@@ -770,6 +770,7 @@
     const celebrateOk = document.getElementById('celebrateOk');
 
     let currentWishId = null;
+let hasShownCelebration = false;
 
     // Helpers
     function loadWishes() {
@@ -814,7 +815,7 @@
       // Refresh certain pages
       if (name === 'admin') { renderAdmin(); switchAdminTab(currentAdminTab); }
       if (name === 'status') renderStatus();
-      if (name === 'home') { refreshBallColors(); refreshBallHighlights(); maybePlayCelebrationOnReturn(); }
+      if (name === 'home') { refreshBallColors(); refreshBallHighlights(); if (!hasShownCelebration) maybePlayCelebrationOnReturn(); }
       if (name === 'achievements') renderAchievements();
       if (name === 'about') refreshAboutStats();
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1097,11 +1098,15 @@
 
             // Update wish granted state if phase 2
             if (newPhase === 2) {
-              const ws = loadWishes();
+              let ws = loadWishes();
               const wi = ws.findIndex(w => w.id === ds[idx].wishId);
-              if (wi >= 0) { ws[wi].granted = true; saveWishes(ws); }
+              if (wi >= 0) {
+                // Remove the wish entirely once granted
+                ws.splice(wi, 1);
+                saveWishes(ws);
+              }
               // mark celebration pending for donor
-              localStorage.removeItem(celebrationKey(code)); // ensure it will show once on return
+              localStorage.setItem(celebrationKey(code), 'queued'); // show once on next return
             }
             renderAdmin();
             refreshBallHighlights();
@@ -1524,14 +1529,19 @@
       if (!d) return;
       const wish = byId(d.wishId);
       const already = localStorage.getItem(celebrationKey(latest));
-      if (d.statusPhase === 2 && !already) {
+      if (d.statusPhase === 2 && already === 'queued' && !hasShownCelebration) {
         playCelebration(d.wishNickname, wish?.emotion);
         localStorage.setItem(celebrationKey(latest), '1');
+        hasShownCelebration = true;
       }
     }
     celebrateOk.addEventListener('click', () => {
       celebrateOverlay.classList.remove('celebrate-show');
       celebrateOverlay.classList.add('celebrate-hidden');
+      hasShownCelebration = true;
+      // mark as shown
+      const latest = getLatestCode();
+      if (latest) localStorage.setItem(celebrationKey(latest), 'shown');
     });
 
     // Batch controls
@@ -1570,5 +1580,5 @@
     window.routeTo = routeTo;
     window.renderStatusLookup = window.renderStatusLookup;
   </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ffd1a57394d42f',t:'MTc1NTMzNTY0MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ffe28c3247e543',t:'MTc1NTMzNjMzMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
