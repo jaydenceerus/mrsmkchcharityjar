@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Wish Jar for One School — Charity Demo</title>
+  <title>MRSM Kuching Wish Jar — Charity Demo</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
@@ -22,6 +22,32 @@
       70%  { box-shadow: 0 0 40px 8px rgba(255,255,255,0.15); }
       100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
     }
+    /* Celebration animations */
+    @keyframes jarShake {
+      0%,100% { transform: translateX(0) rotate(0); }
+      15% { transform: translateX(-6px) rotate(-1.5deg); }
+      30% { transform: translateX(6px) rotate(1.5deg); }
+      45% { transform: translateX(-4px) rotate(-1deg); }
+      60% { transform: translateX(4px) rotate(1deg); }
+      75% { transform: translateX(-2px) rotate(-.5deg); }
+      90% { transform: translateX(2px) rotate(.5deg); }
+    }
+    @keyframes popUp {
+      0% { transform: translate(-50%, 0) scale(0.6); opacity: 0; }
+      20% { transform: translate(-50%, -60px) scale(1); opacity: 1; }
+      60% { transform: translate(-50%, -120px) scale(1.05); }
+      100% { transform: translate(-50%, -20px) scale(1); }
+    }
+    @keyframes glowPulseBall {
+      0% { box-shadow: 0 0 0 rgba(255,255,200,0); }
+      50% { box-shadow: 0 0 24px rgba(255,255,200,0.9); }
+      100% { box-shadow: 0 0 0 rgba(255,255,200,0); }
+    }
+    @keyframes dropBack {
+      0% { transform: translate(-50%, -20px) scale(1); opacity: 1; }
+      100% { transform: translate(-50%, 220px) scale(.9); opacity: 0.9; }
+    }
+
     .modal-hidden { opacity: 0; pointer-events: none; transform: translateY(10px) scale(.98); }
     .modal-visible { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
     .page { display: none; }
@@ -31,22 +57,27 @@
       outline-offset: 6px;
       border-radius: 16px;
     }
+
+    /* Celebration overlay styles */
+    .celebrate-hidden { opacity: 0; pointer-events: none; }
+    .celebrate-show { opacity: 1; pointer-events: auto; }
   </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-indigo-800 via-violet-700 to-pink-600 text-white overflow-x-hidden">
+<body class="min-h-screen text-white overflow-x-hidden" style="background: radial-gradient(circle at 20% 20%, #60A5FA 0%, transparent 25%), radial-gradient(circle at 80% 20%, #A78BFA 0%, transparent 25%), radial-gradient(circle at 20% 80%, #F472B6 0%, transparent 25%), radial-gradient(circle at 80% 80%, #34D399 0%, transparent 25%), radial-gradient(circle at 50% 50%, #FCA5A5 0%, #6d28d9 60%);">
   <!-- Top Navigation -->
   <header class="sticky top-0 z-40 bg-white/10 backdrop-blur border-b border-white/10">
     <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/20">🫙</span>
         <div>
-          <div class="font-bold text-lg leading-tight">One School Wish Jar</div>
-          <div class="text-xs opacity-85">Support B40 students with love</div>
+          <div class="font-bold text-lg leading-tight">MRSM Kuching Wish Jar</div>
+          <div class="text-xs opacity-85">Support MRSM Kuching’s B40 students</div>
         </div>
       </div>
       <nav class="flex items-center gap-2 text-sm">
         <button data-route="home" class="navlink px-3 py-2 rounded-lg hover:bg-white/20 font-semibold bg-white/20">Wish Jar</button>
         <button data-route="about" class="navlink px-3 py-2 rounded-lg hover:bg-white/20">About</button>
+        <button data-route="achievements" class="navlink px-3 py-2 rounded-lg hover:bg-white/20">Achievements</button>
         <button data-route="status" class="navlink px-3 py-2 rounded-lg hover:bg-white/20">Donor Status</button>
         <button data-route="admin" class="navlink px-3 py-2 rounded-lg hover:bg-white/20">Admin</button>
       </nav>
@@ -54,142 +85,264 @@
   </header>
 
   <main class="relative z-10">
-    <!-- HOME: Wish Jar -->
+    <!-- HOME: Wish Jar (centered & larger; flatter, wider jar) -->
     <section id="page-home" class="page active">
       <div class="max-w-6xl mx-auto px-6 py-10">
-        <div class="grid lg:grid-cols-2 gap-10 items-center">
-          <div class="space-y-5">
-            <h1 class="text-3xl md:text-4xl font-bold tracking-tight">Tap a Wish from the Jar</h1>
-            <p class="text-white/90 text-lg leading-relaxed">
-              Each ball holds an anonymous wish from a student in need. Open one to see their story and grant their wish.
-            </p>
-            <ul class="space-y-2 text-white/90">
-              <li class="flex items-center gap-3">
-                <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20">🫶</span>
-                100% anonymous student stories
-              </li>
-              <li class="flex items-center gap-3">
-                <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20">✨</span>
-                Smooth, simple, and secure demo
-              </li>
-              <li class="flex items-center gap-3">
-                <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20">📍</span>
-                For one school’s B40 students
-              </li>
-            </ul>
-            <div class="hidden md:block">
-              <div class="mt-6 inline-flex items-center gap-2 bg-white text-indigo-700 font-semibold px-5 py-3 rounded-xl shadow-lg shadow-black/20">
-                Try it: click a ball to open a wish
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M13 5l7 7-7 7M5 12h14" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </div>
-            </div>
+        <div class="text-center max-w-3xl mx-auto">
+          <h1 class="text-3xl md:text-4xl font-bold tracking-tight">Choose a Wish to Brighten a Day</h1>
+          <p class="text-white/90 text-lg leading-relaxed mt-3">
+            Each ball is an anonymous student wish. Click to see their story and pledge support. Wishes rotate monthly.
+          </p>
+          <div id="monthBadge" class="mt-4 inline-flex items-center gap-2 bg-white/20 backdrop-blur px-4 py-2 rounded-full text-sm">
+            <span>Monthly rotation</span> <span class="opacity-90">•</span> <span id="currentMonth"></span>
+          </div>
+        </div>
+
+        <!-- Centered Jar -->
+        <div class="mt-10 flex flex-col items-center">
+          <div
+            id="jarButton"
+            role="button"
+            tabindex="0"
+            aria-label="Wish Jar"
+            class="jar-focus group relative mx-auto w-[380px] h-[580px] md:w-[520px] md:h-[720px] rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/12 transition-all duration-300"
+            style="animation: glowPulse 3s ease-in-out infinite"
+          >
+            <!-- Glow accents -->
+            <div class="absolute -top-10 -left-10 h-28 w-28 rounded-full bg-white/10 blur-2xl"></div>
+            <div class="absolute -bottom-14 -right-14 h-36 w-36 rounded-full bg-pink-300/20 blur-2xl"></div>
+
+            <svg viewBox="0 0 360 660" class="absolute inset-0 w-full h-full">
+              <defs>
+                <linearGradient id="jarGlass" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="rgba(255,255,255,0.7)"/>
+                  <stop offset="100%" stop-color="rgba(255,255,255,0.15)"/>
+                </linearGradient>
+                <clipPath id="jarClip">
+                  <!-- Wider neck and flatter, less-rounded bottom -->
+                  <path d="M60,100 h240 a22,22 0 0 1 22,22 v300 q0,90 -98,120 h-88 q-98,-30 -98,-120 v-300 a22,22 0 0 1 22,-22 z" />
+                </clipPath>
+              </defs>
+
+              <!-- Jar shape (flatter bottom, wider) -->
+              <path d="M60,100 h240 a22,22 0 0 1 22,22 v300 q0,90 -98,120 h-88 q-98,-30 -98,-120 v-300 a22,22 0 0 1 22,-22 z"
+                    fill="url(#jarGlass)" stroke="white" stroke-opacity="0.35" stroke-width="3"/>
+              <rect x="78" y="72" width="204" height="26" rx="6" fill="rgba(255,255,255,0.6)" />
+              <rect x="112" y="58" width="136" height="14" rx="6" fill="rgba(255,255,255,0.45)" />
+
+              <!-- Balls -->
+              <g clip-path="url(#jarClip)" id="ballsGroup">
+                <ellipse cx="180" cy="520" rx="170" ry="70" fill="rgba(255,255,255,0.08)"/>
+                <!-- Positions (5 rows, roomy) -->
+                <!-- Row 1 (bottom) -->
+                <g class="row" data-row="1">
+                  <circle data-id="w1" cx="100" cy="500" r="28" style="animation: bob 3.3s ease-in-out infinite; animation-delay: .1s; cursor: pointer;" />
+                  <circle data-id="w2" cx="170" cy="510" r="32" style="animation: bob 3s ease-in-out infinite; animation-delay: .5s; cursor: pointer;" />
+                  <circle data-id="w3" cx="240" cy="500" r="28" style="animation: bob 3.6s ease-in-out infinite; animation-delay: .2s; cursor: pointer;" />
+                </g>
+                <!-- Row 2 -->
+                <g class="row" data-row="2">
+                  <circle data-id="w4" cx="80"  cy="460" r="24" style="animation: bob 3.2s ease-in-out infinite; animation-delay: .3s; cursor: pointer;" />
+                  <circle data-id="w5" cx="145" cy="468" r="26" style="animation: bob 3.1s ease-in-out infinite; animation-delay: .9s; cursor: pointer;" />
+                  <circle data-id="w6" cx="210" cy="465" r="24" style="animation: bob 3.4s ease-in-out infinite; animation-delay: .7s; cursor: pointer;" />
+                  <circle data-id="w7" cx="270" cy="460" r="22" style="animation: bob 3.2s ease-in-out infinite; animation-delay: .5s; cursor: pointer;" />
+                </g>
+                <!-- Row 3 -->
+                <g class="row" data-row="3">
+                  <circle data-id="w8" cx="95"  cy="420" r="22" style="animation: bob 3.5s ease-in-out infinite; animation-delay: .6s; cursor: pointer;" />
+                  <circle data-id="w9" cx="160" cy="425" r="24" style="animation: bob 3.2s ease-in-out infinite; animation-delay: .1s; cursor: pointer;" />
+                  <circle data-id="w10" cx="225" cy="420" r="22" style="animation: bob 3.9s ease-in-out infinite; animation-delay: .75s; cursor: pointer;" />
+                  <circle data-id="w11" cx="280" cy="415" r="20" style="animation: bob 3.15s ease-in-out infinite; animation-delay: .45s; cursor: pointer;" />
+                </g>
+                <!-- Row 4 -->
+                <g class="row" data-row="4">
+                  <circle data-id="w12" cx="90" cy="375" r="20" style="animation: bob 3.6s ease-in-out infinite; animation-delay: .2s; cursor: pointer;" />
+                  <circle data-id="w13" cx="155" cy="380" r="22" style="animation: bob 3.4s ease-in-out infinite; animation-delay: .4s; cursor: pointer;" />
+                  <circle data-id="w14" cx="220" cy="375" r="20" style="animation: bob 3.1s ease-in-out infinite; animation-delay: .8s; cursor: pointer;" />
+                  <circle data-id="w15" cx="270" cy="370" r="18" style="animation: bob 3.3s ease-in-out infinite; animation-delay: .6s; cursor: pointer;" />
+                </g>
+                <!-- Row 5 (topmost) -->
+                <g class="row" data-row="5">
+                  <circle data-id="w16" cx="120" cy="330" r="18" style="animation: bob 3.7s ease-in-out infinite; animation-delay: .3s; cursor: pointer;" />
+                  <circle data-id="w17" cx="180" cy="335" r="20" style="animation: bob 3.2s ease-in-out infinite; animation-delay: .1s; cursor: pointer;" />
+                  <circle data-id="w18" cx="235" cy="330" r="18" style="animation: bob 3.5s ease-in-out infinite; animation-delay: .5s; cursor: pointer;" />
+                </g>
+
+                <!-- Icons (emojis) centered on balls -->
+                <g id="iconsLayer" font-size="12" text-anchor="middle" dominant-baseline="central" font-weight="700"></g>
+
+                <!-- Highlights for glass look -->
+                <rect x="100" y="140" width="20" height="300" rx="10" fill="rgba(255,255,255,0.15)" />
+                <rect x="240" y="150" width="10" height="200" rx="5" fill="rgba(255,255,255,0.12)" />
+              </g>
+            </svg>
+
+            <!-- Callout moved below jar -->
           </div>
 
-          <!-- Jar -->
-          <div class="relative">
-            <div
-              id="jarButton"
-              role="button"
-              tabindex="0"
-              aria-label="Wish Jar"
-              class="jar-focus group relative mx-auto w-[320px] h-[460px] md:w-[400px] md:h-[540px] rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/12 transition-all duration-300"
-              style="animation: glowPulse 3s ease-in-out infinite"
-            >
-              <!-- Glow accents -->
-              <div class="absolute -top-8 -left-8 h-24 w-24 rounded-full bg-white/10 blur-2xl"></div>
-              <div class="absolute -bottom-10 -right-10 h-32 w-32 rounded-full bg-pink-300/20 blur-2xl"></div>
-
-              <svg viewBox="0 0 300 420" class="absolute inset-0 w-full h-full">
-                <defs>
-                  <linearGradient id="jarGlass" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="rgba(255,255,255,0.7)"/>
-                    <stop offset="100%" stop-color="rgba(255,255,255,0.15)"/>
-                  </linearGradient>
-                  <clipPath id="jarClip">
-                    <path d="M60,70 h180 a20,20 0 0 1 20,20 v180 a70,70 0 0 1 -70,70 h-80 a70,70 0 0 1 -70,-70 v-180 a20,20 0 0 1 20,-20 z" />
-                  </clipPath>
-                </defs>
-
-                <!-- Jar -->
-                <path d="M60,70 h180 a20,20 0 0 1 20,20 v180 a70,70 0 0 1 -70,70 h-80 a70,70 0 0 1 -70,-70 v-180 a20,20 0 0 1 20,-20 z"
-                      fill="url(#jarGlass)" stroke="white" stroke-opacity="0.35" stroke-width="3"/>
-                <rect x="70" y="48" width="160" height="24" rx="8" fill="rgba(255,255,255,0.6)" />
-                <rect x="95" y="36" width="110" height="12" rx="6" fill="rgba(255,255,255,0.45)" />
-
-                <!-- Balls (dynamic highlights added by JS for granted wishes) -->
-                <g clip-path="url(#jarClip)" id="ballsGroup">
-                  <ellipse cx="150" cy="340" rx="150" ry="70" fill="rgba(255,255,255,0.08)"/>
-                  <!-- Row 1 -->
-                  <circle data-id="w1" cx="85"  cy="320" r="28" fill="#FDE047" style="animation: bob 3.3s ease-in-out infinite; animation-delay: .1s; cursor: pointer;" />
-                  <circle data-id="w2" cx="140" cy="330" r="32" fill="#34D399" style="animation: bob 3s ease-in-out infinite; animation-delay: .5s; cursor: pointer;" />
-                  <circle data-id="w3" cx="200" cy="320" r="28" fill="#FB7185" style="animation: bob 3.6s ease-in-out infinite; animation-delay: .2s; cursor: pointer;" />
-                  <circle data-id="w4" cx="245" cy="310" r="22" fill="#60A5FA" style="animation: bob 3.2s ease-in-out infinite; animation-delay: .8s; cursor: pointer;" />
-                  <!-- Row 2 -->
-                  <circle data-id="w5" cx="70"  cy="270" r="22" fill="#F472B6" style="animation: bob 3.4s ease-in-out infinite; animation-delay: .3s; cursor: pointer;" />
-                  <circle data-id="w6" cx="120" cy="280" r="26" fill="#A78BFA" style="animation: bob 3.1s ease-in-out infinite; animation-delay: .9s; cursor: pointer;" />
-                  <circle data-id="w7" cx="180" cy="275" r="24" fill="#FCA5A5" style="animation: bob 3.7s ease-in-out infinite; animation-delay: .4s; cursor: pointer;" />
-                  <circle data-id="w8" cx="230" cy="270" r="20" fill="#4ADE80" style="animation: bob 3.15s ease-in-out infinite; animation-delay: .7s; cursor: pointer;" />
-                  <!-- Row 3 -->
-                  <circle data-id="w9"  cx="90"  cy="225" r="20" fill="#93C5FD" style="animation: bob 3.5s ease-in-out infinite; animation-delay: .6s; cursor: pointer;" />
-                  <circle data-id="w10" cx="150" cy="230" r="22" fill="#FDE68A" style="animation: bob 3.2s ease-in-out infinite; animation-delay: .1s; cursor: pointer;" />
-                  <circle data-id="w11" cx="210" cy="225" r="18" fill="#34D399" style="animation: bob 3.9s ease-in-out infinite; animation-delay: .75s; cursor: pointer;" />
-                </g>
-              </svg>
-
-              <!-- Callout -->
-              <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-center">
-                <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur px-4 py-2 rounded-full text-sm">
-                  <span class="hidden sm:inline">Click a ball to open a wish</span>
-                  <span class="sm:hidden">Tap a ball to open a wish</span>
-                  <span class="opacity-90">→</span>
-                </div>
-              </div>
+          <!-- Legend split to sides -->
+          <div class="mt-8 grid grid-cols-2 gap-6 w-full max-w-4xl">
+            <div class="flex flex-col gap-2 text-sm items-start">
+              <div class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-white/70 ring-2 ring-yellow-300/70 shadow"></span> Completed (glow)</div>
+              <div class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-white/30"></span> Pending (slightly faded)</div>
+              <div class="inline-flex items-center gap-2"><span>🥿</span> Shoes</div>
+              <div class="inline-flex items-center gap-2"><span>✏️</span> Stationery</div>
+              <div class="inline-flex items-center gap-2"><span>🧃</span> Meals</div>
+              <div class="inline-flex items-center gap-2"><span>📶</span> Data</div>
+              <div class="inline-flex items-center gap-2"><span>🚲</span> Transport</div>
             </div>
-
-            <!-- Legend -->
-            <div class="mt-8 flex items-center gap-3 text-sm">
-              <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-white/70 ring-2 ring-yellow-300/70 shadow"></span> Granted</span>
-              <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-white/30"></span> Pending</span>
+            <div class="flex flex-col gap-2 text-sm items-end">
+              <div class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-full" style="background:#60A5FA"></span> Hope</div>
+              <div class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-full" style="background:#A78BFA"></span> Sadness</div>
+              <div class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-full" style="background:#F472B6"></span> Embarrassment</div>
+              <div class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-full" style="background:#FCA5A5"></span> Anxiety</div>
+              <div class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-full" style="background:#34D399"></span> Determination</div>
+            </div>
+          </div>
+          <!-- New callout below jar -->
+          <div class="mt-6">
+            <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur px-5 py-3 rounded-full text-sm">
+              <span class="hidden sm:inline">Click a ball to open a wish</span>
+              <span class="sm:hidden">Tap a ball to open a wish</span>
+              <span class="opacity-90">→</span>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ABOUT -->
-    <section id="page-about" class="page">
-      <div class="max-w-5xl mx-auto px-6 py-10">
-        <h2 class="text-3xl md:text-4xl font-bold">About This Project</h2>
-        <p class="mt-4 text-white/90 text-lg leading-relaxed">
-          This initiative supports one school’s B40 students by turning real needs into simple, grantable wishes.
-          Every ball is an anonymous story—clear, dignified, and safe.
-        </p>
-
-        <div class="mt-8 grid md:grid-cols-3 gap-5">
-          <div class="rounded-2xl bg-white/10 border border-white/10 p-5">
-            <div class="text-4xl font-bold">B40</div>
-            <p class="mt-2 text-white/90">Refers to the bottom 40% of household incomes. Many students need essentials to thrive.</p>
+    <!-- Celebration overlay -->
+    <div id="celebrate" class="fixed inset-0 z-[60] flex items-center justify-center p-6 transition-opacity duration-300 celebrate-hidden">
+      <div class="absolute inset-0 pointer-events-none"></div>
+      <div class="relative w-full max-w-xl">
+        <div class="rounded-2xl bg-white/95 text-slate-800 overflow-hidden shadow-2xl">
+          <div class="relative bg-gradient-to-r from-yellow-300 via-amber-300 to-pink-300 p-6">
+            <h3 class="text-xl font-bold text-slate-900 text-center">Congratulations!</h3>
+            <p class="text-slate-800/80 text-center">You’ve granted <span id="celebrateName" class="font-semibold">a student</span>’s wish</p>
           </div>
-          <div class="rounded-2xl bg-white/10 border border-white/10 p-5">
-            <div class="text-4xl font-bold">62%</div>
-            <p class="mt-2 text-white/90">Of our students are from B40 households (sample figure). We focus on practical, immediate impact.</p>
+          <div class="relative h-72 bg-white">
+            <!-- Mini jar area -->
+            <div id="celebrateJar" class="absolute left-1/2 top-10 -translate-x-1/2 w-56 h-48 rounded-xl border-2 border-slate-200 bg-slate-50"></div>
+            <!-- Confetti canvas -->
+            <canvas id="confettiCanvas" class="absolute inset-0"></canvas>
+            <!-- The ball that pops -->
+            <div id="celebrateBall" class="absolute left-1/2 top-28 -translate-x-1/2 h-14 w-14 rounded-full flex items-center justify-center text-xl"
+                 style="background:#FDE047; z-index: 2;">
+              <span id="celebrateEmoji">✨</span>
+            </div>
+            <!-- Animation layers -->
+            <div id="celebrateAnim" class="absolute inset-0 pointer-events-none" style="z-index:1"></div>
           </div>
-          <div class="rounded-2xl bg-white/10 border border-white/10 p-5">
-            <div class="text-4xl font-bold">3–7 days</div>
-            <p class="mt-2 text-white/90">Typical time for a wish to be granted once a donor commits (varies by item).</p>
+          <div class="p-4 flex items-center justify-center">
+            <button id="celebrateOk" class="px-5 py-2 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-500">Back to Jar</button>
           </div>
         </div>
+      </div>
+    </div>
 
-        <div class="mt-8 rounded-2xl bg-white/10 border border-white/10 p-6">
-          <h3 class="text-2xl font-semibold">How it works</h3>
-          <ol class="mt-3 space-y-2 text-white/90">
-            <li>1) Students submit wishes anonymously through the school counselor.</li>
-            <li>2) Wishes appear in the jar.</li>
-            <li>3) Donors pick a wish and pledge support.</li>
-            <li>4) Admins coordinate and mark completion.</li>
-          </ol>
+    <!-- ABOUT (graphical + contact + SKP) -->
+    <section id="page-about" class="page">
+      <div class="max-w-6xl mx-auto px-6 py-10">
+        <h2 class="text-3xl md:text-4xl font-bold">About This Project</h2>
+        <p class="mt-4 text-white/90 text-lg leading-relaxed max-w-3xl">
+          A simple way to support MRSM Kuching’s B40 students. Each anonymous wish is reviewed by school staff and listed here for donors to grant.
+        </p>
+
+        <div class="mt-8 grid lg:grid-cols-2 gap-6">
+          <div class="rounded-2xl bg-white/10 border border-white/10 p-6">
+            <h3 class="text-xl font-semibold">School Snapshot</h3>
+            <div class="mt-4 space-y-4">
+              <div>
+                <div class="flex items-center justify-between text-sm"><span>B40 Students</span><span id="statB40Pct">62%</span></div>
+                <div class="mt-2 h-3 rounded-full bg-white/10 overflow-hidden">
+                  <div id="barB40" class="h-3 bg-yellow-300 rounded-full" style="width:62%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between text-sm"><span>Avg. Grant Time</span><span>3–7 days</span></div>
+                <div class="mt-2 h-3 rounded-full bg-white/10 overflow-hidden">
+                  <div class="h-3 bg-green-300 rounded-full" style="width:45%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between text-sm"><span>Essentials Coverage (est.)</span><span>76%</span></div>
+                <div class="mt-2 h-3 rounded-full bg-white/10 overflow-hidden">
+                  <div class="h-3 bg-indigo-300 rounded-full" style="width:76%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl bg-white/10 border border-white/10 p-6">
+            <h3 class="text-xl font-semibold">Impact This Month</h3>
+            <div class="grid grid-cols-3 gap-4 mt-4 text-center">
+              <div class="rounded-xl bg-white/10 p-4">
+                <div id="statWishes" class="text-3xl font-bold">18</div>
+                <div class="text-sm opacity-80">Wishes</div>
+              </div>
+              <div class="rounded-xl bg-white/10 p-4">
+                <div id="statGranted" class="text-3xl font-bold">0</div>
+                <div class="text-sm opacity-80">Granted</div>
+              </div>
+              <div class="rounded-xl bg-white/10 p-4">
+                <div id="statDonors" class="text-3xl font-bold">0</div>
+                <div class="text-sm opacity-80">Donors</div>
+              </div>
+            </div>
+
+            <div class="mt-6 rounded-xl bg-white/10 p-4">
+              <div class="font-semibold">Contact MRSM Kuching</div>
+              <div class="mt-2 space-y-1 text-white/90">
+                <div>📞 +60 82-123 456</div>
+                <div>✉️ support.mrsmkuching@example.edu.my</div>
+              </div>
+            </div>
+
+            <div class="mt-6 rounded-xl bg-white/10 p-4">
+              <div class="font-semibold">How SKP (Student Bodies) supports this</div>
+              <ul class="mt-2 list-disc list-inside text-white/90 space-y-1">
+                <li>Collect and verify wishes with counselors and class teachers</li>
+                <li>Coordinate logistics and handovers with donors</li>
+                <li>Rotate monthly wish lists and track completions</li>
+                <li>Safeguard student privacy and dignity throughout</li>
+              </ul>
+            </div>
+          </div>
+          <!-- New callout below jar -->
+          <div class="mt-6">
+            <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur px-5 py-3 rounded-full text-sm">
+              <span class="hidden sm:inline">Click a ball to open a wish</span>
+              <span class="sm:hidden">Tap a ball to open a wish</span>
+              <span class="opacity-90">→</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ACHIEVEMENTS -->
+    <section id="page-achievements" class="page">
+      <div class="max-w-6xl mx-auto px-6 py-10">
+        <h2 class="text-3xl md:text-4xl font-bold">Achievements</h2>
+        <p class="mt-3 text-white/90">Top contributors by number of pledges and estimated value.</p>
+
+        <div class="mt-6 grid lg:grid-cols-2 gap-6">
+          <div class="rounded-2xl bg-white/10 border border-white/10 p-6">
+            <h3 class="text-xl font-semibold mb-4">Most Pledges</h3>
+            <div id="topPledges" class="space-y-3"></div>
+          </div>
+          <div class="rounded-2xl bg-white/10 border border-white/10 p-6">
+            <h3 class="text-xl font-semibold mb-4">Highest Estimated Value</h3>
+            <div id="topValue" class="space-y-3"></div>
+          </div>
+          <!-- New callout below jar -->
+          <div class="mt-6">
+            <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur px-5 py-3 rounded-full text-sm">
+              <span class="hidden sm:inline">Click a ball to open a wish</span>
+              <span class="sm:hidden">Tap a ball to open a wish</span>
+              <span class="opacity-90">→</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -217,31 +370,155 @@
       </div>
     </section>
 
-    <!-- ADMIN -->
+    <!-- ADMIN (with tabs + current month and sliders) -->
     <section id="page-admin" class="page">
       <div class="max-w-6xl mx-auto px-6 py-10">
-        <h2 class="text-3xl md:text-4xl font-bold">Admin Dashboard</h2>
-        <p class="mt-3 text-white/90">Track each wish and donation. Toggle “Completed” when fulfilled.</p>
+        <h2 class="text-3xl md:text-4xl font-bold">Admin</h2>
+        <p class="mt-3 text-white/90">Manage wishes and donations. This is a demo; data stays in your browser.</p>
 
-        <div class="mt-8 grid lg:grid-cols-2 gap-6">
-          <!-- Wishes -->
+        <div class="mt-6 flex flex-wrap gap-2">
+          <button class="adminTab px-4 py-2 rounded-xl bg-white text-indigo-700 font-semibold" data-tab="track">Track</button>
+          <button class="adminTab px-4 py-2 rounded-xl bg-white/10 border border-white/20 hover:bg-white/20" data-tab="manage">Manage Wishes</button>
+          <button class="adminTab px-4 py-2 rounded-xl bg-white/10 border border-white/20 hover:bg-white/20" data-tab="donors">Donors</button>
+          <button id="resetDemo" class="ml-auto px-4 py-2 rounded-xl bg-white/10 border border-white/20 hover:bg-white/20">Reset Demo Data</button>
+        </div>
+
+        <div class="mt-4 rounded-2xl bg-white/10 border border-white/10 p-4 flex flex-wrap items-center gap-3">
+          <div class="text-sm opacity-80">Current month batch (filter jar):</div>
+          <input id="currentBatchInput" class="px-3 py-2 rounded-xl bg-white text-slate-900" placeholder="e.g., 2025-08" />
+          <button id="setBatchBtn" class="px-3 py-2 rounded-xl bg-white text-indigo-700 font-semibold">Set</button>
+          <button id="clearBatchBtn" class="px-3 py-2 rounded-xl bg-white/10 border border-white/20 hover:bg-white/20">Show All</button>
+        </div>
+
+        <!-- TRACK -->
+        <div id="admin-track" class="mt-6 adminPage">
+          <div class="grid lg:grid-cols-2 gap-6">
+            <!-- Wishes summary -->
+            <div class="rounded-2xl bg-white/10 border border-white/10 p-6">
+              <h3 class="text-2xl font-semibold mb-4">Wishes</h3>
+              <div id="adminWishes" class="space-y-4"></div>
+            </div>
+
+            <!-- Donations with phase slider -->
+            <div class="rounded-2xl bg-white/10 border border-white/10 p-6">
+              <h3 class="text-2xl font-semibold mb-4">Donations</h3>
+              <div id="adminDonations" class="space-y-4"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MANAGE -->
+        <div id="admin-manage" class="mt-6 adminPage hidden">
+          <div class="grid lg:grid-cols-2 gap-6">
+            <div class="rounded-2xl bg-white/10 border border-white/10 p-6">
+              <h3 class="text-2xl font-semibold mb-4">Add New Wish</h3>
+              <form id="addWishForm" class="space-y-4">
+                <div class="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm mb-2">Nickname (optional)</label>
+                    <input name="nickname" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900" placeholder="Leave blank to auto-generate" />
+                  </div>
+                  <div>
+                    <label class="block text-sm mb-2">Category</label>
+                    <select name="category" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900">
+                      <option value="shoes">Shoes</option>
+                      <option value="stationery">Stationery</option>
+                      <option value="meals">Meals</option>
+                      <option value="data">Data</option>
+                      <option value="transport">Transport</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm mb-2">Emotion</label>
+                    <select name="emotion" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900">
+                      <option value="hope">Hope</option>
+                      <option value="sadness">Sadness</option>
+                      <option value="embarrassment">Embarrassment</option>
+                      <option value="anxiety">Anxiety</option>
+                      <option value="determination">Determination</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-sm mb-2">Monthly Batch</label>
+                    <input name="batch" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900" placeholder="e.g., 2025-08" />
+                  </div>
+                </div>
+                <div class="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm mb-2">Student Name (internal only)</label>
+                    <input name="studentName" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900" placeholder="Not displayed to donors" />
+                  </div>
+                  <div>
+                    <label class="block text-sm mb-2">Class (internal only)</label>
+                    <input name="studentClass" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900" placeholder="e.g., 3A" />
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm mb-2">Situation</label>
+                  <textarea name="situation" rows="3" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900" required></textarea>
+                </div>
+                <div>
+                  <label class="block text-sm mb-2">Wish</label>
+                  <textarea name="wish" rows="2" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900" required></textarea>
+                </div>
+                <button class="px-5 py-3 rounded-xl bg-white text-indigo-700 font-semibold">Add Wish</button>
+              </form>
+
+              <div class="mt-6 rounded-xl bg-white/10 border border-white/10 p-4">
+                <div class="font-semibold mb-2">Bulk Add (paste CSV lines)</div>
+                <textarea id="bulkText" rows="5" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900" placeholder="nickname,category,emotion,batch,situation,wish,studentName,studentClass&#10;Star Panda,shoes,embarrassment,2025-08,Short situation,Black shoes size 38,Ali,3A"></textarea>
+                <div class="mt-3 flex items-center gap-2">
+                  <button id="bulkAddBtn" class="px-4 py-2 rounded-xl bg-white text-indigo-700 font-semibold">Add Lines</button>
+                  <div class="text-xs opacity-80">Note: Stored locally for demo only.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-2xl bg-white/10 border border-white/10 p-6">
+              <h3 class="text-2xl font-semibold mb-4">Existing Wishes</h3>
+              <div id="manageWishesList" class="space-y-3"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DONORS -->
+        <div id="admin-donors" class="mt-6 adminPage hidden">
           <div class="rounded-2xl bg-white/10 border border-white/10 p-6">
             <div class="flex items-center justify-between mb-4">
-              <h3 class="text-2xl font-semibold">Wishes</h3>
-              <button id="resetDemo" class="text-sm px-3 py-2 rounded-lg bg-white/20 hover:bg-white/30">Reset Demo Data</button>
+              <h3 class="text-2xl font-semibold">Donor Directory</h3>
+              <input id="donorSearch" class="px-3 py-2 rounded-xl bg-white text-slate-900" placeholder="Search by name..." />
             </div>
-            <div id="adminWishes" class="space-y-4"></div>
+            <div id="donorList" class="space-y-3"></div>
           </div>
-
-          <!-- Donations -->
-          <div class="rounded-2xl bg-white/10 border border-white/10 p-6">
-            <h3 class="text-2xl font-semibold mb-4">Donations</h3>
-            <div id="adminDonations" class="space-y-4"></div>
+          <!-- New callout below jar -->
+          <div class="mt-6">
+            <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur px-5 py-3 rounded-full text-sm">
+              <span class="hidden sm:inline">Click a ball to open a wish</span>
+              <span class="sm:hidden">Tap a ball to open a wish</span>
+              <span class="opacity-90">→</span>
+            </div>
           </div>
         </div>
       </div>
     </section>
   </main>
+
+  <!-- Admin Info Modal -->
+  <div id="adminInfoModal" class="fixed inset-0 z-[70] hidden">
+    <div class="absolute inset-0 bg-black/50"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-6">
+      <div class="w-full max-w-md rounded-2xl bg-white text-slate-800 shadow-2xl overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-3 bg-slate-100">
+          <div class="font-semibold">Student Details (Internal)</div>
+          <button id="adminInfoClose" class="px-2 py-1 rounded-lg bg-slate-200 hover:bg-slate-300">Close</button>
+        </div>
+        <div id="adminInfoBox" class="p-5 text-sm"></div>
+      </div>
+    </div>
+  </div>
 
   <!-- WISH MODAL -->
   <div id="modalBackdrop" class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity"></div>
@@ -268,6 +545,10 @@
         </div>
         <div class="mt-5 space-y-3">
           <div>
+            <div class="text-slate-500 text-sm">Emotion</div>
+            <p id="wishEmotion" class="text-slate-800"></p>
+          </div>
+          <div>
             <div class="text-slate-500 text-sm">Situation</div>
             <p id="wishSituation" class="text-slate-800"></p>
           </div>
@@ -289,7 +570,7 @@
     </div>
   </div>
 
-  <!-- DONOR FORM PAGE (appears after pressing Grant this wish) -->
+  <!-- DONOR FORM PAGE -->
   <section id="page-donate" class="page">
     <div class="max-w-3xl mx-auto px-6 py-10">
       <div class="rounded-2xl bg-white/10 border border-white/10 p-6">
@@ -302,21 +583,32 @@
         </p>
 
         <form id="donorForm" class="mt-6 space-y-5">
-          <div class="grid md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm mb-2">Full Name (optional)</label>
-              <input required name="name" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400" placeholder="Your name" />
+          <div class="rounded-xl bg-white/10 border border-white/10 p-4">
+            <div class="text-sm opacity-80 mb-2">Choose how your name appears</div>
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm mb-2">Full Name (optional)</label>
+                <input name="name" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400" placeholder="Your full name" />
+              </div>
+              <div>
+                <label class="block text-sm mb-2">Nickname (optional)</label>
+                <input name="nickname" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400" placeholder="Shown to student if you prefer" />
+              </div>
             </div>
+            <div class="text-xs opacity-80 mt-2">You can fill either one. If both are filled, we’ll show the Full Name.</div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm mb-2">Email</label>
               <input required type="email" name="email" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400" placeholder="you@example.com" />
             </div>
-          </div>
-          <div class="grid md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm mb-2">Phone (optional)</label>
               <input name="phone" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400" placeholder="+60 ..." />
             </div>
+          </div>
+          <div class="grid md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm mb-2">Contribution Type</label>
               <select name="type" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900">
@@ -326,12 +618,12 @@
                 <option>Volunteer help</option>
               </select>
             </div>
-          </div>
-          <div class="grid md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm mb-2">Estimated Amount/Value (optional)</label>
               <input name="amount" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400" placeholder="e.g., RM120" />
             </div>
+          </div>
+          <div class="grid md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm mb-2">Preferred Timeline</label>
               <select name="timeline" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900">
@@ -340,10 +632,10 @@
                 <option>Within 1 month</option>
               </select>
             </div>
-          </div>
-          <div>
-            <label class="block text-sm mb-2">Message to Admin (optional)</label>
-            <textarea name="message" rows="4" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400" placeholder="Any details or questions"></textarea>
+            <div>
+              <label class="block text-sm mb-2">Message to Admin (optional)</label>
+              <input name="message" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400" placeholder="Any details or questions" />
+            </div>
           </div>
 
           <div class="flex items-center gap-3">
@@ -356,61 +648,63 @@
   </section>
 
   <footer class="max-w-6xl mx-auto px-6 pb-10 pt-6 text-sm text-white/80">
-    Tip: Admin can mark wishes complete in the Admin tab. Donors can check progress in the Donor Status tab using their donation code.
+    Tip: Admin can set the current month in Admin and slide donations through each step. Donors will see a celebration on the jar once their wish is granted.
   </footer>
 
   <script>
-    // Simple in-browser data store (Demo only)
+    // Local storage keys
     const LS_WISHES = 'wishjar_wishes';
     const LS_DONATIONS = 'wishjar_donations';
     const LS_LATEST_CODE = 'wishjar_latest_code';
+    const LS_CURRENT_BATCH = 'wishjar_current_batch';
+    const celebrationKey = (code) => `wishjar_celebrated_${code}`;
 
-    // Sample wishes (small set for demo)
+    // Emotion colors and emojis
+    const EMOTION_COLORS = {
+      hope: '#60A5FA',
+      sadness: '#A78BFA',
+      embarrassment: '#F472B6',
+      anxiety: '#FCA5A5',
+      determination: '#34D399'
+    };
+    const EMOTION_EMOJI = {
+      hope: '🌟',
+      sadness: '💙',
+      embarrassment: '🫣',
+      anxiety: '💛',
+      determination: '💪'
+    };
+
+    // Category icons (emojis)
+    const CATEGORY_ICON = {
+      shoes: '🥿',
+      stationery: '✏️',
+      meals: '🧃',
+      data: '📶',
+      transport: '🚲',
+      other: '🎒'
+    };
+
+    // Wishes (demo set)
     const defaultWishes = [
-      {
-        id: 'w1', nickname: 'Star Panda', situation: 'Lives with single parent. Part-time after school to help at home.',
-        wish: 'A pair of black school shoes (size 38) and white socks.', granted: false
-      },
-      {
-        id: 'w2', nickname: 'Blue Sparrow', situation: 'Family income irregular; shares study space with siblings.',
-        wish: 'Simple study desk lamp and A4 exercise books.', granted: false
-      },
-      {
-        id: 'w3', nickname: 'Kind Tiger', situation: 'Commutes long distance with limited lunch budget.',
-        wish: 'Meal allowance for one month (RM60).', granted: false
-      },
-      {
-        id: 'w4', nickname: 'Bright Mango', situation: 'Preparing for exams but lacks calculator.',
-        wish: 'A scientific calculator (Casio fx-570MS or equivalent).', granted: false
-      },
-      {
-        id: 'w5', nickname: 'Quiet Horizon', situation: 'Shoes torn and uniform fading.',
-        wish: '1 set school uniform (size M).', granted: false
-      },
-      {
-        id: 'w6', nickname: 'Silver Fern', situation: 'Uses borrowed phone; limited for online resources.',
-        wish: 'Prepaid data top-up (RM30).', granted: false
-      },
-      {
-        id: 'w7', nickname: 'Sunny Lychee', situation: 'riding old bicycle to school.',
-        wish: 'Basic bicycle repair (brakes and tires).', granted: false
-      },
-      {
-        id: 'w8', nickname: 'Clever Otter', situation: 'Needs better focus in shared room.',
-        wish: 'Noise-cancelling earmuffs for studying.', granted: false
-      },
-      {
-        id: 'w9', nickname: 'Brave Orchid', situation: 'Family caring for elderly grandparent.',
-        wish: 'Reusable water bottle and lunch container.', granted: false
-      },
-      {
-        id: 'w10', nickname: 'Golden Kite', situation: 'Preparing for PT3 with limited materials.',
-        wish: 'Stationery kit: pens, pencils, eraser, ruler.', granted: false
-      },
-      {
-        id: 'w11', nickname: 'Snowy Finch', situation: 'Needs support for co-curricular activities.',
-        wish: 'Sports shoes (size 40).', granted: false
-      }
+      { id:'w1',  nickname:'Star Panda',    situation:'Lives with single parent. Part-time after school to help at home.', wish:'Black school shoes (size 38) and socks.', category:'shoes', emotion:'embarrassment', granted:false, batch:'2025-08' },
+      { id:'w2',  nickname:'Blue Sparrow',  situation:'Family income irregular; shares study space with siblings.',      wish:'Desk lamp and A4 exercise books.',       category:'stationery', emotion:'hope', granted:false, batch:'2025-08' },
+      { id:'w3',  nickname:'Kind Tiger',    situation:'Commutes long distance with limited lunch budget.',               wish:'Meal allowance for one month (RM60).',   category:'meals', emotion:'sadness', granted:false, batch:'2025-08' },
+      { id:'w4',  nickname:'Bright Mango',  situation:'Preparing for exams but lacks calculator.',                       wish:'Scientific calculator fx-570MS.',        category:'stationery', emotion:'determination', granted:false, batch:'2025-08' },
+      { id:'w5',  nickname:'Quiet Horizon', situation:'Shoes torn and uniform fading.',                                  wish:'1 set school uniform (size M).',         category:'other', emotion:'embarrassment', granted:false, batch:'2025-08' },
+      { id:'w6',  nickname:'Silver Fern',   situation:'Uses borrowed phone; limited for online resources.',              wish:'Prepaid data top-up (RM30).',            category:'data', emotion:'anxiety', granted:false, batch:'2025-09' },
+      { id:'w7',  nickname:'Sunny Lychee',  situation:'Riding old bicycle to school.',                                   wish:'Bicycle brake and tire repair.',         category:'transport', emotion:'determination', granted:false, batch:'2025-09' },
+      { id:'w8',  nickname:'Clever Otter',  situation:'Needs better focus in shared room.',                              wish:'Noise-cancelling earmuffs.',             category:'other', emotion:'anxiety', granted:false, batch:'2025-09' },
+      { id:'w9',  nickname:'Brave Orchid',  situation:'Family caring for elderly grandparent.',                          wish:'Reusable water bottle and lunch box.',   category:'other', emotion:'hope', granted:false, batch:'2025-09' },
+      { id:'w10', nickname:'Golden Kite',   situation:'Preparing for exams with limited materials.',                      wish:'Stationery kit: pens, pencils, eraser.', category:'stationery', emotion:'determination', granted:false, batch:'2025-09' },
+      { id:'w11', nickname:'Snowy Finch',   situation:'Needs support for co-curricular activities.',                     wish:'Sports shoes (size 40).',                category:'shoes', emotion:'hope', granted:false, batch:'2025-09' },
+      { id:'w12', nickname:'Amber Wave',    situation:'Lunch funds are tight mid-month.',                                wish:'Meal vouchers for two weeks.',           category:'meals', emotion:'sadness', granted:false, batch:'2025-08' },
+      { id:'w13', nickname:'Coral Leaf',    situation:'Late-night studying with poor light.',                            wish:'Clip-on reading lamp.',                  category:'stationery', emotion:'hope', granted:false, batch:'2025-08' },
+      { id:'w14', nickname:'Misty Brook',   situation:'Worn-out sneakers for PE.',                                       wish:'Basic sports shoes (size 39).',          category:'shoes', emotion:'embarrassment', granted:false, batch:'2025-09' },
+      { id:'w15', nickname:'Ruby Dawn',     situation:'Long commute and flat tire risk.',                                wish:'Bike tube + mini pump.',                  category:'transport', emotion:'anxiety', granted:false, batch:'2025-08' },
+      { id:'w16', nickname:'Jade River',    situation:'Spotty internet access at home.',                                 wish:'Data top-up (RM30).',                     category:'data', emotion:'anxiety', granted:false, batch:'2025-09' },
+      { id:'w17', nickname:'Lilac Sky',     situation:'Needs notebooks for new term.',                                   wish:'Set of A4 notebooks (x6).',              category:'stationery', emotion:'hope', granted:false, batch:'2025-08' },
+      { id:'w18', nickname:'Copper Star',   situation:'Uniform shoes worn-out.',                                         wish:'Black school shoes (size 41).',          category:'shoes', emotion:'embarrassment', granted:false, batch:'2025-08' }
     ];
 
     // Elements
@@ -419,16 +713,19 @@
       donate: document.getElementById('page-donate'),
       status: document.getElementById('page-status'),
       admin: document.getElementById('page-admin'),
-      about: document.getElementById('page-about')
+      about: document.getElementById('page-about'),
+      achievements: document.getElementById('page-achievements')
     };
     const navlinks = document.querySelectorAll('.navlink');
     const ballsGroup = document.getElementById('ballsGroup');
+    const iconsLayer = document.getElementById('iconsLayer');
     const modal = document.getElementById('wishModal');
     const modalBackdrop = document.getElementById('modalBackdrop');
     const closeModalBtn = document.getElementById('closeModal');
     const closeModalTop = document.getElementById('closeModalTop');
     const grantBtn = document.getElementById('grantBtn');
     const wishNickname = document.getElementById('wishNickname');
+    const wishEmotion = document.getElementById('wishEmotion');
     const wishSituation = document.getElementById('wishSituation');
     const wishText = document.getElementById('wishText');
     const donateBadge = document.getElementById('donateWishBadge');
@@ -442,6 +739,35 @@
     const adminWishes = document.getElementById('adminWishes');
     const adminDonations = document.getElementById('adminDonations');
     const resetDemo = document.getElementById('resetDemo');
+    const monthBadge = document.getElementById('currentMonth');
+
+    // Admin tabs
+    const adminTabs = document.querySelectorAll('.adminTab');
+    const adminPages = {
+      track: document.getElementById('admin-track'),
+      manage: document.getElementById('admin-manage'),
+      donors: document.getElementById('admin-donors')
+    };
+    const addWishForm = document.getElementById('addWishForm');
+    const manageWishesList = document.getElementById('manageWishesList');
+    const donorSearch = document.getElementById('donorSearch');
+    const donorList = document.getElementById('donorList');
+
+    // Achievements
+    const topPledges = document.getElementById('topPledges');
+    const topValue = document.getElementById('topValue');
+
+    // Admin batch controls
+    const currentBatchInput = document.getElementById('currentBatchInput');
+    const setBatchBtn = document.getElementById('setBatchBtn');
+    const clearBatchBtn = document.getElementById('clearBatchBtn');
+
+    // Celebration elements
+    const celebrateOverlay = document.getElementById('celebrate');
+    const celebrateName = document.getElementById('celebrateName');
+    const celebrateBall = document.getElementById('celebrateBall');
+    const celebrateEmoji = document.getElementById('celebrateEmoji');
+    const celebrateOk = document.getElementById('celebrateOk');
 
     let currentWishId = null;
 
@@ -468,6 +794,12 @@
     function getLatestCode() {
       return localStorage.getItem(LS_LATEST_CODE);
     }
+    function getCurrentBatch() {
+      return localStorage.getItem(LS_CURRENT_BATCH) || '';
+    }
+    function setCurrentBatch(v) {
+      localStorage.setItem(LS_CURRENT_BATCH, v || '');
+    }
     function byId(id) {
       return loadWishes().find(w => w.id === id);
     }
@@ -480,9 +812,11 @@
         else n.classList.remove('bg-white/20','font-semibold');
       });
       // Refresh certain pages
-      if (name === 'admin') renderAdmin();
+      if (name === 'admin') { renderAdmin(); switchAdminTab(currentAdminTab); }
       if (name === 'status') renderStatus();
-      if (name === 'home') refreshBallHighlights();
+      if (name === 'home') { refreshBallColors(); refreshBallHighlights(); maybePlayCelebrationOnReturn(); }
+      if (name === 'achievements') renderAchievements();
+      if (name === 'about') refreshAboutStats();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -491,6 +825,7 @@
       const wish = byId(wishId);
       currentWishId = wishId;
       wishNickname.textContent = wish?.nickname || 'Student';
+      wishEmotion.textContent = wish?.emotion ? wish.emotion.charAt(0).toUpperCase()+wish.emotion.slice(1) : '-';
       wishSituation.textContent = wish?.situation || '';
       wishText.textContent = wish?.wish || '';
       modal.classList.remove('modal-hidden'); modal.classList.add('modal-visible');
@@ -526,23 +861,26 @@
       closeModal();
     });
 
-    // Donor form (Demo only — stored locally)
+    // Donor form submit
     donorForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const fd = new FormData(donorForm);
-      if (!donateBadge.textContent) return;
+      const fullName = (fd.get('name') || '').trim();
+      const nick = (fd.get('nickname') || '').trim();
+      if (!fullName && !nick) { alert('Please enter either your Full Name or a Nickname.'); return; }
       const wishes = loadWishes();
-      const wishId = (currentWishId) ? currentWishId : (donateBadge.textContent.split(':')[1] || '').trimStart();
-      const w = byId(wishId) || wishes[0];
+      const w = wishes.find(x => `Granting: ${x.nickname}` === donateBadge.textContent) || wishes[0];
 
       const code = 'WISH-' + Math.floor(1000 + Math.random()*9000);
+      const now = new Date().toISOString();
       const donation = {
         code,
         wishId: w.id,
         wishNickname: w.nickname,
-        timestamp: new Date().toISOString(),
+        timestamp: now,
         donor: {
-          name: fd.get('name'),
+          displayName: fullName || nick || 'Anonymous',
+          fullName, nickname: nick,
           email: fd.get('email'),
           phone: fd.get('phone') || '',
           type: fd.get('type'),
@@ -550,7 +888,11 @@
           timeline: fd.get('timeline') || '',
           message: fd.get('message') || ''
         },
-        status: 'Pending' // Admin will flip
+        // Phases: 0=Pledged, 1=Received, 2=Granted
+        statusPhase: 0,
+        pledgedAt: now,
+        receivedAt: null,
+        grantedAt: null
       };
       const list = loadDonations();
       list.push(donation);
@@ -558,9 +900,7 @@
       setLatestCode(code);
 
       donorForm.reset();
-      // Show status page right away
       routeTo('status');
-      // Prefill code and render
       lookupCode.value = code;
       renderStatus();
     });
@@ -603,36 +943,54 @@
       }
       const wishes = loadWishes();
       const w = wishes.find(x => x.id === d.wishId);
-      const isComplete = w?.granted || d.status === 'Completed';
+      const phase = d.statusPhase ?? 0;
+
+      // Timeline items
+      const steps = [
+        { label: 'Pledge given', date: d.pledgedAt, done: phase >= 0, icon: '📝' },
+        { label: 'Donation received', date: d.receivedAt, done: phase >= 1, icon: '📦' },
+        { label: 'Wish granted', date: d.grantedAt, done: phase >= 2, icon: '✨' },
+      ];
+
+      // Build timeline UI
+      const items = steps.map((s,i) => `
+        <div class="flex items-start gap-3">
+          <div class="h-8 w-8 rounded-full ${s.done ? 'bg-green-400 text-green-900' : 'bg-white/20 text-white'} flex items-center justify-center font-semibold">${s.icon}</div>
+          <div>
+            <div class="font-semibold ${s.done ? '' : 'opacity-80'}">${s.label}${s.done ? ' • Completed' : ''}</div>
+            <div class="text-xs opacity-80">${s.date ? new Date(s.date).toLocaleString() : (i===phase+1 ? 'In progress' : '')}</div>
+          </div>
+        </div>
+      `).join('<div class="ml-3 h-6 border-l border-white/20"></div>');
 
       statusResult.classList.remove('hidden');
       statusResult.innerHTML = `
-        <div class="flex flex-col gap-4">
+        <div class="flex flex-col gap-5">
           <div class="flex items-center justify-between">
             <div>
               <div class="text-sm opacity-80">Donation Code</div>
               <div class="text-xl font-semibold">${d.code}</div>
             </div>
             <div class="text-sm">
-              <span class="px-3 py-1 rounded-full ${isComplete ? 'bg-green-400 text-green-900' : 'bg-yellow-300 text-yellow-900'} font-semibold">
-                ${isComplete ? 'Completed' : 'Pending'}
+              <span class="px-3 py-1 rounded-full ${phase === 2 ? 'bg-green-400 text-green-900' : phase === 1 ? 'bg-blue-300 text-blue-900' : 'bg-yellow-300 text-yellow-900'} font-semibold">
+                ${phase === 2 ? 'Granted' : phase === 1 ? 'Received' : 'Pledged'}
               </span>
             </div>
           </div>
 
-          ${isComplete ? `
+          <div class="rounded-xl bg-white/10 border border-white/10 p-5">
+            <div class="grid gap-4">${items}</div>
+          </div>
+
+          ${phase === 2 ? `
             <div class="rounded-xl bg-white text-slate-900 p-5">
               <div class="flex items-center gap-3">
                 <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-yellow-300 ring-4 ring-yellow-100 shadow">✨</span>
-                <div class="text-lg font-semibold">Congrats! You have granted ${d.wishNickname}'s wish!</div>
+                <div class="text-lg font-semibold">Congrats! You have granted ${d.wishNickname}’s wish!</div>
               </div>
               <p class="mt-3 text-slate-700">Thank you for making a real difference.</p>
             </div>
-          ` : `
-            <div class="rounded-xl bg-white/10 border border-white/10 p-5">
-              <div class="text-white/90">We’re coordinating the details. You’ll see a celebration here once it’s done.</div>
-            </div>
-          `}
+          ` : ''}
 
           <div class="rounded-xl bg-white/10 border border-white/10 p-5">
             <div class="text-sm opacity-80 mb-1">Student</div>
@@ -646,57 +1004,40 @@
     };
     lookupBtn.addEventListener('click', () => window.renderStatusLookup());
 
-    // Admin
+    // Admin: render
     function renderAdmin() {
       const wishes = loadWishes();
       const donations = loadDonations().slice().reverse();
 
-      // Wishes list
+      // Fill current batch box
+      currentBatchInput.value = getCurrentBatch();
+
+      // Wishes summary
       adminWishes.innerHTML = '';
       wishes.forEach(w => {
         const donationsForWish = loadDonations().filter(d => d.wishId === w.id);
+        const highestPhase = donationsForWish.reduce((acc, d) => Math.max(acc, d.statusPhase ?? 0), 0);
+        const completed = highestPhase === 2 || w.granted === true;
         const block = document.createElement('div');
         block.className = 'rounded-xl bg-white/10 border border-white/10 p-4';
         block.innerHTML = `
           <div class="flex items-center justify-between">
             <div>
-              <div class="font-semibold">${w.nickname}</div>
+              <div class="font-semibold">${w.nickname} <span class="text-xs opacity-70">(${w.category}, ${w.emotion})</span></div>
               <div class="text-sm opacity-80">${w.wish}</div>
-              <div class="text-xs opacity-70 mt-1">${donationsForWish.length} pledge(s)</div>
+              <div class="text-xs opacity-70 mt-1">${donationsForWish.length} pledge(s) • Batch: ${w.batch || '-'}</div>
             </div>
-            <div class="flex items-center gap-3">
-              <label class="flex items-center gap-2 text-sm">
-                <input type="checkbox" ${w.granted ? 'checked' : ''} data-toggle="${w.id}" />
-                Completed
-              </label>
+            <div>
+              <span class="px-3 py-1 rounded-full ${completed ? 'bg-green-400 text-green-900' : 'bg-white/20'} font-semibold text-sm">
+                ${completed ? 'Granted' : 'In progress'}
+              </span>
             </div>
           </div>
         `;
         adminWishes.appendChild(block);
       });
 
-      // Toggle handlers
-      adminWishes.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-        cb.addEventListener('change', () => {
-          const id = cb.getAttribute('data-toggle');
-          const ws = loadWishes();
-          const idx = ws.findIndex(x => x.id === id);
-          if (idx >= 0) {
-            ws[idx].granted = cb.checked;
-            saveWishes(ws);
-            // Also mark all related donations
-            const ds = loadDonations();
-            ds.forEach(d => {
-              if (d.wishId === id) d.status = cb.checked ? 'Completed' : 'Pending';
-            });
-            saveDonations(ds);
-            renderAdmin();
-            refreshBallHighlights();
-          }
-        });
-      });
-
-      // Donations list
+      // Donations with sliders
       adminDonations.innerHTML = '';
       if (donations.length === 0) {
         adminDonations.innerHTML = '<div class="text-white/80">No donations yet.</div>';
@@ -705,81 +1046,474 @@
           const row = document.createElement('div');
           row.className = 'rounded-xl bg-white/10 border border-white/10 p-4';
           row.innerHTML = `
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-              <div>
-                <div class="text-sm opacity-80">Code</div>
-                <div class="font-semibold">${d.code}</div>
-                <div class="text-sm opacity-80 mt-1">Wish: ${d.wishNickname}</div>
+            <div class="flex flex-col gap-3">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div>
+                  <div class="text-sm opacity-80">Code</div>
+                  <div class="font-semibold">${d.code}</div>
+                  <div class="text-sm opacity-80 mt-1">Wish: ${d.wishNickname}</div>
+                </div>
+                <div>
+                  <div class="text-sm opacity-80">Donor</div>
+                  <div>${d.donor.displayName || '-' } <span class="opacity-70">(${d.donor.type})</span></div>
+                </div>
+                <div>
+                  <span class="px-3 py-1 rounded-full ${d.statusPhase === 2 ? 'bg-green-400 text-green-900' : d.statusPhase === 1 ? 'bg-blue-300 text-blue-900' : 'bg-yellow-300 text-yellow-900'} font-semibold text-sm">
+                    ${d.statusPhase === 2 ? 'Granted' : d.statusPhase === 1 ? 'Received' : 'Pledged'}
+                  </span>
+                </div>
               </div>
-              <div>
-                <div class="text-sm opacity-80">Donor</div>
-                <div>${d.donor.name} <span class="opacity-70">(${d.donor.type})</span></div>
+
+              <div class="flex items-center gap-3">
+                <span class="text-xs">Pledged</span>
+                <input data-slider="${d.code}" type="range" min="0" max="2" step="1" value="${d.statusPhase ?? 0}" class="w-full accent-amber-300">
+                <span class="text-xs">Granted</span>
               </div>
-              <div>
-                <span class="px-3 py-1 rounded-full ${d.status === 'Completed' ? 'bg-green-400 text-green-900' : 'bg-yellow-300 text-yellow-900'} font-semibold text-sm">
-                  ${d.status}
-                </span>
+              <div class="grid grid-cols-3 text-xs opacity-80">
+                <div>${d.pledgedAt ? new Date(d.pledgedAt).toLocaleString() : '-'}</div>
+                <div class="text-center">${d.receivedAt ? new Date(d.receivedAt).toLocaleString() : '-'}</div>
+                <div class="text-right">${d.grantedAt ? new Date(d.grantedAt).toLocaleString() : '-'}</div>
               </div>
             </div>
           `;
           adminDonations.appendChild(row);
         });
+
+        // Slider handlers
+        adminDonations.querySelectorAll('input[type="range"][data-slider]').forEach(sl => {
+          sl.addEventListener('input', () => {
+            const code = sl.getAttribute('data-slider');
+            const ds = loadDonations();
+            const idx = ds.findIndex(x => x.code === code);
+            if (idx < 0) return;
+            const oldPhase = ds[idx].statusPhase ?? 0;
+            const newPhase = parseInt(sl.value, 10);
+            const now = new Date().toISOString();
+            ds[idx].statusPhase = newPhase;
+            if (newPhase >= 0 && !ds[idx].pledgedAt) ds[idx].pledgedAt = now;
+            if (newPhase >= 1 && !ds[idx].receivedAt) ds[idx].receivedAt = now;
+            if (newPhase >= 2 && !ds[idx].grantedAt) ds[idx].grantedAt = now;
+            saveDonations(ds);
+
+            // Update wish granted state if phase 2
+            if (newPhase === 2) {
+              const ws = loadWishes();
+              const wi = ws.findIndex(w => w.id === ds[idx].wishId);
+              if (wi >= 0) { ws[wi].granted = true; saveWishes(ws); }
+              // mark celebration pending for donor
+              localStorage.removeItem(celebrationKey(code)); // ensure it will show once on return
+            }
+            renderAdmin();
+            refreshBallHighlights();
+            renderAchievements();
+            refreshAboutStats();
+          });
+        });
       }
+
+      // Manage wishes list
+      renderManageWishes();
+
+      // Donor directory
+      renderDonors();
     }
 
-    // Ball highlights for granted wishes
+    // Manage Wishes
+    function renderManageWishes() {
+      const infoModal = document.getElementById('adminInfoModal');
+      const infoBox = document.getElementById('adminInfoBox');
+      const wishes = loadWishes();
+      manageWishesList.innerHTML = '';
+      wishes.forEach(w => {
+        const card = document.createElement('div');
+        card.className = 'rounded-xl bg-white/10 border border-white/10 p-4';
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="font-semibold">${w.nickname} <span class="text-xs opacity-70">(${w.category}, ${w.emotion})</span></div>
+              <div class="text-sm opacity-80">${w.wish}</div>
+              <div class="text-xs opacity-70 mt-1">Batch: ${w.batch || '-'}</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="px-3 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-sm" data-info="${w.id}">View Details</button>
+              <button class="px-3 py-1 rounded-lg bg-red-500/80 hover:bg-red-500 text-white text-sm" data-del="${w.id}">Delete</button>
+            </div>
+          </div>
+        `;
+        manageWishesList.appendChild(card);
+      });
+
+      // View details
+      manageWishesList.querySelectorAll('button[data-info]').forEach(b => {
+        b.addEventListener('click', () => {
+          const id = b.getAttribute('data-info');
+          const w = loadWishes().find(x => x.id === id);
+          if (!w) return;
+          infoBox.innerHTML = `
+            <div class='font-semibold mb-2'>Internal Student Info</div>
+            <div class='text-sm'>Name: <span class='font-medium'>${w.studentName || '-'}</span></div>
+            <div class='text-sm'>Class: <span class='font-medium'>${w.studentClass || '-'}</span></div>
+            <div class='text-sm mt-2'>Batch: <span class='font-medium'>${w.batch || '-'}</span></div>
+          `;
+          infoModal.classList.remove('hidden');
+        });
+      });
+
+      // Delete
+      manageWishesList.querySelectorAll('button[data-del]').forEach(b => {
+        b.addEventListener('click', () => {
+          const id = b.getAttribute('data-del');
+          if (!confirm('Delete this wish?')) return;
+          let ws = loadWishes().filter(x => x.id !== id);
+          saveWishes(ws);
+          renderManageWishes();
+          renderAdmin();
+          refreshBallColors();
+          refreshBallHighlights();
+        });
+      });
+    }
+
+    // Add Wish
+    addWishForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const fd = new FormData(addWishForm);
+      const ws = loadWishes();
+      const newId = 'w' + (ws.length ? Math.max(...ws.map(x => parseInt(x.id.replace('w','')))) + 1 : 1);
+      const genNick = (()=>{
+        const a=['Star','Blue','Kind','Bright','Quiet','Silver','Sunny','Clever','Brave','Golden','Snowy','Amber','Coral','Misty','Ruby','Jade','Lilac','Copper'];
+        const b=['Panda','Sparrow','Tiger','Mango','Horizon','Fern','Lychee','Otter','Orchid','Kite','Finch','Wave','Leaf','Brook','Dawn','River','Sky','Star'];
+        return a[Math.floor(Math.random()*a.length)]+' '+b[Math.floor(Math.random()*b.length)];
+      })();
+      const newWish = {
+        id: newId,
+        nickname: (fd.get('nickname') || '').trim() || genNick,
+        situation: (fd.get('situation') || '').trim(),
+        wish: (fd.get('wish') || '').trim(),
+        category: fd.get('category') || 'other',
+        emotion: fd.get('emotion') || 'hope',
+        granted: false,
+        batch: (fd.get('batch') || '').trim(),
+        studentName: (fd.get('studentName') || '').trim(),
+        studentClass: (fd.get('studentClass') || '').trim()
+      };
+      ws.push(newWish);
+      saveWishes(ws);
+      addWishForm.reset();
+      renderManageWishes();
+      renderAdmin();
+      refreshBallColors();
+      refreshBallHighlights();
+      alert('Wish added!');
+    });
+
+    // Bulk add
+    document.getElementById('bulkAddBtn').addEventListener('click', () => {
+      const text = (document.getElementById('bulkText').value || '').trim();
+      if (!text) return;
+      const ws = loadWishes();
+      const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
+      let added = 0;
+      lines.forEach(line => {
+        const parts = line.split(',');
+        if (parts.length < 6) return;
+        const [nickname, category, emotion, batch, situation, wish, studentName, studentClass] = parts;
+        const newId = 'w' + (ws.length ? Math.max(...ws.map(x => parseInt(x.id.replace('w','')))) + 1 : 1);
+        ws.push({ id:newId, nickname:nickname?.trim()||'Student', situation:(situation||'').trim(), wish:(wish||'').trim(), category:(category||'other').trim(), emotion:(emotion||'hope').trim(), granted:false, batch:(batch||'').trim(), studentName:(studentName||'').trim(), studentClass:(studentClass||'').trim() });
+        added++;
+      });
+      saveWishes(ws);
+      renderManageWishes();
+      renderAdmin();
+      refreshBallColors();
+      refreshBallHighlights();
+      alert(`Added ${added} wish(es).`);
+    });
+
+    // Donors Directory
+    function renderDonors() {
+      const ds = loadDonations();
+      const q = (donorSearch.value || '').toLowerCase();
+      const byCode = ds.slice().reverse().filter(d => (d.donor.displayName || '').toLowerCase().includes(q));
+      donorList.innerHTML = '';
+      if (byCode.length === 0) {
+        donorList.innerHTML = '<div class="text-white/80">No donors found.</div>';
+        return;
+      }
+      byCode.forEach(d => {
+        const card = document.createElement('div');
+        card.className = 'rounded-xl bg-white/10 border border-white/10 p-4';
+        card.innerHTML = `
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <div class="text-sm opacity-80">Donor</div>
+              <div class="font-semibold">${d.donor.displayName || '-'}</div>
+              <div class="text-xs opacity-70 mt-1">${d.donor.email}${d.donor.phone ? ' • '+d.donor.phone : ''}</div>
+            </div>
+            <div>
+              <div class="text-sm opacity-80">Wish</div>
+              <div>${d.wishNickname}</div>
+            </div>
+            <div>
+              <span class="px-3 py-1 rounded-full ${d.statusPhase === 2 ? 'bg-green-400 text-green-900' : d.statusPhase === 1 ? 'bg-blue-300 text-blue-900' : 'bg-yellow-300 text-yellow-900'} font-semibold text-sm">
+                ${d.statusPhase === 2 ? 'Granted' : d.statusPhase === 1 ? 'Received' : 'Pledged'}
+              </span>
+            </div>
+          </div>
+        `;
+        donorList.appendChild(card);
+      });
+    }
+    donorSearch?.addEventListener('input', renderDonors);
+    document.getElementById('adminInfoClose').addEventListener('click', ()=>{
+      document.getElementById('adminInfoModal').classList.add('hidden');
+    });
+
+    // Admin tabs
+    let currentAdminTab = 'track';
+    function switchAdminTab(tab) {
+      currentAdminTab = tab;
+      Object.entries(adminPages).forEach(([k, el]) => {
+        if (k === tab) el.classList.remove('hidden');
+        else el.classList.add('hidden');
+      });
+      adminTabs.forEach(b => {
+        if (b.dataset.tab === tab) {
+          b.classList.add('bg-white','text-indigo-700','font-semibold');
+          b.classList.remove('bg-white/10');
+        } else {
+          b.classList.remove('bg-white','text-indigo-700','font-semibold');
+          b.classList.add('bg-white/10');
+        }
+      });
+    }
+    adminTabs.forEach(b => b.addEventListener('click', () => switchAdminTab(b.dataset.tab)));
+
+    // Ball coloring and icons
+    function filteredWishes() {
+      const batch = getCurrentBatch();
+      const ws = loadWishes();
+      if (!batch) return ws;
+      return ws.filter(w => (w.batch || '') === batch);
+    }
+    function refreshBallColors() {
+      const wishes = filteredWishes();
+      const all = loadWishes();
+      const circles = ballsGroup.querySelectorAll('circle[data-id]');
+      const icons = [];
+      circles.forEach(c => {
+        const id = c.dataset.id;
+        const w = wishes.find(x => x.id === id);
+        const exists = all.find(x => x.id === id);
+        if (w) {
+          const color = EMOTION_COLORS[w.emotion] || '#FDE68A';
+          c.setAttribute('fill', color);
+          c.style.display = '';
+          const cx = c.getAttribute('cx');
+          const cy = c.getAttribute('cy');
+          const icon = CATEGORY_ICON[w.category] || '🎒';
+          icons.push(`<text data-for="${w.id}" x="${cx}" y="${cy}" fill="#fff">${icon}</text>`);
+        } else if (exists) {
+          // Hide if not in active batch
+          c.style.display = 'none';
+        }
+      });
+      iconsLayer.innerHTML = icons.join('');
+    }
+
+    // Ball highlights for granted wishes (glow) and fade for pending
     function refreshBallHighlights() {
       const wishes = loadWishes();
+      const batch = getCurrentBatch();
       const balls = ballsGroup.querySelectorAll('circle[data-id]');
       balls.forEach(b => {
         const w = wishes.find(x => x.id === b.dataset.id);
+        // Hidden if not in batch
+        if (batch && w && (w.batch || '') !== batch) {
+          b.style.display = 'none';
+          return;
+        }
         if (w?.granted) {
-          b.setAttribute('filter', '');
-          b.style.filter = 'drop-shadow(0 0 10px rgba(255,255,255,0.9))';
-          b.style.stroke = 'rgba(255,255,255,0.9)';
+          b.style.display = '';
+          b.style.filter = 'drop-shadow(0 0 12px rgba(255,255,255,0.95))';
+          b.style.stroke = 'rgba(255,255,255,0.95)';
           b.style.strokeWidth = '3';
-        } else {
+          b.style.opacity = '1';
+        } else if (w) {
+          b.style.display = '';
           b.style.filter = 'none';
           b.style.stroke = 'none';
+          b.style.opacity = '0.75';
         }
       });
     }
 
+    // Achievements
+    function renderAchievements() {
+      const ds = loadDonations();
+      const byPerson = {};
+      ds.forEach(d => {
+        const name = d.donor.displayName || 'Anonymous';
+        const value = parseFloat((d.donor.amount || '').toString().replace(/[^0-9.]/g,'')) || 0;
+        if (!byPerson[name]) byPerson[name] = { name, count: 0, value: 0 };
+        byPerson[name].count += 1;
+        byPerson[name].value += value;
+      });
+      const rows = Object.values(byPerson);
+
+      // Most pledges
+      const pledgesSorted = rows.slice().sort((a,b) => b.count - a.count).slice(0,5);
+      topPledges.innerHTML = pledgesSorted.length ? '' : '<div class="text-white/80">No pledges yet.</div>';
+      pledgesSorted.forEach((r,i) => {
+        const badge = i===0 ? 'bg-gradient-to-br from-yellow-300 to-amber-400 text-amber-900 ring-2 ring-yellow-200' : i===1 ? 'bg-gradient-to-br from-slate-200 to-slate-300 text-slate-800 ring-2 ring-slate-100' : i===2 ? 'bg-gradient-to-br from-orange-300 to-amber-400 text-amber-900 ring-2 ring-orange-100' : 'bg-white/20';
+        const line = document.createElement('div');
+        line.className = 'flex items-center justify-between rounded-xl bg-white/10 border border-white/10 p-3';
+        line.innerHTML = `
+          <div class="flex items-center gap-3">
+            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full ${badge}">${i+1}</span>
+            <div class="font-semibold">${r.name}</div>
+          </div>
+          <div class="text-sm opacity-90">${r.count} pledge(s)</div>
+        `;
+        topPledges.appendChild(line);
+      });
+
+      // Highest value
+      const valueSorted = rows.slice().sort((a,b) => b.value - a.value).slice(0,5);
+      topValue.innerHTML = valueSorted.length ? '' : '<div class="text-white/80">No pledges yet.</div>';
+      valueSorted.forEach((r,i) => {
+        const badge = i===0 ? 'bg-gradient-to-br from-yellow-300 to-amber-400 text-amber-900 ring-2 ring-yellow-200' : i===1 ? 'bg-gradient-to-br from-slate-200 to-slate-300 text-slate-800 ring-2 ring-slate-100' : i===2 ? 'bg-gradient-to-br from-orange-300 to-amber-400 text-amber-900 ring-2 ring-orange-100' : 'bg-white/20';
+        const line = document.createElement('div');
+        line.className = 'flex items-center justify-between rounded-xl bg-white/10 border border-white/10 p-3';
+        line.innerHTML = `
+          <div class="flex items-center gap-3">
+            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full ${badge}">${i+1}</span>
+            <div class="font-semibold">${r.name}</div>
+          </div>
+          <div class="text-sm opacity-90">~RM${r.value.toFixed(2)}</div>
+        `;
+        topValue.appendChild(line);
+      });
+    }
+
+    // About stats (live small counters)
+    function refreshAboutStats() {
+      const wishes = loadWishes();
+      const donations = loadDonations();
+      const granted = wishes.filter(w => w.granted).length;
+      document.getElementById('statWishes').textContent = wishes.length;
+      document.getElementById('statGranted').textContent = granted;
+      const uniqueDonors = new Set(donations.map(d => d.donor.displayName || 'Anonymous')).size;
+      document.getElementById('statDonors').textContent = uniqueDonors;
+    }
+
+    // Celebration flow
+    // Simple confetti
+    function launchConfetti() {
+      const canvas = document.getElementById('confettiCanvas');
+      const ctx = canvas.getContext('2d');
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * devicePixelRatio;
+      canvas.height = rect.height * devicePixelRatio;
+      ctx.scale(devicePixelRatio, devicePixelRatio);
+      const pieces = Array.from({length: 80}).map(()=>({
+        x: canvas.width/devicePixelRatio/2 + (Math.random()*60-30),
+        y: canvas.height/devicePixelRatio/2,
+        r: Math.random()*3+2,
+        c: ['#60A5FA','#A78BFA','#F472B6','#FCA5A5','#34D399'][Math.floor(Math.random()*5)],
+        vx: (Math.random()*2-1)*2,
+        vy: -Math.random()*4-3,
+        a: Math.random()*Math.PI*2
+      }));
+      let t=0;
+      const tick=()=>{
+        t++;
+        ctx.clearRect(0,0,canvas.width/devicePixelRatio,canvas.height/devicePixelRatio);
+        pieces.forEach(p=>{
+          p.x+=p.vx; p.y+=p.vy; p.vy+=0.08; p.a+=0.1;
+          ctx.save();
+          ctx.translate(p.x,p.y); ctx.rotate(p.a);
+          ctx.fillStyle=p.c; ctx.fillRect(-p.r, -p.r, p.r*2, p.r*2);
+          ctx.restore();
+        });
+        if (t<120) requestAnimationFrame(tick);
+      };
+      tick();
+    }
+
+    function playCelebration(nickname, emotion) {
+      celebrateName.textContent = nickname || 'a student';
+      celebrateEmoji.textContent = EMOTION_EMOJI[emotion] || '✨';
+
+      celebrateOverlay.classList.remove('celebrate-hidden');
+      celebrateOverlay.classList.add('celebrate-show');
+
+      // Animate: shake the jar card, then pop ball, glow, drop back
+      const jarCard = celebrateOverlay.querySelector('.rounded-2xl.bg-white');
+      jarCard.style.animation = 'jarShake 1.2s ease-in-out';
+
+      // Ball pop
+      celebrateBall.style.animation = 'popUp 1.2s ease-out 0.2s forwards, glowPulseBall 1.4s ease-in-out 0.4s 2';
+      launchConfetti();
+
+      // After glow, drop back
+      setTimeout(() => {
+        celebrateBall.style.animation = 'dropBack 0.8s ease-in forwards';
+      }, 2000);
+    }
+    function maybePlayCelebrationOnReturn() {
+      const latest = getLatestCode();
+      if (!latest) return;
+      const ds = loadDonations();
+      const d = ds.find(x => x.code === latest);
+      if (!d) return;
+      const wish = byId(d.wishId);
+      const already = localStorage.getItem(celebrationKey(latest));
+      if (d.statusPhase === 2 && !already) {
+        playCelebration(d.wishNickname, wish?.emotion);
+        localStorage.setItem(celebrationKey(latest), '1');
+      }
+    }
+    celebrateOk.addEventListener('click', () => {
+      celebrateOverlay.classList.remove('celebrate-show');
+      celebrateOverlay.classList.add('celebrate-hidden');
+    });
+
+    // Batch controls
+    setBatchBtn.addEventListener('click', () => {
+      setCurrentBatch(currentBatchInput.value.trim());
+      refreshBallColors(); refreshBallHighlights();
+      alert('Current month set for jar filter.');
+    });
+    clearBatchBtn.addEventListener('click', () => {
+      setCurrentBatch('');
+      currentBatchInput.value = '';
+      refreshBallColors(); refreshBallHighlights();
+    });
+
     // Navigation
     navlinks.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const dest = btn.dataset.route;
-        routeTo(dest);
-      });
+      btn.addEventListener('click', () => routeTo(btn.dataset.route));
     });
 
     // Initialize
     (function init() {
+      const now = new Date();
+      monthBadge.textContent = now.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+
       // Ensure wishes exist
       loadWishes();
+      refreshBallColors();
       refreshBallHighlights();
       renderAdmin();
       renderStatus();
-      // Allow clicking the jar background without selecting a ball
-      document.getElementById('jarButton').addEventListener('keydown', (e) => {
-        if ((e.key === 'Enter' || e.key === ' ') && currentWishId) {
-          openModal(currentWishId);
-        }
-      });
-      resetDemo.addEventListener('click', () => {
-        localStorage.removeItem(LS_WISHES);
-        localStorage.removeItem(LS_DONATIONS);
-        localStorage.removeItem(LS_LATEST_CODE);
-        loadWishes();
-        refreshBallHighlights();
-        renderAdmin();
-        renderStatus();
-        alert('Demo data reset!');
-      });
+      renderAchievements();
+      refreshAboutStats();
     })();
 
-    // Expose for inline button in status
+    // Expose optional helpers
     window.routeTo = routeTo;
+    window.renderStatusLookup = window.renderStatusLookup;
   </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96fdd3fd16a78f7c',t:'MTc1NTMxNDc2NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ff353922a4a70a',t:'MTc1NTMyOTIzMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
