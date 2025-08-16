@@ -1301,21 +1301,36 @@
       const all = loadWishes();
       const circles = ballsGroup.querySelectorAll('circle[data-id]');
       const icons = [];
+      // Quick maps for faster lookups
+      const byIdAll = Object.fromEntries(all.map(w => [w.id, w]));
+      const byIdCurrent = Object.fromEntries(wishes.map(w => [w.id, w]));
+
       circles.forEach(c => {
         const id = c.dataset.id;
-        const w = wishes.find(x => x.id === id);
-        const exists = all.find(x => x.id === id);
-        if (w) {
-          const color = EMOTION_COLORS[w.emotion] || '#FDE68A';
+        const wCurrent = byIdCurrent[id];
+        const wAny = byIdAll[id];
+        if (wCurrent) {
+          // Show and color this slot
+          const color = EMOTION_COLORS[wCurrent.emotion] || '#FDE68A';
           c.setAttribute('fill', color);
           c.style.display = '';
+          // Place icon
           const cx = c.getAttribute('cx');
           const cy = c.getAttribute('cy');
-          const icon = CATEGORY_ICON[w.category] || '🎒';
-          icons.push(`<text data-for="${w.id}" x="${cx}" y="${cy}" fill="#fff">${icon}</text>`);
-        } else if (exists) {
-          // Hide if not in active batch
+          const icon = CATEGORY_ICON[wCurrent.category] || '🎒';
+          icons.push(`<text data-for="${wCurrent.id}" x="${cx}" y="${cy}" fill="#fff">${icon}</text>`);
+        } else if (wAny) {
+          // Exists in another batch: hide this slot in current view
           c.style.display = 'none';
+          c.removeAttribute('filter');
+          c.style.filter = 'none';
+          c.style.stroke = 'none';
+        } else {
+          // No wish for this slot at all: hide completely
+          c.style.display = 'none';
+          c.removeAttribute('filter');
+          c.style.filter = 'none';
+          c.style.stroke = 'none';
         }
       });
       iconsLayer.innerHTML = icons.join('');
@@ -1515,5 +1530,5 @@
     window.routeTo = routeTo;
     window.renderStatusLookup = window.renderStatusLookup;
   </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ff353922a4a70a',t:'MTc1NTMyOTIzMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ffadbe55dbd89d',t:'MTc1NTMzNDE2OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
