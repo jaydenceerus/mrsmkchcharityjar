@@ -1423,36 +1423,76 @@
     }
 
     // Celebration flow
-    // Simple confetti
+    // Confetti bursts flying out from the popping ball
     function launchConfetti() {
       const canvas = document.getElementById('confettiCanvas');
+      const ball = document.getElementById('celebrateBall');
+      if (!canvas || !ball) return;
       const ctx = canvas.getContext('2d');
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * devicePixelRatio;
-      canvas.height = rect.height * devicePixelRatio;
-      ctx.scale(devicePixelRatio, devicePixelRatio);
-      const pieces = Array.from({length: 80}).map(()=>({
-        x: canvas.width/devicePixelRatio/2 + (Math.random()*60-30),
-        y: canvas.height/devicePixelRatio/2,
-        r: Math.random()*3+2,
-        c: ['#60A5FA','#A78BFA','#F472B6','#FCA5A5','#34D399'][Math.floor(Math.random()*5)],
-        vx: (Math.random()*2-1)*2,
-        vy: -Math.random()*4-3,
-        a: Math.random()*Math.PI*2
-      }));
-      let t=0;
-      const tick=()=>{
-        t++;
-        ctx.clearRect(0,0,canvas.width/devicePixelRatio,canvas.height/devicePixelRatio);
-        pieces.forEach(p=>{
-          p.x+=p.vx; p.y+=p.vy; p.vy+=0.08; p.a+=0.1;
+      const cRect = canvas.getBoundingClientRect();
+      const bRect = ball.getBoundingClientRect();
+      // Origin: center of the popping ball within the canvas
+      const originX = (bRect.left + bRect.width/2) - cRect.left;
+      const originY = (bRect.top + bRect.height/2) - cRect.top;
+
+      // Setup canvas for high-DPI
+      canvas.width = cRect.width * devicePixelRatio;
+      canvas.height = cRect.height * devicePixelRatio;
+      ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+
+      const colors = ['#60A5FA','#A78BFA','#F472B6','#FCA5A5','#34D399','#FDE047'];
+      let pieces = [];
+
+      // Create a radial burst of confetti pieces
+      function spawnBurst(count=80, speed=5) {
+        for (let i=0;i<count;i++) {
+          const angle = Math.random()*Math.PI*2; // 360°
+          const spd = speed * (0.6 + Math.random()*0.8);
+          pieces.push({
+            x: originX, y: originY,
+            r: Math.random()*3+2,
+            c: colors[Math.floor(Math.random()*colors.length)],
+            vx: Math.cos(angle)*spd,
+            vy: Math.sin(angle)*spd - 1.5, // slight lift
+            a: Math.random()*Math.PI*2,
+            va: (Math.random()*0.2 - 0.1)
+          });
+        }
+      }
+
+      // Launch multiple mini bursts for a fuller effect
+      spawnBurst(90, 6);
+      setTimeout(()=>spawnBurst(60, 5), 150);
+      setTimeout(()=>spawnBurst(50, 5), 300);
+
+      let frames = 0;
+      function tick() {
+        frames++;
+        ctx.clearRect(0,0,cRect.width, cRect.height);
+        pieces.forEach(p => {
+          p.x += p.vx; p.y += p.vy;
+          p.vy += 0.12; // gravity
+          p.a += p.va;  // spin
           ctx.save();
-          ctx.translate(p.x,p.y); ctx.rotate(p.a);
-          ctx.fillStyle=p.c; ctx.fillRect(-p.r, -p.r, p.r*2, p.r*2);
+          ctx.translate(p.x, p.y); ctx.rotate(p.a);
+          ctx.fillStyle = p.c;
+          // rectangles + occasional confetti triangles
+          if (Math.random() < 0.2) {
+            ctx.beginPath();
+            ctx.moveTo(0, -p.r);
+            ctx.lineTo(p.r, p.r);
+            ctx.lineTo(-p.r, p.r);
+            ctx.closePath();
+            ctx.fill();
+          } else {
+            ctx.fillRect(-p.r, -p.r, p.r*2, p.r*2);
+          }
           ctx.restore();
         });
-        if (t<120) requestAnimationFrame(tick);
-      };
+        // fade out over time
+        pieces = pieces.filter(p => p.y < cRect.height + 40);
+        if (frames < 180) requestAnimationFrame(tick);
+      }
       tick();
     }
 
@@ -1530,5 +1570,5 @@
     window.routeTo = routeTo;
     window.renderStatusLookup = window.renderStatusLookup;
   </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ffadbe55dbd89d',t:'MTc1NTMzNDE2OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ffd1a57394d42f',t:'MTc1NTMzNTY0MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
