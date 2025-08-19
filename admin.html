@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Wish Jar — Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>body{font-family:'Poppins',system-ui,-apple-system,Segoe UI,Roboto,sans-serif}</style>
+</head>
+<body class="min-h-screen text-white overflow-x-hidden" style="background: radial-gradient(circle at 20% 20%, #60A5FA 0%, transparent 25%), radial-gradient(circle at 80% 20%, #A78BFA 0%, transparent 25%), radial-gradient(circle at 20% 80%, #F472B6 0%, transparent 25%), radial-gradient(circle at 80% 80%, #34D399 0%, transparent 25%), radial-gradient(circle at 50% 50%, #FCA5A5 0%, #6d28d9 60%);">
+
+  <!-- Top Navigation (matching donor theme) -->
+  <header class="sticky top-0 z-40 bg-white/10 backdrop-blur border-b border-white/10">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/20">🫙</span>
+        <div>
+          <div class="font-bold text-lg leading-tight">Wish Jar — Admin</div>
+          <div class="text-xs opacity-85">Manage wishes, donations & inbox</div>
+        </div>
+      </div>
+      <nav class="flex items-center gap-2 text-sm">
+        <button data-tab="track" class="adminTab px-3 py-2 rounded-lg bg-white text-indigo-700 font-semibold">Track</button>
+        <button data-tab="manage" class="adminTab px-3 py-2 rounded-lg bg-white/10">Manage</button>
+        <button data-tab="donors" class="adminTab px-3 py-2 rounded-lg bg-white/10">Donors</button>
+        <button data-tab="inbox" class="adminTab px-3 py-2 rounded-lg bg-white/10">Inbox</button>
+        <button id="resetDemo" class="ml-4 px-3 py-2 rounded-lg bg-white/10">Reset Demo</button>
+        <span class="inline-block w-px h-6 bg-white/20 mx-2"></span>
+        <button id="logoutBtn" class="px-3 py-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20">Logout</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="p-6 max-w-6xl mx-auto space-y-6">
+    <!-- TRACK -->
+    <section id="admin-track" class="adminPage">
+      <h2 class="text-2xl font-bold mb-4">Tracking Overview</h2>
+      <div id="adminWishes" class="space-y-4"></div>
+      <div id="adminDonations" class="mt-6 space-y-4"></div>
+    </section>
+
+    <!-- MANAGE -->
+    <section id="admin-manage" class="adminPage hidden">
+      <h2 class="text-2xl font-bold mb-4">Manage Wishes</h2>
+      <form id="wishForm" class="space-y-4 max-w-lg">
+        <input id="wishStudent" placeholder="Student Name" class="w-full px-4 py-3 rounded-xl bg-white text-black" />
+        <input id="wishItem" placeholder="Wish Item" class="w-full px-4 py-3 rounded-xl bg-white text-black" />
+        <select id="wishCategory" class="w-full px-4 py-3 rounded-xl bg-white text-black">
+          <option value="shoes">Shoes</option>
+          <option value="stationery">Stationery</option>
+          <option value="meals">Meals</option>
+          <option value="data">Data</option>
+          <option value="transport">Transport</option>
+          <option value="other">Other</option>
+        </select>
+        <button class="w-full px-4 py-3 rounded-xl bg-white text-indigo-700 font-semibold">Add Wish</button>
+      </form>
+    </section>
+
+    <!-- DONORS -->
+    <section id="admin-donors" class="adminPage hidden">
+      <h2 class="text-2xl font-bold mb-4">Donor List</h2>
+      <div id="donorList"></div>
+    </section>
+
+    <!-- INBOX -->
+    <section id="admin-inbox" class="adminPage hidden">
+      <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-bold">Inbox</h2>
+        <div id="adminInboxBadge" class="text-sm bg-white/20 px-3 py-1 rounded-full">All threads</div>
+      </div>
+
+      <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Thread list -->
+        <div class="lg:col-span-1 rounded-2xl bg-white/10 border border-white/10 overflow-hidden">
+          <div class="px-4 py-3 border-b border-white/10 font-semibold">Conversations</div>
+          <div id="adminThreadList" class="max-h-[60vh] overflow-y-auto divide-y divide-white/10"></div>
+        </div>
+
+        <!-- Chat view -->
+        <div class="lg:col-span-2 rounded-2xl bg-white/10 border border-white/10 flex flex-col min-h-[50vh]">
+          <div id="adminChatHeader" class="px-5 py-3 border-b border-white/10 flex items-center justify-between">
+            <div class="font-semibold">Select a conversation</div>
+            <div id="adminChatMeta" class="text-xs opacity-80"></div>
+          </div>
+
+          <div id="adminChatMessages" class="flex-1 overflow-y-auto p-5 space-y-3"></div>
+
+          <div class="p-4 border-t border-white/10">
+            <form id="adminChatForm" class="flex items-center gap-3">
+              <input id="adminChatInput" class="flex-1 px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400" placeholder="Write a message to the donor..." />
+              <button class="px-4 py-3 rounded-xl bg-white text-indigo-700 font-semibold hover:bg-white/90">Send</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>
