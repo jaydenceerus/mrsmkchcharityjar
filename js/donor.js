@@ -194,7 +194,8 @@ const wishText = document.getElementById('wishText');
 
 let currentWishId = null;
 function openModal(wishId){
-  const w = loadWishes().find(x=>x.id===wishId);
+  const wishes = await loadWishes(); // Await the result of the async function
+  const w = wishes.find(x=>x.id===wishId);  
   if(!w) return;
   currentWishId = wishId;
   wishNickname.textContent = w.nickname || 'Student';
