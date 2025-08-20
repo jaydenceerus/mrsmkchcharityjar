@@ -93,7 +93,11 @@ async function setLatestCode(code) {
   if (error) console.error(error);
 }
 async function getLatestCode() {
-  const { data, error } = await supabase.from('latest_code').select('code').eq('id',1).single();
+  const { data, error } = await supabase
+  .from('latest_code')
+  .select('code')
+  .eq('id', 1)
+  .maybeSingle();  // ✅ won't throw 406 if no row
   if (error) return null;
   return data?.code;
 }
