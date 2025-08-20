@@ -11,14 +11,14 @@ const logoutBtnEl = document.getElementById('logoutBtn');
 if (logoutBtnEl) {
   logoutBtnEl.addEventListener('click', () => {
     try { localStorage.removeItem(LS_ROLE); localStorage.removeItem(LS_ACTIVE_USER); } catch(e){}
-    window.location.href = 'login.html';
+    window.location.href = 'index.html';
   });
 }
 
 // Guard: only continue if admin
 if (localStorage.getItem(LS_ROLE) !== 'admin') {
   alert('Admin access only (demo). Redirecting to login.');
-  window.location.href = 'login.html';
+  window.location.href = 'index.html';
 }
 
 // Storage helpers
@@ -225,50 +225,62 @@ function renderAdminInbox(){
 }
 
 // Open a thread in admin inbox
-function openAdminThread(threadId){
+function openAdminThread(threadId) {
+  // 1. Ensure the inbox tab is visible
+  switchAdminTab('inbox');
+
+  // 2. Load all threads from storage
   const threads = loadMessages();
-  const t = threads.find(x=>x.threadId === threadId);
+  let t = threads.find(x => x.threadId === threadId);
+
+  // 3. If it doesn't exist yet, create it
   if (!t) {
-    alert('Thread not found.');
-    return;
-  }
-  // show header
-  const header = document.getElementById('adminChatHeader');
-  if (header) header.querySelector('.font-semibold').textContent = t.title;
-  const meta = document.getElementById('adminChatMeta');
-  if (meta) meta.textContent = `Thread: ${t.threadId}`;
-  // render messages
-  const messagesEl = document.getElementById('adminChatMessages');
-  messagesEl.innerHTML = '';
-  t.messages.forEach(m=>{
-    const item = document.createElement('div');
-    item.className = 'p-3 rounded-xl bg-white/10';
-    item.innerHTML = `<div class="text-xs opacity-80">${m.from} • ${new Date(m.time).toLocaleString()}</div><div class="mt-1">${m.text}</div>`;
-    messagesEl.appendChild(item);
-  });
-  // wire send handler: adminChatForm
-  const chatForm = document.getElementById('adminChatForm');
-  if (chatForm) {
-    chatForm.onsubmit = (e)=>{
-      e.preventDefault();
-      const inp = document.getElementById('adminChatInput');
-      const txt = (inp.value||'').trim();
-      if (!txt) return;
-      // append message
-      t.messages.push({ from: 'Admin', text: txt, time: new Date().toISOString() });
-      // save updated thread in storage (replace)
-      const all = loadMessages();
-      const idx = all.findIndex(x=>x.threadId===t.threadId);
-      if (idx !== -1) all[idx] = t;
-      else all.push(t);
-      saveMessages(all);
-      // reflect in UI
-      inp.value = '';
-      openAdminThread(threadId); // re-render
+    const d = loadDonations().find(x => x.code === threadId);
+    const title = d
+      ? `Wish: ${d.wishNickname} • ${d.code}`
+      : `Thread • ${threadId}`;
+    t = {
+      threadId,
+      title,
+      messages: [{ from: 'Admin', text: 'Thread created.', time: new Date().toISOString() }]
     };
+    threads.push(t);
+    saveMessages(threads);
   }
-  // scroll messages to bottom
-  setTimeout(()=> { const m = document.getElementById('adminChatMessages'); if (m) m.scrollTop = m.scrollHeight; }, 40);
+
+  // 4. Update header/meta
+  document.querySelector('#adminChatHeader .font-semibold').textContent = t.title;
+  document.getElementById('adminChatMeta').textContent = `Thread: ${threadId}`;
+
+  // 5. Render the message list
+  const msgContainer = document.getElementById('adminChatMessages');
+  msgContainer.innerHTML = '';
+  t.messages.forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'p-3 rounded-xl bg-white/10';
+    div.innerHTML = `
+      <div class="text-xs opacity-80">
+        ${m.from} • ${new Date(m.time).toLocaleString()}
+      </div>
+      <div class="mt-1">${m.text}</div>
+    `;
+    msgContainer.appendChild(div);
+  });
+  msgContainer.scrollTop = msgContainer.scrollHeight;
+
+  // 6. Wire up the send‐message form
+  const chatForm = document.getElementById('adminChatForm');
+  chatForm.onsubmit = e => {
+    e.preventDefault();
+    const input = document.getElementById('adminChatInput');
+    const txt = input.value.trim();
+    if (!txt) return;
+
+    t.messages.push({ from: 'Admin', text: txt, time: new Date().toISOString() });
+    saveMessages(threads);
+    input.value = '';
+    openAdminThread(threadId); // re-render
+  };
 }
 
 function clearAdminChatView(){
@@ -285,22 +297,6 @@ function clearAdminChatView(){
 }
 
 // Convenience: if admin clicks "Open Thread" from donations, open that thread. If thread not exist, create it.
-function openAdminThread(code){
-  let threads = loadMessages();
-  let t = threads.find(x=>x.threadId === code);
-  if (!t) {
-    // try build title from donation
-    const d = loadDonations().find(x => x.code === code);
-    const title = d ? `Wish: ${d.wishNickname} • ${d.code}` : `Thread • ${code}`;
-    t = { threadId: code, title, wishId: d?.wishId || null, donorUsername: d?.donorUsername || 'unknown', createdAt: new Date().toISOString(), messages: [{ from:'Admin', text:'Thread created by admin.', time: new Date().toISOString() }] };
-    threads.push(t);
-    saveMessages(threads);
-  }
-  // open inbox tab then open thread
-  switchAdminTab('inbox');
-  // slight delay to ensure inbox rendered
-  setTimeout(()=> openAdminThreadImmediate(code), 80);
-}
 function openAdminThreadImmediate(code){
   const threads = loadMessages();
   const t = threads.find(x=>x.threadId === code);

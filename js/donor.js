@@ -8,6 +8,16 @@ const LS_MESSAGES = 'wishjar_messages';
 const LS_LATEST_CODE = 'wishjar_latest_code';
 const LS_THANKS = 'wishjar_thankyou';
 
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+// ---------- CONFIG ----------
+const SUPABASE_URL = "https://eaivuhgvzdvvxscqqqji.supabase.co"; // replace
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhaXZ1aGd2emR2dnhzY3FxcWppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1OTMxNDIsImV4cCI6MjA3MTE2OTE0Mn0.ru1S0ZiYQluFFzYkrbFxqzk2v315xAA29iXlviy3Y1E";                          // replace
+// ----------------------------
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
 // Demo defaults (copied from original full.html)
 const defaultWishes = [
   { id:'w1', nickname:'Star Panda',    situation:'Lives with single parent.', wish:'Black school shoes (size 38)', category:'shoes', emotion:'hope', granted:false, batch:'2025-08' },
@@ -27,25 +37,70 @@ const CATEGORY_ICON = { shoes:'👟', stationery:'✏️', meals:'🧃', data:'�
 // Ensure role present: redirect if not logged in
 if (!localStorage.getItem(LS_ROLE)) {
   alert('Please sign in (demo). Redirecting to login.');
-  window.location.href = 'login.html';
+  window.location.href = 'index.html';
 }
 
 // Utilities
-function loadWishes() {
-  const raw = localStorage.getItem(LS_WISHES);
-  if (raw) return JSON.parse(raw);
-  localStorage.setItem(LS_WISHES, JSON.stringify(defaultWishes));
-  return defaultWishes.slice();
+async function loadWishes() {
+  let { data, error } = await supabase.from('wishes').select('*');
+  if (error) {
+    console.error("Error loading wishes:", error);
+    return [];
+  }
+  return data || []; // ensures it's always an array
 }
-function saveWishes(wishes) { localStorage.setItem(LS_WISHES, JSON.stringify(wishes)); }
-function loadDonations() { const raw = localStorage.getItem(LS_DONATIONS); return raw ? JSON.parse(raw) : []; }
-function saveDonations(list) { localStorage.setItem(LS_DONATIONS, JSON.stringify(list)); }
-function loadMessages(){ const raw = localStorage.getItem(LS_MESSAGES); return raw ? JSON.parse(raw) : []; }
-function saveMessages(list){ localStorage.setItem(LS_MESSAGES, JSON.stringify(list)); }
-function setLatestCode(code) { localStorage.setItem(LS_LATEST_CODE, code); }
-function getLatestCode() { return localStorage.getItem(LS_LATEST_CODE); }
-function loadThanks(){ const raw = localStorage.getItem(LS_THANKS); return raw ? JSON.parse(raw) : {}; }
-function saveThanks(obj){ localStorage.setItem(LS_THANKS, JSON.stringify(obj)); }
+
+async function saveWishes(wishes) {
+  for (const w of wishes) {
+    await supabase.from('wishes').upsert(w);
+  }
+}
+
+// DONATIONS
+async function loadDonations() {
+  const { data, error } = await supabase.from('donations').select('*');
+  if (error) { console.error(error); return []; }
+  return data;
+}
+async function saveDonation(donation) {
+  const { error } = await supabase.from('donations').insert([donation]);
+  if (error) console.error(error);
+}
+
+// MESSAGES
+async function loadMessages() {
+  const { data, error } = await supabase.from('messages').select('*');
+  if (error) { console.error(error); return []; }
+  return data;
+}
+async function saveMessage(thread) {
+  const { error } = await supabase.from('messages').upsert(thread);
+  if (error) console.error(error);
+}
+
+// LATEST CODE
+async function setLatestCode(code) {
+  const { error } = await supabase.from('latest_code').upsert({ id:1, code });
+  if (error) console.error(error);
+}
+async function getLatestCode() {
+  const { data, error } = await supabase.from('latest_code').select('code').eq('id',1).single();
+  if (error) return null;
+  return data?.code;
+}
+
+// THANKS
+async function loadThanks() {
+  const { data, error } = await supabase.from('thanks').select('*');
+  if (error) { console.error(error); return {}; }
+  const map = {};
+  data.forEach(row => { map[row.code] = row; });
+  return map;
+}
+async function saveThanks(obj) {
+  const { error } = await supabase.from('thanks').upsert(obj);
+  if (error) console.error(error);
+}
 
 // Router (pages are sections with IDs)
 const navlinks = document.querySelectorAll('.navlink');
@@ -74,19 +129,20 @@ navlinks.forEach(btn => btn.addEventListener('click', ()=> routeTo(btn.dataset.r
 // Logout
 document.getElementById('logoutBtn').addEventListener('click', ()=>{
   try { localStorage.removeItem(LS_ROLE); localStorage.removeItem(LS_ACTIVE_USER); } catch(e){}
-  window.location.href = 'login.html';
+  window.location.href = 'index.html';
 });
 
 // Jar rendering
 const ballsGroup = document.getElementById('ballsGroup');
 const iconsLayer = document.getElementById('iconsLayer');
 
-function renderJar(){
+async function renderJar() {
   const circles = ballsGroup.querySelectorAll('circle[data-id]');
-  const wishes = loadWishes();
+  const wishes = await loadWishes();   // ⬅️ FIXED
   const map = Object.fromEntries(wishes.map(w => [w.id, w]));
   const icons = [];
-  circles.forEach(c=>{
+
+  circles.forEach(c => {
     const id = c.dataset.id;
     const w = map[id];
     if (w) {
@@ -97,14 +153,18 @@ function renderJar(){
       c.style.stroke = w.granted ? 'rgba(255,255,255,0.95)' : 'none';
       c.style.strokeWidth = w.granted ? '3' : '0';
       const cx = +c.getAttribute('cx'), cy = +c.getAttribute('cy');
-      icons.push(`<text x="${cx}" y="${cy}" fill="#fff" text-anchor="middle" dominant-baseline="central" font-weight="700" font-size="12">${CATEGORY_ICON[w.category] || '🎒'}</text>`);
+      icons.push(
+        `<text x="${cx}" y="${cy}" fill="#fff" text-anchor="middle" dominant-baseline="central" font-weight="700" font-size="12">${CATEGORY_ICON[w.category] || '🎒'}</text>`
+      );
     } else {
       c.style.display = 'none';
     }
   });
+
   iconsLayer.innerHTML = icons.join('');
-  refreshBallHighlights();
+  await refreshBallHighlights();
 }
+
 
 // Modal open/close
 const modal = document.getElementById('wishModal');
@@ -157,7 +217,7 @@ grantBtn.addEventListener('click', ()=>{
 
 // Pledge form submission
 const donorForm = document.getElementById('donorForm');
-donorForm.addEventListener('submit', (e)=>{
+donorForm.addEventListener('submit', async (e) =>{
   e.preventDefault();
   const fd = new FormData(donorForm);
   const fullName = (fd.get('name')||'').trim();
@@ -191,24 +251,12 @@ donorForm.addEventListener('submit', (e)=>{
     receivedAt: null,
     grantedAt: null
   };
-  const list = loadDonations();
-  list.push(donation);
-  saveDonations(list);
-  setLatestCode(code);
+  await saveDonation(donation);
+  await setLatestCode(code);
 
   // Create a new thread for this pledge
   const msgs = loadMessages();
-  msgs.push({
-    threadId: code,
-    title: `Wish: ${target.nickname} • ${code}`,
-    wishId: target.id,
-    donorUsername: activeUser,
-    createdAt: now,
-    messages: [
-      { from:'Student Support', text:`Thanks for your pledge to help ${target.nickname}! We’ll coordinate next steps here.`, time: now }
-    ]
-  });
-  saveMessages(msgs);
+  await saveMessage(thread);
 
   donorForm.reset();
   alert('Pledge submitted! You can chat in Inbox. Admin will mark it as Granted when fulfilled.');
@@ -286,18 +334,23 @@ document.getElementById('lookupBtn').addEventListener('click', ()=>{
 });
 
 // Inbox rendering + thread open
-function renderInbox(){
-  const msgs = loadMessages().slice().reverse();
+async function renderInbox(){
+  const msgs = await loadMessages();   // ✅ wait for Supabase
+  const sorted = msgs.slice().reverse(); // ✅ now it's an array
+
   const list = document.getElementById('threadList');
-  list.innerHTML = msgs.length ? '' : `<div class="p-4 text-white/80">No conversations yet.</div>`;
-  msgs.forEach(m => {
+  list.innerHTML = sorted.length ? '' : `<div class="p-4 text-white/80">No conversations yet.</div>`;
+  sorted.forEach(m => {
     const el = document.createElement('div');
     el.className = 'px-4 py-3 hover:bg-white/5 cursor-pointer';
-    el.innerHTML = `<div class="font-semibold">${m.title}</div><div class="text-xs opacity-80">${new Date(m.createdAt).toLocaleString()}</div>`;
+    el.innerHTML = `
+      <div class="font-semibold">${m.title}</div>
+      <div class="text-xs opacity-80">${new Date(m.createdAt).toLocaleString()}</div>`;
     el.addEventListener('click', ()=> openThread(m.threadId));
     list.appendChild(el);
   });
 }
+
 function openThread(threadId){
   const msgs = loadMessages();
   const t = msgs.find(x=>x.threadId===threadId);
@@ -324,37 +377,64 @@ function openThread(threadId){
 }
 
 // Achievements (simple)
-function renderAchievements(){
-  const donations = loadDonations();
+
+async function renderAchievements() {
   const topPledges = document.getElementById('topPledges');
+  const topValue = document.getElementById('topValue');
+  if (!topPledges || !topValue) return;
+
   topPledges.innerHTML = '';
-  const grouped = {};
-  donations.forEach(d=>{
-    const name = d.donor.displayName || 'Anonymous';
-    grouped[name] = (grouped[name]||0) + 1;
+  topValue.innerHTML = '';
+
+  const ds = await loadDonations();   // ✅ wait for data
+  const byPerson = {};
+
+  ds.forEach(d => {
+    const name = d.donor?.displayName || 'Anonymous';
+    const value = parseFloat((d.donor?.amount || d.amount || '').toString().replace(/[^0-9.]/g,'')) || 0;
+
+    if (!byPerson[name]) byPerson[name] = { name, count: 0, value: 0 };
+    byPerson[name].count += 1;
+    byPerson[name].value += value;
   });
-  const items = Object.entries(grouped).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  if(!items.length) topPledges.innerHTML = '<div class="text-white/80">No pledges yet.</div>';
-  items.forEach(([name,count])=>{
-    const el = document.createElement('div');
-    el.className = 'rounded-xl bg-white/10 p-3';
-    el.innerHTML = `<div class="font-semibold">${name}</div><div class="text-xs opacity-80">${count} pledge(s)</div>`;
-    topPledges.appendChild(el);
+
+  const rows = Object.values(byPerson);
+  const pledgesSorted = rows.slice().sort((a,b) => b.count - a.count).slice(0,5);
+  const valueSorted   = rows.slice().sort((a,b) => b.value - a.value).slice(0,5);
+
+  pledgesSorted.forEach((r) => {
+    const line = document.createElement('div');
+    line.className = 'flex items-center justify-between rounded-xl bg-white/10 border border-white/10 p-3';
+    line.innerHTML = `<div class="font-semibold">${r.name}</div><div class="text-sm opacity-90">${r.count} pledge(s)</div>`;
+    topPledges.appendChild(line);
+  });
+
+  valueSorted.forEach((r) => {
+    const line = document.createElement('div');
+    line.className = 'flex items-center justify-between rounded-xl bg-white/10 border border-white/10 p-3';
+    line.innerHTML = `<div class="font-semibold">${r.name}</div><div class="text-sm opacity-90">~RM${r.value.toFixed(2)}</div>`;
+    topValue.appendChild(line);
   });
 }
 
+
 // Misc
-function refreshBallHighlights(){
+async function refreshBallHighlights(){
   // highlight balls which have open pledges
   const latest = getLatestCode();
-  const donations = loadDonations();
-  const donatedWishIds = donations.map(d=>d.wishId);
-  document.querySelectorAll('#ballsGroup circle[data-id]').forEach(c=>{
+  const donations = await loadDonations();   // ✅ wait for array
+  const donatedWishIds = donations.map(d => d.wishId);
+
+  document.querySelectorAll('#ballsGroup circle[data-id]').forEach(c => {
     const id = c.dataset.id;
-    if (donatedWishIds.includes(id)) c.style.boxShadow = '0 0 12px rgba(255,255,255,0.15)';
-    else c.style.boxShadow = '';
+    if (donatedWishIds.includes(id)) {
+      c.style.filter = 'drop-shadow(0 0 12px rgba(255,255,255,0.15))'; // ✅ SVG-friendly glow
+    } else {
+      c.style.filter = '';
+    }
   });
 }
+
 
 // Profile modal
 document.getElementById('profileBtn').addEventListener('click', ()=>{
