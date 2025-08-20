@@ -47,6 +47,7 @@ async function loadWishes() {
     console.error("Error loading wishes:", error);
     return [];
   }
+   console.log("Wishes loaded:", data);
   return data || []; // ensures it's always an array
 }
 
