@@ -42,13 +42,23 @@ if (!localStorage.getItem(LS_ROLE)) {
 
 // Utilities
 async function loadWishes() {
-  let { data, error } = await supabase.from('wishes').select('*');
+  console.log("Attempting to load wishes from Supabase...");
+  
+  let { data, error } = await supabase
+    .from('wishes')
+    .select('*')
+    .order('created_at', { ascending: false }); // Optional: order by date
+
   if (error) {
     console.error("Error loading wishes:", error);
+    console.error("Error details:", error.message, error.code);
     return [];
   }
-   console.log("Wishes loaded:", data);
-  return data || []; // ensures it's always an array
+  
+  console.log("Wishes loaded successfully:", data);
+  console.log("Number of wishes:", data?.length || 0);
+  
+  return data || [];
 }
 
 async function saveWishes(wishes) {
