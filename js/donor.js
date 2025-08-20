@@ -145,7 +145,7 @@ async function renderJar() {
   const wishes = await loadWishes();   // ⬅️ FIXED
   const map = Object.fromEntries(wishes.map(w => [w.id, w]));
   const icons = [];
-
+  console.log(wishes)
   circles.forEach(c => {
     const id = c.dataset.id;
     const w = map[id];
