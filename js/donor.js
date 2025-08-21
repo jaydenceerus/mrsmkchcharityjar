@@ -193,7 +193,7 @@ const wishSituation = document.getElementById('wishSituation');
 const wishText = document.getElementById('wishText');
 
 let currentWishId = null;
-function openModal(wishId){
+async function openModal(wishId){
   const wishes = await loadWishes(); // Await the result of the async function
   const w = wishes.find(x=>x.id===wishId);  
   if(!w) return;
@@ -223,9 +223,10 @@ ballsGroup.addEventListener('click', (e)=>{
 
 // Grant -> go to pledge form
 const donateWishBadge = document.getElementById('donateWishBadge');
-grantBtn.addEventListener('click', ()=>{
+grantBtn.addEventListener('click',async ()=>{
   if (!currentWishId) return;
-  const w = loadWishes().find(x=>x.id===currentWishId);
+  const wishes = await loadWishes(); // Await the result of the async function
+  const w = wishes.find(x=>x.id===currentWishId);  
   donateWishBadge.textContent = `Granting: ${w.nickname}`;
   closeModal();
   routeTo('donate');
@@ -239,7 +240,7 @@ donorForm.addEventListener('submit', async (e) =>{
   const fullName = (fd.get('name')||'').trim();
   const nick = (fd.get('nickname')||'').trim();
   if (!fullName && !nick) { alert('Please enter either your Full Name or a Nickname.'); return; }
-  const wishes = loadWishes();
+  const wishes = await loadWishes();
   const target = wishes.find(x => `Granting: ${x.nickname}` === donateWishBadge.textContent) || wishes[0];
 
   const code = 'WISH-' + Math.floor(1000 + Math.random()*9000);
@@ -248,9 +249,9 @@ donorForm.addEventListener('submit', async (e) =>{
 
   const donation = {
     code,
-    wishId: target.id,
-    wishNickname: target.nickname,
-    donorUsername: activeUser,
+    wish_id: target.id,
+    wish_nickname: target.nickname,
+    donor_username: activeUser,
     timestamp: now,
     donor: {
       displayName: fullName || nick || 'Anonymous',
@@ -262,16 +263,26 @@ donorForm.addEventListener('submit', async (e) =>{
       timeline: fd.get('timeline') || '',
       message: fd.get('message') || ''
     },
-    statusPhase: 0,
-    pledgedAt: now,
-    receivedAt: null,
-    grantedAt: null
+    status_phase: 0,
+    pledged_at: now,
+    received_at: null,
+    granted_at: null
   };
   await saveDonation(donation);
   await setLatestCode(code);
 
   // Create a new thread for this pledge
-  const msgs = loadMessages();
+  const msgs = await loadMessages();
+  const thread = {
+      threadId: code,
+      title: `Pledge for ${target.nickname} (${code})`,
+      createdAt: now,
+      messages: [{
+          from: 'System',
+          text: `Thank you for your pledge. We will update you on its status.`,
+          time: now
+      }]
+  };
   await saveMessage(thread);
 
   donorForm.reset();
