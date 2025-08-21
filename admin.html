@@ -33,36 +33,117 @@
   </header>
 
   <main class="p-6 max-w-6xl mx-auto space-y-6">
-    <!-- TRACK -->
-    <section id="admin-track" class="adminPage">
-      <h2 class="text-2xl font-bold mb-4">Tracking Overview</h2>
-      <div id="adminWishes" class="space-y-4"></div>
-      <div id="adminDonations" class="mt-6 space-y-4"></div>
-    </section>
+    <!-- ADMIN -->
+      <section id="page-admin" class="page">
+        <div class="max-w-6xl mx-auto px-6 py-10">
+          <h2 class="text-3xl md:text-4xl font-bold">Admin</h2>
+          <p class="mt-3 text-white/90">Manage wishes and donations (demo only, saved in your browser).</p>
 
-    <!-- MANAGE -->
-    <section id="admin-manage" class="adminPage hidden">
-      <h2 class="text-2xl font-bold mb-4">Manage Wishes</h2>
-      <form id="wishForm" class="space-y-4 max-w-lg">
-        <input id="wishStudent" placeholder="Student Name" class="w-full px-4 py-3 rounded-xl bg-white text-black" />
-        <input id="wishItem" placeholder="Wish Item" class="w-full px-4 py-3 rounded-xl bg-white text-black" />
-        <select id="wishCategory" class="w-full px-4 py-3 rounded-xl bg-white text-black">
-          <option value="shoes">Shoes</option>
-          <option value="stationery">Stationery</option>
-          <option value="meals">Meals</option>
-          <option value="data">Data</option>
-          <option value="transport">Transport</option>
-          <option value="other">Other</option>
-        </select>
-        <button class="w-full px-4 py-3 rounded-xl bg-white text-indigo-700 font-semibold">Add Wish</button>
-      </form>
-    </section>
+          <!-- TRACK -->
+          <div id="admin-track" class="mt-6 adminPage">
+            <div class="grid lg:grid-cols-2 gap-6">
+              <div class="rounded-2xl bg-white/10 border border-white/10 p-6">
+                <h3 class="text-2xl font-semibold mb-4">Wishes</h3>
+                <div id="adminWishes" class="space-y-4"></div>
+              </div>
+              <div class="rounded-2xl bg-white/10 border border-white/10 p-6">
+                <h3 class="text-2xl font-semibold mb-4">Donations</h3>
+                <div id="adminDonations" class="space-y-4"></div>
+                <div class="mt-6 p-4 rounded-xl bg-white/10 border border-white/10">
+                  <div class="font-semibold">Student Thank-you</div>
+                  <form id="thankyouForm" class="mt-3 space-y-3">
+                    <div>
+                      <label class="block text-sm mb-1">Donation Code</label>
+                      <input id="tyCode" class="w-full px-3 py-2 rounded-xl bg-white text-slate-900" placeholder="e.g., WISH-1234" />
+                    </div>
+                    <div>
+                      <label class="block text-sm mb-1">Message from student</label>
+                      <textarea id="tyNote" rows="3" class="w-full px-3 py-2 rounded-xl bg-white text-slate-900" placeholder="Say thanks or share an update..."></textarea>
+                    </div>
+                    <div>
+                      <label class="block text-sm mb-1">Optional image</label>
+                      <input id="tyImage" type="file" accept="image/*" class="w-full px-3 py-2 rounded-xl bg-white text-slate-900" />
+                    </div>
+                    <button class="px-4 py-2 rounded-xl bg-white text-indigo-700 font-semibold">Save Thank-you</button>
+                    <div class="text-xs opacity-80">Note: Image is stored locally and shown to the donor on their status page.</div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
 
-    <!-- DONORS -->
-    <section id="admin-donors" class="adminPage hidden">
-      <h2 class="text-2xl font-bold mb-4">Donor List</h2>
-      <div id="donorList"></div>
-    </section>
+          <!-- MANAGE -->
+          <div id="admin-manage" class="mt-6 adminPage hidden">
+            <div class="grid lg:grid-cols-2 gap-6">
+              <div class="rounded-2xl bg-white/10 border border-white/10 p-6">
+                <h3 class="text-2xl font-semibold mb-4">Add New Wish</h3>
+                <form id="addWishForm" class="space-y-4">
+                  <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-sm mb-2">Nickname (optional)</label>
+                      <input name="nickname" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900" placeholder="Leave blank to auto-generate" />
+                    </div>
+                    <div>
+                      <label class="block text-sm mb-2">Category</label>
+                      <select name="category" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900">
+                        <option value="shoes">Shoes</option>
+                        <option value="stationery">Stationery</option>
+                        <option value="meals">Meals</option>
+                        <option value="data">Data</option>
+                        <option value="transport">Transport</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-sm mb-2">Emotion</label>
+                      <select name="emotion" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900">
+                        <option value="hope">Hope</option>
+                        <option value="sadness">Sadness</option>
+                        <option value="embarrassment">Embarrassment</option>
+                        <option value="anxiety">Anxiety</option>
+                        <option value="determination">Determination</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-sm mb-2">Monthly Batch</label>
+                      <input name="batch" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900" placeholder="e.g., 2025-08" />
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-sm mb-2">Situation</label>
+                    <textarea name="situation" rows="3" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900" required></textarea>
+                  </div>
+                  <div>
+                    <label class="block text-sm mb-2">Wish</label>
+                    <textarea name="wish" rows="2" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900" required></textarea>
+                  </div>
+                  <button class="px-5 py-3 rounded-xl bg-white text-indigo-700 font-semibold">Add Wish</button>
+                </form>
+              </div>
+
+              <div class="rounded-2xl bg-white/10 border border-white/10 p-6">
+                <h3 class="text-2xl font-semibold mb-4">Existing Wishes</h3>
+                <div id="manageWishesList" class="space-y-3"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DONORS -->
+          <div id="admin-donors" class="mt-6 adminPage hidden">
+            <div class="rounded-2xl bg-white/10 border border-white/10 p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-2xl font-semibold">Donor Directory</h3>
+                <input id="donorSearch" class="px-3 py-2 rounded-xl bg-white text-slate-900" placeholder="Search by name..." />
+              </div>
+              <div id="donorList" class="space-y-3"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
 
     <!-- INBOX -->
     <section id="admin-inbox" class="adminPage hidden">
@@ -98,6 +179,6 @@
     </section>
   </main>
 
-  <script src="js/admin.js"></script>
+  <script type="module" src="js/admin.js"></script>
 </body>
 </html>

@@ -310,6 +310,7 @@ const wishText = document.getElementById('wishText');
 let currentWishId = null;
 async function openModal(wishId){
   const wishes = await loadWishes(); // Await the result of the async function
+
   const w = wishes.find(x=>x.id===wishId);  
   if(!w) return;
   currentWishId = wishId;
@@ -323,7 +324,6 @@ async function openModal(wishId){
 function closeModal(){
   modal.classList.remove('modal-visible'); modal.classList.add('modal-hidden');
   modalBackdrop.classList.add('opacity-0','pointer-events-none'); modalBackdrop.classList.remove('opacity-100');
-  currentWishId = null;
 }
 closeModalBtn.addEventListener('click', closeModal);
 closeModalTop.addEventListener('click', closeModal);
@@ -333,24 +333,41 @@ document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') closeModal()
 // Click on jar circle
 ballsGroup.addEventListener('click', (e)=>{
   const t = e.target;
-  if (t && t.tagName === 'circle' && t.dataset.id) openModal(t.dataset.id);
+  if (t && t.tagName === 'circle' && t.dataset.id) 
+    console.log(t.dataset.id);
+    openModal(t.dataset.id);
 });
 
 // Grant -> go to pledge form
-// Grant -> go to pledge form
 const donateWishBadge = document.getElementById('donateWishBadge');
-grantBtn.addEventListener('click', async () => {
+grantBtn.addEventListener('click',async ()=>{
   if (!currentWishId) return;
-  const wishes = await loadWishes();
-  const w = wishes.find(x => x.id === currentWishId);
-  
-  // --- START MODIFICATION ---
-  // Set the value of the hidden input field in the donation form
-  document.getElementById('donateWishId').value = currentWishId;
-  // --- END MODIFICATION ---
+  const wishes = await loadWishes(); // Await the result of the async function
+  const donations = await loadDonations();
+  const prof = await getActiveProfile();
 
+  // check if wish is already taken
+  const isAlreadyPledged = donations.some(d => d.wish_id === currentWishId);
+
+  if (isAlreadyPledged) {
+    alert('Sorry, this wish has already been reserved by another donor. Please select a different one.');
+    return; // Stop the function from continuing
+  }
+
+  // check if user has ongoing pledge
+  const usersLatestPledge = prof?.latestCode;
+  const latestDonation = donations.find(d => d.code === usersLatestPledge);
+
+  //const hasPledgeOngoing = latestDonation && latestDonation.granted_at == null;
+
+  if (latestDonation && latestDonation.granted_at == null) {
+    alert('You already have an active pledge! Please finish it first.');
+    return;
+  } 
+
+  const w = wishes.find(x=>x.id===currentWishId);   
   donateWishBadge.textContent = `Granting: ${w.nickname}`;
-  closeModal(); // This is now safe to call
+  closeModal();
   routeTo('donate');
 });
 
@@ -369,30 +386,30 @@ donorForm.addEventListener('submit', async (e) =>{
   const wishes = await loadWishes();
   const donations = await loadDonations();
 
-  // 2. Find the correct wish the user selected (Fixing existing bug)
-  const target = wishes.find(w => w.id === currentWishId);
-  if (!target) {
-    alert("Could not find the selected wish. It may have been removed.");
-    return;
-  }
-
-  // 3. Check if a donation for this wish already exists
-  const isAlreadyPledged = donations.some(d => d.wish_id === target.id);
-  if (isAlreadyPledged) {
-    alert('Sorry, this wish was just pledged by someone else. Please select another wish.');
-    routeTo('home'); // Go back to the main page
-    return; // Stop the submission
-  }
-
-  // --- END MODIFICATION ---
-
   const user = await getActiveUser();
   if (!user) {
     alert("Not logged in.");
     return;
   }
-  const code = 'WISH-' + Math.floor(1000 + Math.random()*9000);
+  let code;
+  let isUnique = false;
+  while (!isUnique) {
+    // 1. Generate a potential code
+    const potentialCode = 'WISH-' + Math.floor(1000 + Math.random() * 9000);
+    
+    // 2. Check if this code already exists in the donations list
+    const codeExists = donations.some(d => d.code === potentialCode);
+    
+    // 3. If it does not exist, we've found our unique code.
+    if (!codeExists) {
+      code = potentialCode;
+      isUnique = true;
+    }
+    // If it *does* exist, the loop will simply run again to generate a new number.
+  }
   const now = new Date().toISOString();
+  const target = wishes.find(w => w.id === currentWishId);
+  console.log(currentWishId);
 
   const donation = {
     code,
@@ -589,7 +606,7 @@ async function openThread(conversationId, title) {
     const from = m.sender_name || (isMine ? donorDisplayName || 'You' : m.sender_id ? 'Staff' : 'System');
 
     const item = document.createElement('div');
-    item.className = `p-3 rounded-xl my-1 max-w-[70%] ${isMine ? 'bg-blue-500 text-white ml-auto' : 'bg-white/10 text-white/90 mr-auto'}`;
+    item.className = `p-3 rounded-xl my-1 max-w-[70%] ${isMine ? 'bg-blue-500/80 text-white text-right ml-auto' : 'bg-white/10 text-white/90 mr-auto'}`;
     item.innerHTML = `
       <div class="text-xs opacity-80 ${isMine ? 'text-right' : ''}">${from} • ${new Date(m.created_at).toLocaleString()}</div>
       <div class="mt-1">${m.body}</div>

@@ -1,4 +1,13 @@
 // js/admin.js
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+// ---------- CONFIG (Same as donor.js) ----------
+const SUPABASE_URL = "https://eaivuhgvzdvvxscqqqji.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhaXZ1aGd2emR2dnhzY3FxcWppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1OTMxNDIsImV4cCI6MjA3MTE2OTE0Mn0.ru1S0ZiYQluFFzYrbFxqzk2v315xAA29iXlviy3Y1E";
+// ----------------------------------------------------
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 const LS_ROLE = 'wishjar_role';
 const LS_ACTIVE_USER = 'wishjar_active_user';
 const LS_WISHES = 'wishjar_wishes';
@@ -15,18 +24,46 @@ if (logoutBtnEl) {
   });
 }
 
-// Guard: only continue if admin
-if (localStorage.getItem(LS_ROLE) !== 'admin') {
-  alert('Admin access only (demo). Redirecting to login.');
-  window.location.href = 'index.html';
-}
+(async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || localStorage.getItem(LS_ROLE) !== 'admin') {
+    alert('Admin access only. Redirecting to login.');
+    window.location.href = 'index.html';
+  } else {
+    currentUser = user;
+    // Initial data load
+    renderAdmin();
+    renderAdminInbox();
+  }
+})();
+
 
 // Storage helpers
-function loadWishes() { const raw = localStorage.getItem(LS_WISHES); return raw ? JSON.parse(raw) : []; }
+async function loadWishes() {
+  const { data, error } = await supabase.from('wishes').select('*').order('created_at', { ascending: false });
+  if (error) { console.error("Error loading wishes:", error); return []; }
+  return data;
+}
+
+async function loadDonations() {
+  const { data, error } = await supabase.from('donations').select('*').order('created_at', { ascending: false });
+  if (error) { console.error("Error loading donations:", error); return []; }
+  return data;
+}
+
+async function loadConversations() {
+    const { data, error } = await supabase.from('conversations').select('*').order('created_at', { ascending: false });
+    if (error) { console.error("Error loading conversations:", error); return []; }
+    return data;
+}
+
+async function loadMessages(conversationId) {
+    const { data, error } = await supabase.from('messages').select('*').eq('conversation_id', conversationId).order('created_at');
+    if (error) { console.error("Error loading messages:", error); return []; }
+    return data;
+}
 function saveWishes(w){ localStorage.setItem(LS_WISHES, JSON.stringify(w)); }
-function loadDonations(){ const raw = localStorage.getItem(LS_DONATIONS); return raw ? JSON.parse(raw) : []; }
 function saveDonations(list){ localStorage.setItem(LS_DONATIONS, JSON.stringify(list)); }
-function loadMessages(){ const raw = localStorage.getItem(LS_MESSAGES); return raw ? JSON.parse(raw) : []; }
 function saveMessages(list){ localStorage.setItem(LS_MESSAGES, JSON.stringify(list)); }
 function loadThanks(){ const raw = localStorage.getItem(LS_THANKS); return raw ? JSON.parse(raw) : {}; }
 function saveThanks(obj){ localStorage.setItem(LS_THANKS, JSON.stringify(obj)); }
@@ -40,63 +77,57 @@ const adminPages = {
   inbox: document.getElementById('admin-inbox')
 };
 let currentAdminTab = 'track';
-function switchAdminTab(tab){
-  currentAdminTab = tab;
-  Object.entries(adminPages).forEach(([k,el]) => {
-    if (!el) return;
-    if (k === tab) el.classList.remove('hidden'); else el.classList.add('hidden');
+function switchAdminTab(tab) {
+  Object.entries(adminPages).forEach(([k, el]) => el.classList.toggle('hidden', k !== tab));
+  adminTabs.forEach(b => {
+    const isSelected = b.dataset.tab === tab;
+    b.classList.toggle('bg-white', isSelected);
+    b.classList.toggle('text-indigo-700', isSelected);
+    b.classList.toggle('font-semibold', isSelected);
+    b.classList.toggle('bg-white/10', !isSelected);
   });
-  adminTabs.forEach(b=>{
-    if (b.dataset.tab === tab) {
-      b.classList.add('bg-white','text-indigo-700','font-semibold');
-      b.classList.remove('bg-white/10');
-    } else {
-      b.classList.remove('bg-white','text-indigo-700','font-semibold');
-      b.classList.add('bg-white/10');
-    }
-  });
+  if (tab === 'inbox') renderAdminInbox();
+}
+adminTabs.forEach(b => b.addEventListener('click', () => switchAdminTab(b.dataset.tab)));
+
 
   // load content for inbox when opened
   if (tab === 'inbox') {
     renderAdminInbox();
   }
-}
 adminTabs.forEach(b => b.addEventListener('click', ()=> switchAdminTab(b.dataset.tab)));
 switchAdminTab('track');
 
 // Render admin track + donations + wishes
-function renderAdmin(){
-  const wishes = loadWishes();
-  const donations = loadDonations().slice().reverse();
-
+async function renderAdmin() {
+  const wishes = await loadWishes();
+  const donations = await loadDonations();
   const adminWishes = document.getElementById('adminWishes');
+  const adminDonations = document.getElementById('adminDonations');
+
+  // Render Wishes
   if (adminWishes) {
     adminWishes.innerHTML = '';
     wishes.forEach(w => {
-      const dsFor = loadDonations().filter(d => d.wishId === w.id);
-      const highest = dsFor.reduce((acc,d)=>Math.max(acc, d.statusPhase ?? 0), 0);
-      const completed = highest === 2 || w.granted === true;
+      const isGranted = donations.some(d => d.wish_id === w.id && d.status_phase === 2);
       const block = document.createElement('div');
       block.className = 'rounded-2xl bg-white/10 border border-white/10 p-6';
       block.innerHTML = `
         <div class="flex items-center justify-between">
           <div>
-            <div class="font-semibold">${w.nickname} <span class="text-xs opacity-70">(${w.category}, ${w.emotion})</span></div>
+            <div class="font-semibold">${w.nickname} <span class="text-xs opacity-70">(${w.category}, ${w.emotion || 'hope'})</span></div>
             <div class="text-sm opacity-80">${w.wish}</div>
-            <div class="text-xs opacity-70 mt-1">${dsFor.length} pledge(s) • Batch: ${w.batch || '-'}</div>
           </div>
           <div>
-            <span class="px-3 py-1 rounded-full ${completed ? 'bg-green-400 text-green-900' : 'bg-white/20'} font-semibold text-sm">
-              ${completed ? 'Granted' : 'In progress'}
+            <span class="px-3 py-1 rounded-full ${isGranted ? 'bg-green-400 text-green-900' : 'bg-white/20'} font-semibold text-sm">
+              ${isGranted ? 'Granted' : 'Pending'}
             </span>
           </div>
-        </div>
-      `;
+        </div>`;
       adminWishes.appendChild(block);
     });
   }
 
-  const adminDonations = document.getElementById('adminDonations');
   if (adminDonations) {
     adminDonations.innerHTML = donations.length ? '' : '<div class="text-white/80">No donations yet.</div>';
     donations.forEach(d => {
