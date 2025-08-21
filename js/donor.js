@@ -34,13 +34,87 @@ const defaultWishes = [
 const EMOTION_COLORS = { hope:'#60A5FA', determination:'#34D399', sadness:'#A78BFA', embarrassment:'#F472B6', anxiety:'#FCA5A5' };
 const CATEGORY_ICON = { shoes:'👟', stationery:'✏️', meals:'🧃', data:'📶', transport:'🚲', other:'🎒' };
 
-// Ensure role present: redirect if not logged in
-if (!localStorage.getItem(LS_ROLE)) {
-  alert('Please sign in (demo). Redirecting to login.');
-  window.location.href = 'index.html';
-}
 
 // Utilities
+async function getActiveUser() {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) return null;
+  console.log(data.user.id)
+  return {
+    id: data.user.id, // UUID
+    username: data.user.user_metadata?.username || data.user.email || "Anonymous"
+  };
+}
+
+(async () => {
+  const user = await getActiveUser();
+  if (!user) {
+    alert('Please sign in first. Redirecting to login.');
+    window.location.href = 'index.html';
+  }
+})();
+
+async function getActiveProfile() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  // Fetch the full profile from your profiles table
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    // Select all the columns from your new table structure
+    .select('username, full_name, hide_full_name, phone, affiliation, total_pledges, wishes_granted, total_donated, latest_code')
+    .eq('id', user.id)
+    .maybeSingle(); // Use maybeSingle() to prevent errors if a profile is missing
+
+  if (error) {
+    console.error("Error fetching profile:", error);
+    // Return a default object based on auth user if the query fails
+    return { 
+      id: user.id, 
+      username: user.email || 'Anonymous',
+      fullName: null,
+      hideFullName: false,
+      phone: null,
+      affiliation: null,
+      totalPledges: 0,
+      wishesGranted: 0,
+      totalDonated: 0,
+      latestCode: null
+    };
+  }
+
+  // If a profile exists, return its data.
+  if (profile) {
+    return {
+      id: user.id,
+      username: profile.username || user.email || 'Anonymous',
+      fullName: profile.full_name,
+      hideFullName: profile.hide_full_name,
+      phone: profile.phone,
+      affiliation: profile.affiliation,
+      totalPledges: profile.total_pledges,
+      wishesGranted: profile.wishes_granted,
+      totalDonated: profile.total_donated,
+      latestCode: profile.latest_code
+    };
+  }
+
+  // Fallback for new users who might not have a profile row yet
+  return {
+    id: user.id,
+    username: user.email || 'Anonymous',
+    fullName: null,
+    hideFullName: false,
+    phone: null,
+    affiliation: null,
+    totalPledges: 0,
+    wishesGranted: 0,
+    totalDonated: 0,
+    latestCode: null
+  };
+}
+
+
 async function loadWishes() {
   console.log("Attempting to load wishes from Supabase...");
   
@@ -79,29 +153,70 @@ async function saveDonation(donation) {
 }
 
 // MESSAGES
-async function loadMessages() {
-  const { data, error } = await supabase.from('messages').select('*');
+async function saveMessage(conversationId, senderId, text, senderName) {
+  const { error } = await supabase.from('messages').insert([{
+    conversation_id: conversationId,
+    sender_id: senderId,
+    body: text,
+    sender_name: senderName
+  }]);
+  if (error) console.error(error);
+}
+
+async function loadMessages(conversationId) {
+  const { data, error } = await supabase
+    .from('messages')
+    .select('id, sender_id, sender_name, body, created_at')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true });
   if (error) { console.error(error); return []; }
   return data;
-}
-async function saveMessage(thread) {
-  const { error } = await supabase.from('messages').upsert(thread);
-  if (error) console.error(error);
 }
 
 // LATEST CODE
 async function setLatestCode(code) {
-  const { error } = await supabase.from('latest_code').upsert({ id:1, code });
-  if (error) console.error(error);
+  // Get the currently logged-in user
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    console.error("Cannot set latest code: no active user.");
+    return;
+  }
+
+  // Update the 'latest_code' column in the 'profiles' table for that user
+  const { error } = await supabase
+    .from('profiles')
+    .update({ latest_code: code })
+    .eq('id', user.id); // Match the profile row to the user's ID
+
+  if (error) {
+    console.error("Error updating latest_code in profile:", error);
+  } else {
+    console.log(`Successfully updated latest_code for user ${user.id} to ${code}`);
+  }
 }
 async function getLatestCode() {
+  // Get the currently logged-in user
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    console.error("Cannot get latest code: no active user.");
+    return null;
+  }
+
+  // Select the 'latest_code' from the user's specific profile
   const { data, error } = await supabase
-  .from('latest_code')
-  .select('code')
-  .eq('id', 1)
-  .maybeSingle();  // ✅ won't throw 406 if no row
-  if (error) return null;
-  return data?.code;
+    .from('profiles')
+    .select('latest_code')
+    .eq('id', user.id) // Match the profile row to the user's ID
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error fetching latest_code from profile:", error);
+    return null;
+  }
+
+  return data?.latest_code;
 }
 
 // THANKS
@@ -222,13 +337,20 @@ ballsGroup.addEventListener('click', (e)=>{
 });
 
 // Grant -> go to pledge form
+// Grant -> go to pledge form
 const donateWishBadge = document.getElementById('donateWishBadge');
-grantBtn.addEventListener('click',async ()=>{
+grantBtn.addEventListener('click', async () => {
   if (!currentWishId) return;
-  const wishes = await loadWishes(); // Await the result of the async function
-  const w = wishes.find(x=>x.id===currentWishId);  
+  const wishes = await loadWishes();
+  const w = wishes.find(x => x.id === currentWishId);
+  
+  // --- START MODIFICATION ---
+  // Set the value of the hidden input field in the donation form
+  document.getElementById('donateWishId').value = currentWishId;
+  // --- END MODIFICATION ---
+
   donateWishBadge.textContent = `Granting: ${w.nickname}`;
-  closeModal();
+  closeModal(); // This is now safe to call
   routeTo('donate');
 });
 
@@ -240,22 +362,48 @@ donorForm.addEventListener('submit', async (e) =>{
   const fullName = (fd.get('name')||'').trim();
   const nick = (fd.get('nickname')||'').trim();
   if (!fullName && !nick) { alert('Please enter either your Full Name or a Nickname.'); return; }
-  const wishes = await loadWishes();
-  const target = wishes.find(x => `Granting: ${x.nickname}` === donateWishBadge.textContent) || wishes[0];
+  
+  // --- START MODIFICATION ---
 
+  // 1. First, get all current wishes and donations
+  const wishes = await loadWishes();
+  const donations = await loadDonations();
+
+  // 2. Find the correct wish the user selected (Fixing existing bug)
+  const target = wishes.find(w => w.id === currentWishId);
+  if (!target) {
+    alert("Could not find the selected wish. It may have been removed.");
+    return;
+  }
+
+  // 3. Check if a donation for this wish already exists
+  const isAlreadyPledged = donations.some(d => d.wish_id === target.id);
+  if (isAlreadyPledged) {
+    alert('Sorry, this wish was just pledged by someone else. Please select another wish.');
+    routeTo('home'); // Go back to the main page
+    return; // Stop the submission
+  }
+
+  // --- END MODIFICATION ---
+
+  const user = await getActiveUser();
+  if (!user) {
+    alert("Not logged in.");
+    return;
+  }
   const code = 'WISH-' + Math.floor(1000 + Math.random()*9000);
   const now = new Date().toISOString();
-  const activeUser = localStorage.getItem(LS_ACTIVE_USER) || 'member';
 
   const donation = {
     code,
-    wish_id: target.id,
+    wish_id: target.id, // This now correctly uses the selected wish
     wish_nickname: target.nickname,
-    donor_username: activeUser,
     timestamp: now,
+    donor_id: user.id, 
     donor: {
-      displayName: fullName || nick || 'Anonymous',
-      fullName, nickname: nick,
+      displayName: fullName || nick || user.username,
+      fullName,
+      nickname: nick,
       email: fd.get('email'),
       phone: fd.get('phone') || '',
       type: fd.get('type'),
@@ -268,44 +416,67 @@ donorForm.addEventListener('submit', async (e) =>{
     received_at: null,
     granted_at: null
   };
+  
+  // ... the rest of the function continues as before
+
   await saveDonation(donation);
   await setLatestCode(code);
 
-  // Create a new thread for this pledge
-  const msgs = await loadMessages();
-  const thread = {
-      threadId: code,
-      title: `Pledge for ${target.nickname} (${code})`,
-      createdAt: now,
-      messages: [{
-          from: 'System',
-          text: `Thank you for your pledge. We will update you on its status.`,
-          time: now
-      }]
-  };
-  await saveMessage(thread);
+  // ✅ Create conversation
+  // After pledge is submitted
+
+  const { data: convo, error: convoError } = await supabase
+  .from("conversations")
+  .insert([{
+    donor_id: user.id,        // ✅ link conversation to donor
+    title: `Pledge for ${target.nickname} (${code})`,
+    created_at: now
+  }])
+  .select()
+  .single();
+
+if (convoError) {
+  console.error("Error creating conversation:", convoError);
+} else {
+  // Insert first system message
+  await supabase.from("messages").insert([{
+    conversation_id: convo.id,
+    sender_id: null,  // system message
+    body: `Thank you for your pledge. We will update you on its status.`
+  }]);
+}
+
 
   donorForm.reset();
-  alert('Pledge submitted! You can chat in Inbox. Admin will mark it as Granted when fulfilled.');
+  alert('Pledge submitted! You can chat in Inbox.');
   routeTo('inbox');
   renderInbox();
-  openThread(code);
+  openThread(convo.id, convo.title);
 });
 
 // Cancel donate
 document.getElementById('cancelDonate').addEventListener('click', ()=> routeTo('home'));
 
 // Status lookup
-document.getElementById('lookupBtn').addEventListener('click', ()=>{
+document.getElementById('lookupBtn').addEventListener('click', async ()=>{
   const code = (document.getElementById('lookupCode').value || '').trim();
-  const d = loadDonations().find(x => x.code === code);
+
+  const donations = await loadDonations();  // ⬅️ wait for the array
+  const d = donations.find(x => (x.code || '').trim().toUpperCase() === code.toUpperCase());
+  console.log("Looking for code:", code);
+console.log("All donation codes:", donations.map(d => d.code));
+
   const statusResult = document.getElementById('statusResult');
   statusResult.classList.remove('hidden');
+
   if (!code || !d) {
     statusResult.innerHTML = `<div class="text-white/90">No donation found for that code.</div>`;
     return;
   }
-  const w = loadWishes().find(x => x.id === d.wishId);
+
+  const wishes = await loadWishes();  // ⬅️ also async
+  const w = wishes.find(x => x.id === d.wish_id);
+  console.log(d.code);
   const phase = d.statusPhase ?? 0;
   const steps = [
     { label: 'Pledge given', date: d.pledgedAt, done: phase >= 0, icon: '📝' },
@@ -361,47 +532,104 @@ document.getElementById('lookupBtn').addEventListener('click', ()=>{
 });
 
 // Inbox rendering + thread open
-async function renderInbox(){
-  const msgs = await loadMessages();   // ✅ wait for Supabase
-  const sorted = msgs.slice().reverse(); // ✅ now it's an array
+async function renderInbox() {
+  const { data: convos, error } = await supabase
+    .from('conversations')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) { console.error(error); return; }
 
   const list = document.getElementById('threadList');
-  list.innerHTML = sorted.length ? '' : `<div class="p-4 text-white/80">No conversations yet.</div>`;
-  sorted.forEach(m => {
+  list.innerHTML = convos.length ? '' : `<div class="p-4 text-white/80">No conversations yet.</div>`;
+  convos.forEach(c => {
     const el = document.createElement('div');
     el.className = 'px-4 py-3 hover:bg-white/5 cursor-pointer';
     el.innerHTML = `
-      <div class="font-semibold">${m.title}</div>
-      <div class="text-xs opacity-80">${new Date(m.createdAt).toLocaleString()}</div>`;
-    el.addEventListener('click', ()=> openThread(m.threadId));
+      <div class="font-semibold">${c.title}</div>
+      <div class="text-xs opacity-80">${new Date(c.created_at).toLocaleString()}</div>`;
+    el.addEventListener('click', ()=> openThread(c.id, c.title));
     list.appendChild(el);
   });
 }
 
-function openThread(threadId){
-  const msgs = loadMessages();
-  const t = msgs.find(x=>x.threadId===threadId);
-  if(!t) return;
-  document.getElementById('chatHeader').querySelector('.font-semibold').textContent = t.title;
+async function openThread(conversationId, title) {
+  document.getElementById('chatHeader').querySelector('.font-semibold').textContent = title;
+
   const messagesEl = document.getElementById('chatMessages');
   messagesEl.innerHTML = '';
-  t.messages.forEach(m=>{
+
+  const user = await getActiveUser(); // Current logged-in donor
+
+  // --- Fetch donorDisplayName from the donations table's jsonb column ---
+  let donorDisplayName = 'Anonymous';
+  const { data: convo, error: convoError } = await supabase
+    .from('conversations')
+    .select('donor_id')
+    .eq('id', conversationId)
+    .single();
+
+  if (!convoError && convo) {
+    // We are selecting the donor JSONB column and then filtering by donor_id
+    const { data: donations, error: donationError } = await supabase
+      .from('donations')
+      .select('donor') // Select the entire jsonb column
+      .eq('donor_id', user.id)
+      .limit(1); // Pick the latest if multiple donations exist
+
+    if (!donationError && donations.length) {
+      // Access the displayName key from the JSONB object
+      donorDisplayName = donations[0].donor?.displayName || 'Anonymous';
+    }
+  }
+
+  const msgs = await loadMessages(conversationId);
+
+  msgs.forEach(m => {
+    const isMine = m.sender_id === user?.id;
+    const from = m.sender_name || (isMine ? donorDisplayName || 'You' : m.sender_id ? 'Staff' : 'System');
+
     const item = document.createElement('div');
-    item.className = 'p-3 rounded-xl bg-white/10';
-    item.innerHTML = `<div class="text-xs opacity-80">${m.from} • ${new Date(m.time).toLocaleString()}</div><div class="mt-1">${m.text}</div>`;
+    item.className = `p-3 rounded-xl my-1 max-w-[70%] ${isMine ? 'bg-blue-500 text-white ml-auto' : 'bg-white/10 text-white/90 mr-auto'}`;
+    item.innerHTML = `
+      <div class="text-xs opacity-80 ${isMine ? 'text-right' : ''}">${from} • ${new Date(m.created_at).toLocaleString()}</div>
+      <div class="mt-1">${m.body}</div>
+    `;
     messagesEl.appendChild(item);
   });
-  // show input
-  document.getElementById('chatForm').onsubmit = (e)=>{
+
+  // Scroll to bottom
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  // Sending new message
+  document.getElementById('chatForm').onsubmit = async (e) => {
     e.preventDefault();
-    const txt = (document.getElementById('chatInput').value||'').trim();
-    if(!txt) return;
-    t.messages.push({ from: 'You', text: txt, time: new Date().toISOString() });
-    saveMessages(loadMessages().map(x => x.threadId === t.threadId ? t : x));
+    const txt = (document.getElementById('chatInput').value || '').trim();
+    if (!txt) return;
+
+    const senderId = user?.id || null;
+    const senderName = donorDisplayName || user?.username || 'Anonymous';
+    await saveMessage(conversationId, senderId, txt, senderName);
+
     document.getElementById('chatInput').value = '';
-    openThread(threadId);
+    openThread(conversationId, title); // re-render messages
   };
 }
+
+
+
+  document.getElementById('chatForm').onsubmit = async (e)=>{
+    e.preventDefault();
+    const txt = (document.getElementById('chatInput').value||'').trim();
+    if (!txt) return;
+    const { data: { user } } = await supabase.auth.getUser();
+  const senderId = user.id || null;
+  const senderName = donorDisplayName || user?.email || 'Anonymous';
+  await saveMessage(conversationId, senderId, txt, senderName);
+
+    document.getElementById('chatInput').value = '';
+    openThread(conversationId, title);
+  };
+
 
 // Achievements (simple)
 
@@ -464,11 +692,17 @@ async function refreshBallHighlights(){
 
 
 // Profile modal
-document.getElementById('profileBtn').addEventListener('click', ()=>{
+
+
+document.getElementById('profileBtn').addEventListener('click', async ()=>{
+  const user = await getActiveProfile();
   document.getElementById('profileModal').classList.remove('hidden');
-  const user = localStorage.getItem(LS_ACTIVE_USER) || '-';
-  document.getElementById('profUsername').textContent = user;
-  document.getElementById('profRole').textContent = localStorage.getItem(LS_ROLE) || '-';
+  document.getElementById('profUsername').textContent = user?.username;
+  document.getElementById('profRole').textContent = user?.affiliation || '-';
+  document.getElementById('profPledges').textContent = user?.totalPledges || '-';
+  document.getElementById('profDonated').textContent = user?.totalDonated || '-';
+  document.getElementById('profGranted').textContent = user?.wishesGranted || '-';
+  document.getElementById('profRecent').textContent = user?.latestCode || '-';
 });
 document.getElementById('closeProfile').addEventListener('click', ()=> document.getElementById('profileModal').classList.add('hidden'));
 
