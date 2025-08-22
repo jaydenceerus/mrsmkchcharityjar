@@ -1,49 +1,94 @@
-// js/admin.js
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-// ---------- CONFIG (Same as other Supabase files) ----------
-const SUPABASE_URL = "https://eaivuhgvzdvvxscqqqji.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhaXZ1aGd2emR2dnhzY3FxcWppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1OTMxNDIsImV4cCI6MjA3MTE2OTE0Mn0.ru1S0ZiYQluFFzYkrbFxqzk2v315xAA2_deletia_"; // Using the key from your files
-// ----------------------------------------------------
+// ---------- CONFIG ----------
+const SUPABASE_URL = "https://eaivuhgvzdvvxscqqqji.supabase.co"; // replace
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhaXZ1aGd2emR2dnhzY3FxcWppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1OTMxNDIsImV4cCI6MjA3MTE2OTE0Mn0.ru1S0ZiYQluFFzYkrbFxqzk2v315xAA29iXlviy3Y1E";                          // replace
+// ----------------------------
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // LocalStorage keys are no longer needed for primary data
-const LS_ROLE = 'wishjar_role';
 const LS_ACTIVE_USER = 'wishjar_active_user';
 let currentUser = null;
+
+
+// In wishjarv1/js/admin.js
+
+  async function isUserAdmin(userId) {
+    if (!userId) {
+      console.log("isUserAdmin check failed: No userId provided.");
+      return false;
+    }
+
+    try {
+      console.log("isUserAdmin: Querying database for user:", userId);
+      
+      const { data, error, count } = await supabase
+        .from('admins')
+        .select('user_id', { count: 'exact' })
+        .eq('user_id', userId);
+
+      // This will now run if the query succeeds
+      console.log("isUserAdmin: Query returned. Error:", error, "Count:", count);
+
+      if (error) {
+        console.error("Error checking admin status inside try/catch:", error);
+        return false;
+      }
+
+      return count > 0;
+
+    } catch (e) {
+      // This will catch any unexpected errors, like network failures
+      console.error("A critical, unexpected error occurred in isUserAdmin:", e);
+      return false;
+    }
+  }
+
+
+// --- Auth Guard ---
+supabase.auth.onAuthStateChange(async (event, session) => {
+  const user = session?.user;
+
+  if (!user) {
+    console.log("Auth Guard: No user session found. Redirecting.");
+    window.location.href = 'index.html';
+    return;
+  }
+
+  console.log("Auth Guard: User found, checking admin status for user ID:", user.id);
+  const isAdmin = await isUserAdmin(user.id);
+  console.log("Auth Guard: Is user admin?", isAdmin); // This will tell you the result
+
+  if (!isAdmin) {
+    console.log("Auth Guard: Access denied. User is not an admin. Redirecting.");
+    alert('Admin access only. Redirecting to login.');
+    await supabase.auth.signOut(); 
+    window.location.href = 'index.html';
+  } else {
+    console.log("Auth Guard: Access granted. Proceeding to render admin panel.");
+    currentUser = user;
+    renderAdmin();
+    renderAdminInbox();
+  }
+});
 
 // Ensure logout works early
 const logoutBtnEl = document.getElementById('logoutBtn');
 if (logoutBtnEl) {
   logoutBtnEl.addEventListener('click', () => {
-    try {
-      localStorage.removeItem(LS_ROLE);
-      localStorage.removeItem(LS_ACTIVE_USER);
-      supabase.auth.signOut();
-    } catch(e){}
+    supabase.auth.signOut();
+    // Clear any remaining local storage for good measure
+    localStorage.clear();
     window.location.href = 'index.html';
   });
 }
-
-// --- Auth Guard ---
-(async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user || localStorage.getItem(LS_ROLE) !== 'admin') {
-    alert('Admin access only. Redirecting to login.');
-    window.location.href = 'index.html';
-  } else {
-    currentUser = user;
-    // Initial data load
-    renderAdmin();
-    renderAdminInbox();
-  }
-})();
 
 
 // --- Supabase Storage Helpers ---
 async function loadWishes() {
   const { data, error } = await supabase.from('wishes').select('*').order('created_at', { ascending: false });
+  console.log(data);
   if (error) { console.error("Error loading wishes:", error); return []; }
   return data;
 }
@@ -159,100 +204,118 @@ adminTabs.forEach(b => b.addEventListener('click', () => switchAdminTab(b.datase
 
 
 // Render admin track + donations + wishes
+// In wishjarv1/js/admin.js
+
 async function renderAdmin() {
-  const [wishes, donations] = await Promise.all([loadWishes(), loadDonations()]);
   const adminWishes = document.getElementById('adminWishes');
   const adminDonations = document.getElementById('adminDonations');
 
-  // Render Wishes Summary
-  if (adminWishes) {
-    adminWishes.innerHTML = '';
-    wishes.forEach(w => {
-      const isGranted = donations.some(d => d.wish_id === w.id && d.status_phase === 2);
-      const block = document.createElement('div');
-      block.className = 'rounded-xl bg-white/10 p-4';
-      block.innerHTML = `
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="font-semibold">${w.nickname} <span class="text-xs opacity-70">(${w.category}, ${w.emotion || 'hope'})</span></div>
-            <div class="text-sm opacity-80">${w.wish}</div>
-          </div>
-          <div>
-            <span class="px-3 py-1 rounded-full ${isGranted ? 'bg-green-400 text-green-900' : 'bg-white/20'} font-semibold text-sm">
-              ${isGranted ? 'Granted' : 'Pending'}
-            </span>
-          </div>
-        </div>`;
-      adminWishes.appendChild(block);
-    });
+  if (!adminWishes || !adminDonations) {
+    console.error("Critical Error: Could not find 'adminWishes' or 'adminDonations' containers in the DOM.");
+    return;
   }
 
-  // Render Donations Management
-  if (adminDonations) {
-    adminDonations.innerHTML = donations.length ? '' : '<div class="text-white/80">No donations yet.</div>';
-    donations.forEach(d => {
-      const row = document.createElement('div');
-      row.className = 'rounded-2xl bg-white/10 p-5 space-y-3';
-      row.innerHTML = `
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <div class="font-semibold">${d.code}</div>
-            <div class="text-sm opacity-80">Wish: ${d.wish_nickname}</div>
-          </div>
-          <div>
-            <div class="text-sm opacity-80">Donor</div>
-            <div>${d.donor.displayName || '-'} <span class="opacity-70">(${d.donor.type})</span></div>
-          </div>
-          <div>
-            <span class="px-3 py-1 rounded-full ${d.status_phase === 2 ? 'bg-green-400 text-green-900' : d.status_phase === 1 ? 'bg-blue-300 text-blue-900' : 'bg-yellow-300 text-yellow-900'} font-semibold text-sm">
-              ${d.status_phase === 2 ? 'Granted' : d.status_phase === 1 ? 'Received' : 'Pledged'}
-            </span>
-          </div>
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="text-xs">Pledged</span>
-          <input data-slider="${d.code}" type="range" min="0" max="2" step="1" value="${d.status_phase ?? 0}" class="w-full accent-amber-300">
-          <span class="text-xs">Granted</span>
-          <button data-open-thread='${JSON.stringify(d)}' class="ml-3 px-3 py-2 rounded-lg bg-white/10 text-sm">Chat</button>
-        </div>
-      `;
-      adminDonations.appendChild(row);
-    });
+  try {
+    const [wishes, donations] = await Promise.all([loadWishes(), loadDonations()]);
+console.log('Black');
+    // --- Render Wishes Summary ---
+    adminWishes.innerHTML = '';
+    if (wishes && wishes.length > 0) {
+      wishes.forEach(w => {
+        console.log(w);
+        const isGranted = donations && donations.some(d => d.wish_id === w.id && d.status_phase === 2);
+        const block = document.createElement('div');
+        block.className = 'rounded-xl bg-white/10 p-4';
+        block.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-semibold">${w.nickname} <span class="text-xs opacity-70">(${w.category}, ${w.emotion || 'hope'})</span></div>
+              <div class="text-sm opacity-80">${w.wish}</div>
+            </div>
+            <div>
+              <span class="px-3 py-1 rounded-full ${isGranted ? 'bg-green-400 text-green-900' : 'bg-white/20'} font-semibold text-sm">
+                ${isGranted ? 'Granted' : 'Pending'}
+              </span>
+            </div>
+          </div>`;
+        adminWishes.appendChild(block);
+      });
+    } else {
+      adminWishes.innerHTML = `<div class="text-white/80 p-4">No wishes yet!</div>`;
+    }
 
-    // Event listeners after rendering
-    document.querySelectorAll('button[data-open-thread]').forEach(btn => {
+    // --- Render Donations Management (FIXED: Moved inside the try block) ---
+    adminDonations.innerHTML = '';
+    if (donations && donations.length > 0) {
+      donations.forEach(d => {
+        const row = document.createElement('div');
+        row.className = 'rounded-2xl bg-white/10 p-5 space-y-3';
+        row.innerHTML = `
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <div class="font-semibold">${d.code}</div>
+              <div class="text-sm opacity-80">Wish: ${d.wish_nickname}</div>
+            </div>
+            <div>
+              <div class="text-sm opacity-80">Donor</div>
+              <div>${d.donor.displayName || '-'} <span class="opacity-70">(${d.donor.type})</span></div>
+            </div>
+            <div>
+              <span class="px-3 py-1 rounded-full ${d.status_phase === 2 ? 'bg-green-400 text-green-900' : d.status_phase === 1 ? 'bg-blue-300 text-blue-900' : 'bg-yellow-300 text-yellow-900'} font-semibold text-sm">
+                ${d.status_phase === 2 ? 'Granted' : d.status_phase === 1 ? 'Received' : 'Pledged'}
+              </span>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-xs">Pledged</span>
+            <input data-slider="${d.code}" type="range" min="0" max="2" step="1" value="${d.status_phase ?? 0}" class="w-full accent-amber-300">
+            <span class="text-xs">Granted</span>
+            <button data-open-thread='${JSON.stringify(d)}' class="ml-3 px-3 py-2 rounded-lg bg-white/10 text-sm">Chat</button>
+          </div>
+        `;
+        adminDonations.appendChild(row);
+      });
+
+      // Event listeners for the newly created donation elements
+      document.querySelectorAll('button[data-open-thread]').forEach(btn => {
         btn.addEventListener('click', async () => {
-            const donationData = JSON.parse(btn.dataset.openThread);
-            const conversation = await findOrCreateConversationForDonation(donationData);
-            if(conversation) {
-                switchAdminTab('inbox');
-                setTimeout(() => openAdminThread(conversation.id, conversation.title), 80);
-            }
+          const donationData = JSON.parse(btn.dataset.openThread);
+          const conversation = await findOrCreateConversationForDonation(donationData);
+          if (conversation) {
+            switchAdminTab('inbox');
+            setTimeout(() => openAdminThread(conversation.id, conversation.title), 80);
+          }
         });
-    });
+      });
 
-    document.querySelectorAll('input[type="range"][data-slider]').forEach(r => {
+      document.querySelectorAll('input[type="range"][data-slider]').forEach(r => {
         r.addEventListener('input', async () => {
-            const code = r.dataset.slider;
-            const val = Number(r.value);
-            const originalDonation = donations.find(d => d.code === code);
-            if (!originalDonation) return;
+          const code = r.dataset.slider;
+          const val = Number(r.value);
+          const originalDonation = donations.find(d => d.code === code);
+          if (!originalDonation) return;
 
-            const updates = { status_phase: val };
-            if (val >= 1 && !originalDonation.received_at) updates.received_at = new Date().toISOString();
-            if (val >= 2 && !originalDonation.granted_at) {
-                updates.granted_at = new Date().toISOString();
-                // Also update the wish to be 'granted'
-                await updateWish(originalDonation.wish_id, { granted: true });
-            }
-
-            await updateDonation(code, updates);
-            renderAdmin(); // Re-render to show changes
+          const updates = { status_phase: val };
+          if (val >= 1 && !originalDonation.received_at) updates.received_at = new Date().toISOString();
+          if (val >= 2 && !originalDonation.granted_at) {
+            updates.granted_at = new Date().toISOString();
+            await updateWish(originalDonation.wish_id, { granted: true });
+          }
+          await updateDonation(code, updates);
+          renderAdmin();
         });
-    });
+      });
+
+    } else {
+      adminDonations.innerHTML = `<div class="text-white/80 p-4">No donations yet!</div>`;
+    }
+
+  } catch (error) {
+    console.error("An error occurred while rendering the admin panel:", error);
+    adminWishes.innerHTML = `<div class="text-red-300 p-4">Error loading wishes.</div>`;
+    adminDonations.innerHTML = `<div class="text-red-300 p-4">Error loading donations.</div>`;
   }
 }
-
 // Add Wish Form
 const addWishForm = document.getElementById('addWishForm');
 if (addWishForm) {
