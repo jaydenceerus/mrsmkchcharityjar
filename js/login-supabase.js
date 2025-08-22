@@ -31,6 +31,19 @@ const show = (id, text) => { const e = $(id); if(!e) return; e.classList.remove(
 const hide = id => { const e = $(id); if(!e) return; e.classList.add('hidden'); };
 const setLS = (k,v) => { try { localStorage.setItem(k, v); } catch(e){} };
 
+async function isUserAdmin(userId) {
+  if (!userId) return false;
+  const { data, error, count } = await supabase
+    .from('admins')
+    .select('user_id', { count: 'exact' })
+    .eq('user_id', userId);
+  if (error) {
+    console.error("Error checking admin status during login:", error);
+    return false;
+  }
+  return count > 0;
+}
+
 // Show pending banner if pending profile exists (small UX)
 document.addEventListener('DOMContentLoaded', () => {
   try {
@@ -147,6 +160,7 @@ const form = $('loginForm');
 if (!form) {
   console.error('loginForm not found. Make sure login-supabase.js is loaded after the form and the script tag uses type="module".');
 } else {
+  if (form) {
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
     hide('loginApiError'); hide('emailError'); hide('passwordError');
@@ -162,86 +176,43 @@ if (!form) {
     btn.textContent = 'Signing in...';
 
     try {
-      // sign in via Supabase v2 method
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {
         console.error('Sign in error', error);
-        const msg = (error?.message || '').toString();
-        if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('password')) {
-          show('loginApiError', 'Invalid email or password.');
-        } else if (msg.toLowerCase().includes('email')) {
-          show('loginApiError', msg);
-        } else {
-          show('loginApiError', 'Sign-in failed. Try again.');
-        }
+        show('loginApiError', 'Invalid email or password.');
         btn.disabled = false;
         btn.textContent = orig;
         return;
       }
 
-      // Success: data.session and data.user exist
       const user = data?.user ?? null;
       if (!user) {
-        // Rare: no user returned; redirect back
-        show('loginApiError', 'Sign-in succeeded but user info is missing. Try again.');
+        show('loginApiError', 'Sign-in failed. Please try again.');
         btn.disabled = false;
         btn.textContent = orig;
         return;
       }
 
-      // Try to apply any pending profile BEFORE we fetch the profile (so profile will exist)
-      try {
-        const pendingResult = await tryInsertPendingProfile(user);
-        if (pendingResult) {
-          if (pendingResult.ok) {
-            console.log('Pending profile applied automatically.');
-          } else {
-            // Optionally handle specific reasons - we don't block login on failures
-            if (pendingResult.reason === 'email_mismatch') {
-              console.warn('Pending profile email mismatch; pending profile left in localStorage.');
-            } else if (pendingResult.reason === 'unique') {
-              console.warn('Pending profile has unique constraint conflict. Admin action may be required.');
-            } else if (pendingResult.reason === 'rls') {
-              console.warn('Pending profile insertion blocked by RLS. Will retry on next sign-in or via onAuthStateChange.');
-            } else {
-              console.warn('Pending profile not applied:', pendingResult);
-            }
-          }
-        }
-      } catch (e) {
-        console.error('Error while attempting to insert pending profile after sign-in', e);
+      // --- UNIFIED ADMIN CHECK ---
+      // Instead of checking a hardcoded email list, we now check the database.
+      const isAdmin = await isUserAdmin(user.id);
+
+      // We no longer need to set the role in localStorage, as admin.js does its own check.
+      
+      // Redirect based on the database result
+      if (isAdmin) {
+        window.location.href = 'admin.html';
+      } else {
+        window.location.href = 'donor.html';
       }
 
-      // Try to fetch profile row by auth user id (may exist now if pending applied)
-      const profile = await fetchProfileById(user.id);
-
-      // Determine role:
-      // - If user email is in ADMIN_EMAILS => admin
-      // - Else fallback to affiliation in profile if available
-      // - Else 'user'
-      let role = 'user';
-      const lowEmail = (user.email || '').toLowerCase();
-      const adminSet = new Set(ADMIN_EMAILS.map(e => (e || '').toLowerCase()));
-      if (adminSet.has(lowEmail)) role = 'admin';
-      else if (profile?.affiliation) {
-        const aff = (profile.affiliation || '').toLowerCase();
-        if (aff.includes('admin') || aff.includes('staff')) role = 'admin';
-        else role = 'user';
-      }
-
-      // Save to localStorage (keeps compatibility with earlier code)
-      setLS(LS_ROLE, role);
-      setLS(LS_ACTIVE_USER, profile?.username || user.email || user.id);
-
-      // Redirect
-      if (role === 'admin') window.location.href = 'admin.html';
-      else window.location.href = 'donor.html';
     } catch (err) {
       console.error('Unexpected login error', err);
-      show('loginApiError', 'Unexpected error — try again later.');
+      show('loginApiError', 'An unexpected error occurred. Please try again.');
       btn.disabled = false;
       btn.textContent = orig;
     }
   });
+}
 }

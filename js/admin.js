@@ -1,3 +1,6 @@
+const LS_ACTIVE_USER = 'wishjar_active_user';
+let currentUser = null;
+
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 // ---------- CONFIG ----------
@@ -8,11 +11,20 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // LocalStorage keys are no longer needed for primary data
-const LS_ACTIVE_USER = 'wishjar_active_user';
-let currentUser = null;
 
+// --- DATABASE CONNECTION TEST ---
+// This code will run automatically as soon as admin.js is loaded
 
-// In wishjarv1/js/admin.js
+function generateRandomNickname() {
+  const adjectives = ["Star", "Brave", "Happy", "Gentle", "Wise", "Lucky", "Kind", "Shiny", "Mighty", "Calm"];
+  const animals = ["Panda", "Tiger", "Eagle", "Dolphin", "Fox", "Owl", "Lion", "Rabbit", "Whale", "Koala"];
+  
+  const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const animal = animals[Math.floor(Math.random() * animals.length)];
+  
+  return `${adj} ${animal}`;
+}
+
 
   async function isUserAdmin(userId) {
     if (!userId) {
@@ -47,31 +59,36 @@ let currentUser = null;
 
 
 // --- Auth Guard ---
-supabase.auth.onAuthStateChange(async (event, session) => {
-  const user = session?.user;
-
-  if (!user) {
-    console.log("Auth Guard: No user session found. Redirecting.");
-    window.location.href = 'index.html';
-    return;
-  }
-
-  console.log("Auth Guard: User found, checking admin status for user ID:", user.id);
-  const isAdmin = await isUserAdmin(user.id);
-  console.log("Auth Guard: Is user admin?", isAdmin); // This will tell you the result
-
-  if (!isAdmin) {
-    console.log("Auth Guard: Access denied. User is not an admin. Redirecting.");
-    alert('Admin access only. Redirecting to login.');
-    await supabase.auth.signOut(); 
-    window.location.href = 'index.html';
-  } else {
-    console.log("Auth Guard: Access granted. Proceeding to render admin panel.");
-    currentUser = user;
-    renderAdmin();
-    renderAdminInbox();
-  }
+document.addEventListener('DOMContentLoaded', () => {
+    initializeAdminPage();
 });
+
+async function initializeAdminPage() {
+    // 1. Explicitly fetch the current user to ensure the session is fully validated.
+    const { data: { user }, error } = await supabase.auth.getUser();
+
+    if (error || !user) {
+        console.log("Auth Guard: No verified user session found. Redirecting.");
+        window.location.href = 'index.html';
+        return;
+    }
+
+    // 2. Now that we have a verified user, check if they are an admin.
+    const isAdmin = await isUserAdmin(user.id);
+
+    if (!isAdmin) {
+        console.log("Auth Guard: Access denied. User is not an admin.");
+        alert('Admin access only. Redirecting to login.');
+        await supabase.auth.signOut();
+        window.location.href = 'index.html';
+    } else {
+        // 3. If they are an admin, store the user and set up the page.
+        console.log("Auth Guard: Access granted for", user.email);
+        currentUser = user;
+        renderAdmin(); // Initial data load
+        renderAdminInbox();
+    }
+}
 
 // Ensure logout works early
 const logoutBtnEl = document.getElementById('logoutBtn');
@@ -94,13 +111,44 @@ async function loadWishes() {
 }
 
 async function addWish(wishData) {
-    const { data, error } = await supabase.from('wishes').insert([wishData]).select();
-    if (error) {
-        console.error("Error adding wish:", error);
-        return null;
-    }
-    return data[0];
+  // 1. Get the highest numeric part of id (strip 'w' and cast to int)
+  const { data: existing, error: fetchError } = await supabase
+    .from('wishes')
+    .select('id')
+    .order('id', { ascending: false }) // fallback
+    .limit(1000); // fetch enough to manually parse
+
+  if (fetchError) {
+    console.error("Error fetching last wish:", fetchError);
+    return null;
+  }
+
+  let newId = "w1"; // default if no wishes exist
+  if (existing && existing.length > 0) {
+    // Extract numbers from all IDs
+    const nums = existing
+      .map(w => parseInt(w.id.replace("w", ""), 10))
+      .filter(n => !isNaN(n));
+
+    const maxNum = Math.max(...nums, 0);
+    newId = "w" + (maxNum + 1);
+  }
+
+  // 2. Insert wish with new ID
+  const { data, error } = await supabase
+    .from('wishes')
+    .insert([{ ...wishData, id: newId }])
+    .select();
+
+  if (error) {
+    console.error("Error adding wish:", error);
+    return null;
+  }
+
+  return data[0];
 }
+
+
 
 async function updateWish(wishId, updates) {
     const { data, error } = await supabase.from('wishes').update(updates).eq('id', wishId);
@@ -109,7 +157,7 @@ async function updateWish(wishId, updates) {
 }
 
 async function loadDonations() {
-  const { data, error } = await supabase.from('donations').select('*').order('created_at', { ascending: false });
+  const { data, error } = await supabase.from('donations').select('*').order('pledged_at', { ascending: false });
   if (error) { console.error("Error loading donations:", error); return []; }
   return data;
 }
@@ -121,10 +169,25 @@ async function updateDonation(code, updates) {
 }
 
 async function loadConversations() {
-    const { data, error } = await supabase.from('conversations').select('*, profiles:donor_id ( username, full_name )').order('created_at', { ascending: false });
-    if (error) { console.error("Error loading conversations:", error); return []; }
-    return data;
+  const { data, error } = await supabase
+    .from('conversations')
+    .select(`
+      id,
+      title,
+      created_at,
+      donor_id,
+      donations!fk_conversations_donor ( donor )
+    `)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error("Error loading conversations:", error);
+    return [];
+  }
+
+  return data;
 }
+
 
 async function loadMessages(conversationId) {
     const { data, error } = await supabase.from('messages').select('*').eq('conversation_id', conversationId).order('created_at');
@@ -217,12 +280,12 @@ async function renderAdmin() {
 
   try {
     const [wishes, donations] = await Promise.all([loadWishes(), loadDonations()]);
-console.log('Black');
+    console.log('Black');
+
     // --- Render Wishes Summary ---
     adminWishes.innerHTML = '';
     if (wishes && wishes.length > 0) {
       wishes.forEach(w => {
-        console.log(w);
         const isGranted = donations && donations.some(d => d.wish_id === w.id && d.status_phase === 2);
         const block = document.createElement('div');
         block.className = 'rounded-xl bg-white/10 p-4';
@@ -244,85 +307,149 @@ console.log('Black');
       adminWishes.innerHTML = `<div class="text-white/80 p-4">No wishes yet!</div>`;
     }
 
-    // --- Render Donations Management (FIXED: Moved inside the try block) ---
+    // --- Render Donations Management ---
     adminDonations.innerHTML = '';
     if (donations && donations.length > 0) {
       donations.forEach(d => {
         const row = document.createElement('div');
         row.className = 'rounded-2xl bg-white/10 p-5 space-y-3';
         row.innerHTML = `
-          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div>
-              <div class="font-semibold">${d.code}</div>
-              <div class="text-sm opacity-80">Wish: ${d.wish_nickname}</div>
-            </div>
-            <div>
-              <div class="text-sm opacity-80">Donor</div>
-              <div>${d.donor.displayName || '-'} <span class="opacity-70">(${d.donor.type})</span></div>
-            </div>
-            <div>
-              <span class="px-3 py-1 rounded-full ${d.status_phase === 2 ? 'bg-green-400 text-green-900' : d.status_phase === 1 ? 'bg-blue-300 text-blue-900' : 'bg-yellow-300 text-yellow-900'} font-semibold text-sm">
-                ${d.status_phase === 2 ? 'Granted' : d.status_phase === 1 ? 'Received' : 'Pledged'}
-              </span>
-            </div>
-          </div>
-          <div class="flex items-center gap-3">
-            <span class="text-xs">Pledged</span>
-            <input data-slider="${d.code}" type="range" min="0" max="2" step="1" value="${d.status_phase ?? 0}" class="w-full accent-amber-300">
-            <span class="text-xs">Granted</span>
-            <button data-open-thread='${JSON.stringify(d)}' class="ml-3 px-3 py-2 rounded-lg bg-white/10 text-sm">Chat</button>
-          </div>
-        `;
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+    <div>
+      <div class="font-semibold">${d.code}</div>
+      <div class="text-sm opacity-80">Wish: ${d.wish_nickname}</div>
+    </div>
+    <div>
+      <div class="text-sm opacity-80">Donor</div>
+      <div>${d.donor.displayName || '-'} <span class="opacity-70">(${d.donor.type})</span></div>
+    </div>
+    <div>
+      <span class="px-3 py-1 rounded-full ${d.status_phase === 2 ? 'bg-green-400 text-green-900' : d.status_phase === 1 ? 'bg-blue-300 text-blue-900' : 'bg-yellow-300 text-yellow-900'} font-semibold text-sm">
+        ${d.status_phase === 2 ? 'Granted' : d.status_phase === 1 ? 'Received' : 'Pledged'}
+      </span>
+    </div>
+  </div>
+  <div class="flex items-center gap-3">
+    <span class="text-xs">Pledged</span>
+    <input data-slider="${d.code}" type="range" min="0" max="2" step="1" value="${d.status_phase ?? 0}" class="w-full accent-amber-300">
+    <span class="text-xs">Granted</span>
+    <button data-open-thread='${d.code}' class="ml-3 px-3 py-2 rounded-lg bg-white/10 text-sm">Chat</button>
+    <button data-delete-donation='${d.code}' class="ml-2 px-3 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm">🗑️ Delete</button>
+  </div>
+`;
         adminDonations.appendChild(row);
       });
 
-      // Event listeners for the newly created donation elements
-      document.querySelectorAll('button[data-open-thread]').forEach(btn => {
+      // --- Chat Button Logic ---
+      document.querySelectorAll('[data-open-thread]').forEach(btn => {
         btn.addEventListener('click', async () => {
-          const donationData = JSON.parse(btn.dataset.openThread);
-          const conversation = await findOrCreateConversationForDonation(donationData);
-          if (conversation) {
-            switchAdminTab('inbox');
-            setTimeout(() => openAdminThread(conversation.id, conversation.title), 80);
+          const donationCode = btn.getAttribute('data-open-thread');
+
+          // 1. Check if conversation already exists
+          const { data: existingConversation, error } = await supabase
+            .from('conversations')
+            .select('*')
+            .eq('donation_code', donationCode)
+            .maybeSingle();
+
+          if (error) {
+            console.error("Error checking conversation:", error);
+            return;
           }
+
+          let conversation;
+          if (existingConversation) {
+            conversation = existingConversation;
+            console.log("Opening existing conversation:", conversation);
+          } else {
+            const { data: newConversation, error: insertErr } = await supabase
+              .from('conversations')
+              .insert([{ donation_code: donationCode }])
+              .select()
+              .single();
+
+            if (insertErr) {
+              console.error("Error creating conversation:", insertErr);
+              return;
+            }
+            conversation = newConversation;
+            console.log("Created new conversation:", conversation);
+          }
+
+          openThreadUI(conversation); // existing function
         });
       });
 
-      document.querySelectorAll('input[type="range"][data-slider]').forEach(r => {
-        r.addEventListener('input', async () => {
-          const code = r.dataset.slider;
-          const val = Number(r.value);
-          const originalDonation = donations.find(d => d.code === code);
-          if (!originalDonation) return;
+      // --- Delete Button Logic ---
+document.querySelectorAll('[data-delete-donation]').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const donationCode = btn.getAttribute('data-delete-donation');
+    if (!confirm(`Are you sure you want to delete donation ${donationCode}?`)) return;
+    console.log(donationCode);
+    const { error: delErr } = await supabase
+      .from('donations')
+      .delete()
+      .eq('code', donationCode);
 
-          const updates = { status_phase: val };
-          if (val >= 1 && !originalDonation.received_at) updates.received_at = new Date().toISOString();
-          if (val >= 2 && !originalDonation.granted_at) {
-            updates.granted_at = new Date().toISOString();
-            await updateWish(originalDonation.wish_id, { granted: true });
-          }
-          await updateDonation(code, updates);
-          renderAdmin();
-        });
-      });
-
+    if (delErr) {
+      console.error("Error deleting donation:", delErr);
+      alert("Failed to delete donation.");
     } else {
-      adminDonations.innerHTML = `<div class="text-white/80 p-4">No donations yet!</div>`;
+      // remove from UI
+      btn.closest('.rounded-2xl').remove();
     }
+  });
+});
 
+// --- Slider Logic ---
+document.querySelectorAll('[data-slider]').forEach(slider => {
+  slider.addEventListener('input', async () => {
+    const donationCode = slider.getAttribute('data-slider');
+    const newPhase = parseInt(slider.value, 10);
+
+    const { error: updateErr } = await supabase
+      .from('donations')
+      .update({ status_phase: newPhase })
+      .eq('code', donationCode);
+
+    if (updateErr) {
+      console.error("Error updating status:", updateErr);
+      alert("Failed to update donation status.");
+    } else {
+      // Update the status badge UI
+      const badge = slider.closest('.rounded-2xl')
+        .querySelector('span.px-3'); // status badge span
+      if (badge) {
+        badge.textContent =
+          newPhase === 2 ? 'Granted' :
+          newPhase === 1 ? 'Received' : 'Pledged';
+        badge.className =
+          `px-3 py-1 rounded-full font-semibold text-sm ${
+            newPhase === 2 ? 'bg-green-400 text-green-900' :
+            newPhase === 1 ? 'bg-blue-300 text-blue-900' :
+            'bg-yellow-300 text-yellow-900'
+          }`;
+      }
+    }
+  });
+});
+
+
+    }
   } catch (error) {
     console.error("An error occurred while rendering the admin panel:", error);
     adminWishes.innerHTML = `<div class="text-red-300 p-4">Error loading wishes.</div>`;
     adminDonations.innerHTML = `<div class="text-red-300 p-4">Error loading donations.</div>`;
   }
 }
+
 // Add Wish Form
 const addWishForm = document.getElementById('addWishForm');
 if (addWishForm) {
   addWishForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = new FormData(addWishForm);
-    const nickname = formData.get('nickname').trim() || `Student${Math.floor(100 + Math.random() * 900)}`;
+    const nickname = formData.get('nickname').trim() || generateRandomNickname();
 
     const newWish = {
       nickname,
@@ -409,24 +536,68 @@ if (resetBtn) resetBtn.addEventListener('click', async () => {
 // ----------------------
 // Admin Inbox functions
 // ----------------------
+// ----------------------
+// Admin Inbox functions
+// ----------------------
 async function renderAdminInbox() {
   const threads = await loadConversations();
   const listEl = document.getElementById('adminThreadList');
   const badge = document.getElementById('adminInboxBadge');
   if (!listEl) return;
-  
+
   listEl.innerHTML = threads.length ? '' : `<div class="p-4 text-white/80">No conversations yet.</div>`;
+
   threads.forEach(t => {
+    const donorName = t.donations?.donor?.displayName || 'Anonymous Donor';
     const el = document.createElement('div');
-    el.className = 'px-4 py-3 hover:bg-white/5 cursor-pointer';
-    el.innerHTML = `<div class="font-semibold">${t.title}</div><div class="text-xs opacity-80">${new Date(t.created_at).toLocaleString()}</div>`;
-    el.addEventListener('click', () => openAdminThread(t.id, t.title));
+    el.className = 'px-4 py-3 hover:bg-white/5 flex justify-between items-center';
+
+    el.innerHTML = `
+      <div class="cursor-pointer">
+        <div class="font-semibold">${t.title}</div>
+        <div class="text-xs opacity-80">Donor: ${donorName}</div>
+        <div class="text-xs opacity-60">${new Date(t.created_at).toLocaleString()}</div>
+      </div>
+      <button class="delete-convo px-2 py-1 rounded-md bg-red-600/80 hover:bg-red-700 text-white text-xs" data-id="${t.id}">
+        🗑️
+      </button>
+    `;
+
+    // click anywhere except the trash button opens the thread
+    el.querySelector('div.cursor-pointer').addEventListener('click', () => openAdminThread(t.id, t.title));
+
     listEl.appendChild(el);
   });
-  
+
+  // attach delete handlers
+  document.querySelectorAll('.delete-convo').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const convoId = btn.getAttribute('data-id');
+      if (!confirm("Are you sure you want to delete this conversation?")) return;
+
+      const { error } = await supabase
+        .from('conversations')
+        .delete()
+        .eq('id', convoId);
+
+      if (error) {
+        console.error("Failed to delete conversation:", error);
+        alert("Could not delete conversation.");
+      } else {
+        // remove from DOM immediately
+        btn.closest('div').remove();
+        if (badge) badge.textContent = `${listEl.children.length} thread(s)`;
+        clearAdminChatView();
+      }
+    });
+  });
+
   if (badge) badge.textContent = `${threads.length} thread(s)`;
   clearAdminChatView();
 }
+
+
 
 async function openAdminThread(conversationId, title) {
   switchAdminTab('inbox');

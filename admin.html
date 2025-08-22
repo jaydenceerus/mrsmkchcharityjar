@@ -147,32 +147,34 @@
 
     <!-- INBOX -->
     <section id="admin-inbox" class="adminPage hidden">
-      <div class="flex items-center justify-between">
-        <h2 class="text-2xl font-bold">Inbox</h2>
-        <div id="adminInboxBadge" class="text-sm bg-white/20 px-3 py-1 rounded-full">All threads</div>
-      </div>
-
-      <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Thread list -->
-        <div class="lg:col-span-1 rounded-2xl bg-white/10 border border-white/10 overflow-hidden">
-          <div class="px-4 py-3 border-b border-white/10 font-semibold">Conversations</div>
-          <div id="adminThreadList" class="max-h-[60vh] overflow-y-auto divide-y divide-white/10"></div>
+      <div class="max-w-6xl mx-auto px-6 py-10">
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-bold">Inbox</h2>
+          <div id="adminInboxBadge" class="text-sm bg-white/20 px-3 py-1 rounded-full">All threads</div>
         </div>
 
-        <!-- Chat view -->
-        <div class="lg:col-span-2 rounded-2xl bg-white/10 border border-white/10 flex flex-col min-h-[50vh]">
-          <div id="adminChatHeader" class="px-5 py-3 border-b border-white/10 flex items-center justify-between">
-            <div class="font-semibold">Select a conversation</div>
-            <div id="adminChatMeta" class="text-xs opacity-80"></div>
+        <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Thread list -->
+          <div class="lg:col-span-1 rounded-2xl bg-white/10 border border-white/10 overflow-hidden">
+            <div class="px-4 py-3 border-b border-white/10 font-semibold">Conversations</div>
+            <div id="adminThreadList" class="max-h-[60vh] overflow-y-auto divide-y divide-white/10"></div>
           </div>
 
-          <div id="adminChatMessages" class="flex-1 overflow-y-auto p-5 space-y-3"></div>
+          <!-- Chat view -->
+          <div class="lg:col-span-2 rounded-2xl bg-white/10 border border-white/10 flex flex-col min-h-[50vh]">
+            <div id="adminChatHeader" class="px-5 py-3 border-b border-white/10 flex items-center justify-between">
+              <div class="font-semibold">Select a conversation</div>
+              <div id="adminChatMeta" class="text-xs opacity-80"></div>
+            </div>
 
-          <div class="p-4 border-t border-white/10">
-            <form id="adminChatForm" class="flex items-center gap-3">
-              <input id="adminChatInput" class="flex-1 px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400" placeholder="Write a message to the donor..." />
-              <button id="chatSendBtn" type="submit" class="px-4 py-3 rounded-xl bg-white text-indigo-700 font-semibold hover:bg-white/90">Send</button>
-            </form>
+            <div id="adminChatMessages" class="flex-1 overflow-y-auto p-5 space-y-3"></div>
+
+            <div class="p-4 border-t border-white/10">
+              <form id="adminChatForm" class="flex items-center gap-3">
+                <input id="adminChatInput" class="flex-1 px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400" placeholder="Write a message to the donor..." />
+                <button id="chatSendBtn" type="submit" class="px-4 py-3 rounded-xl bg-white text-indigo-700 font-semibold hover:bg-white/90">Send</button>
+              </form>
+            </div>
           </div>
         </div>
       </div>

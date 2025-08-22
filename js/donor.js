@@ -19,18 +19,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 
 // Demo defaults (copied from original full.html)
-const defaultWishes = [
-  { id:'w1', nickname:'Star Panda',    situation:'Lives with single parent.', wish:'Black school shoes (size 38)', category:'shoes', emotion:'hope', granted:false, batch:'2025-08' },
-  { id:'w2', nickname:'Blue Sparrow',  situation:'Shares study space with siblings.', wish:'Desk lamp + A4 books', category:'stationery', emotion:'determination', granted:false, batch:'2025-08' },
-  { id:'w3', nickname:'Kind Tiger',    situation:'Long commute; limited lunch.', wish:'Meal allowance (RM60)', category:'meals', emotion:'sadness', granted:false, batch:'2025-08' },
-  { id:'w4', nickname:'Bright Mango',  situation:'Exam prep; needs calculator.', wish:'Scientific calculator', category:'stationery', emotion:'determination', granted:false, batch:'2025-08' },
-  { id:'w5', nickname:'Quiet Horizon', situation:'Shoes torn; uniform fading.', wish:'School uniform (size M)', category:'other', emotion:'embarrassment', granted:false, batch:'2025-08' },
-  { id:'w6', nickname:'Silver Fern',   situation:'Limited data at home.', wish:'Data top-up (RM30)', category:'data', emotion:'anxiety', granted:false, batch:'2025-09' },
-  { id:'w7', nickname:'Sunny Lychee',  situation:'Old bicycle to school.', wish:'Bicycle repair', category:'transport', emotion:'determination', granted:false, batch:'2025-09' },
-  { id:'w8', nickname:'Jade River',    situation:'Spotty internet access.', wish:'Data top-up (RM30)', category:'data', emotion:'anxiety', granted:false, batch:'2025-09' },
-  { id:'w9', nickname:'Coral Leaf',    situation:'Late-night studying.', wish:'Clip-on reading lamp', category:'stationery', emotion:'hope', granted:false, batch:'2025-09' },
-  { id:'w10', nickname:'Ruby Dawn',    situation:'Flat tire risk.', wish:'Bike tube + mini pump', category:'transport', emotion:'anxiety', granted:false, batch:'2025-09' }
-];
 const EMOTION_COLORS = { hope:'#60A5FA', determination:'#34D399', sadness:'#A78BFA', embarrassment:'#F472B6', anxiety:'#FCA5A5' };
 const CATEGORY_ICON = { shoes:'👟', stationery:'✏️', meals:'🧃', data:'📶', transport:'🚲', other:'🎒' };
 
@@ -446,6 +434,7 @@ donorForm.addEventListener('submit', async (e) =>{
   .from("conversations")
   .insert([{
     donor_id: user.id,        // ✅ link conversation to donor
+    donation_code: code, 
     title: `Pledge for ${target.nickname} (${code})`,
     created_at: now
   }])
@@ -494,11 +483,11 @@ console.log("All donation codes:", donations.map(d => d.code));
   const wishes = await loadWishes();  // ⬅️ also async
   const w = wishes.find(x => x.id === d.wish_id);
   console.log(d.code);
-  const phase = d.statusPhase ?? 0;
+  const phase = d.status_phase ?? 0;
   const steps = [
-    { label: 'Pledge given', date: d.pledgedAt, done: phase >= 0, icon: '📝' },
-    { label: 'Donation received', date: d.receivedAt, done: phase >= 1, icon: '📦' },
-    { label: 'Wish granted', date: d.grantedAt, done: phase >= 2, icon: '✨' },
+    { label: 'Pledge given', date: d.pledged_at, done: phase >= 0, icon: '📝' },
+    { label: 'Donation received', date: d.received_at, done: phase >= 1, icon: '📦' },
+    { label: 'Wish granted', date: d.granted_at, done: phase >= 2, icon: '✨' },
   ];
   const items = steps.map((s,i) => `
     <div class="flex items-start gap-3">
