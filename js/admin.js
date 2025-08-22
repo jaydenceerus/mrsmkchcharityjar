@@ -310,7 +310,7 @@ async function renderAdmin() {
     // --- Render Donations Management ---
     adminDonations.innerHTML = '';
     if (donations && donations.length > 0) {
-      donations.forEach(d => {
+      donations.forEach(async d => {
         const row = document.createElement('div');
         row.className = 'rounded-2xl bg-white/10 p-5 space-y-3';
         row.innerHTML = `
@@ -337,6 +337,26 @@ async function renderAdmin() {
     <button data-delete-donation='${d.code}' class="ml-2 px-3 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm">🗑️ Delete</button>
   </div>
 `;
+
+  const thanks = await loadThanks(d.code);
+  if (thanks.length > 0) {
+    const thanksDiv = document.createElement("div");
+    thanksDiv.className = "mt-3 p-3 rounded-xl bg-green-100/10";
+    thanksDiv.innerHTML = `
+      <div class="font-semibold mb-1">Student Thank-you</div>
+      ${thanks
+        .map(
+          t => `
+          <div class="text-sm mb-2">
+            💌 ${t.message}
+            ${t.image_url ? `<img src="${t.image_url}" class="mt-1 rounded-lg max-h-40" />` : ""}
+          </div>`
+        )
+        .join("")}
+    `;
+    row.appendChild(thanksDiv);
+  }
+
         adminDonations.appendChild(row);
       });
 
@@ -442,6 +462,77 @@ document.querySelectorAll('[data-slider]').forEach(slider => {
     adminDonations.innerHTML = `<div class="text-red-300 p-4">Error loading donations.</div>`;
   }
 }
+
+// Thank You Form
+const thankyouForm = document.getElementById("thankyouForm");
+if (thankyouForm) {
+  thankyouForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const donationCode = document.getElementById("tyCode").value.trim();
+    const message = document.getElementById("tyNote").value.trim();
+    const imageFile = document.getElementById("tyImage").files[0];
+
+    if (!donationCode || !message) {
+      alert("Please enter a donation code and message.");
+      return;
+    }
+
+    let imageUrl = null;
+    if (imageFile) {
+      // Upload image to Supabase Storage (bucket: "thanks")
+      const filePath = `thanks/${donationCode}-${Date.now()}-${imageFile.name}`;
+      const { error: uploadErr } = await supabase.storage
+        .from("thanks")
+        .upload(filePath, imageFile);
+
+      if (uploadErr) {
+        console.error("Image upload error:", uploadErr);
+        alert("Failed to upload image.");
+        return;
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from("thanks")
+        .getPublicUrl(filePath);
+
+      imageUrl = publicUrlData.publicUrl;
+    }
+
+    // Insert thank-you into DB
+    const { data, error } = await supabase
+      .from("thanks")
+      .insert([{ donation_code: donationCode, message, image_url: imageUrl }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error saving thank-you:", error);
+      alert("Failed to save thank-you note.");
+      return;
+    }
+
+    alert("Thank-you saved!");
+    thankyouForm.reset();
+  });
+}
+
+async function loadThanks(donationCode) {
+  const { data, error } = await supabase
+    .from("thanks")
+    .select("*")
+    .eq("donation_code", donationCode)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("Error loading thanks:", error);
+    return [];
+  }
+  return data;
+}
+
+
+
 
 // Add Wish Form
 const addWishForm = document.getElementById('addWishForm');

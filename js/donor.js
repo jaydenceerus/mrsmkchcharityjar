@@ -499,13 +499,15 @@ console.log("All donation codes:", donations.map(d => d.code));
     </div>
   `).join('<div class="ml-3 h-6 border-l border-white/20"></div>');
 
-  const ty = loadThanks()[d.code];
+  const thanksMap = await loadThanks();
+  const ty = thanksMap[d.code];
+
   const tyBlock = ty ? `
     <div class="rounded-2xl bg-white/10 border border-white/10 p-5">
       <div class="text-sm opacity-80 mb-1">A note from the student</div>
-      <div>${ty.note ? ty.note.replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''}</div>
-      ${ty.image ? `<img src="${ty.image}" alt="Thank-you image" class="mt-3 rounded-xl max-h-64 object-cover" />` : ''}
-      <div class="text-xs opacity-70 mt-2">Sent ${new Date(ty.time).toLocaleString()}</div>
+      <div>${ty.message ? ty.message.replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''}</div>
+      ${ty.image_url ? `<img src="${ty.image_url}" alt="Thank-you image" class="mt-3 rounded-xl max-h-64 object-cover" />` : ''}
+      <div class="text-xs opacity-70 mt-2">Sent ${new Date(ty.created_at).toLocaleString()}</div>
     </div>
   ` : '';
 
