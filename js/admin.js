@@ -205,6 +205,72 @@ async function sendMessage(conversationId, text) {
     return data;
 }
 
+// --- Donor Directory Loader ---
+async function loadDonorDirectory() {
+  console.log("attempt to log");
+  const { data: donations, error } = await supabase
+    .from('donations')
+    .select(`
+      donor_id,
+      donor,
+      wish_nickname,
+      timestamp
+    `)
+    .order('timestamp', { ascending: true });
+
+  if (error) {
+    console.error("Error loading donor directory:", error);
+    return;
+  }
+
+  // Group by donor_id
+  const grouped = {};
+  donations.forEach(d => {
+    if (!d.donor_id) return;
+    if (!grouped[d.donor_id]) {
+      grouped[d.donor_id] = {
+        donor: d.donor,
+        wishes: []
+      };
+    }
+    if (d.wish_nickname) grouped[d.donor_id].wishes.push(d.wish_nickname);
+  });
+
+  const donorList = document.getElementById("donorList");
+  donorList.innerHTML = "";
+
+  Object.values(grouped).forEach(d => {
+    const info = d.donor || {};
+    const wishes = d.wishes.length ? d.wishes.join(", ") : "No wishes yet";
+
+    const card = document.createElement("div");
+    card.className =
+      "p-4 bg-white/10 rounded-xl border border-white/10";
+
+    card.innerHTML = `
+      <div class="font-semibold text-lg">${info.displayName || info.fullName || info.nickname || "Anonymous"}</div>
+      <div class="text-sm text-white/80">${info.email || "No email"}</div>
+      <div class="text-sm text-white/80">${info.phone || "No phone"}</div>
+      <div class="mt-2 text-sm"><span class="font-medium">Type:</span> ${info.type || "N/A"}</div>
+      ${info.amount ? `<div class="text-sm"><span class="font-medium">Amount:</span> ${info.amount}</div>` : ""}
+      ${info.message ? `<div class="text-sm italic text-white/70">"${info.message}"</div>` : ""}
+      ${info.timeline ? `<div class="text-sm"><span class="font-medium">Timeline:</span> ${info.timeline}</div>` : ""}
+      <div class="mt-2 text-sm">
+        <span class="font-medium">Wishes granted:</span> ${wishes}
+      </div>
+    `;
+
+    donorList.appendChild(card);
+  });
+}
+
+document.getElementById("donorSearch").addEventListener("input", e => {
+  const term = e.target.value.toLowerCase();
+  document.querySelectorAll("#donorList > div").forEach(card => {
+    card.style.display = card.textContent.toLowerCase().includes(term) ? "" : "none";
+  });
+});
+
 async function findOrCreateConversationForDonation(donation) {
     // Check if a conversation already exists for this donation code
     let { data: existing, error: findError } = await supabase
@@ -262,6 +328,10 @@ function switchAdminTab(tab) {
   });
   if (tab === 'inbox') renderAdminInbox();
   if (tab === 'manage') renderManageWishes();
+  if (tab === "donors") {
+    document.getElementById("admin-donors").classList.remove("hidden");
+    loadDonorDirectory();
+  }
 }
 adminTabs.forEach(b => b.addEventListener('click', () => switchAdminTab(b.dataset.tab)));
 
@@ -310,7 +380,7 @@ async function renderAdmin() {
     // --- Render Donations Management ---
     adminDonations.innerHTML = '';
     if (donations && donations.length > 0) {
-      donations.forEach(async d => {
+      for (const d of donations) {
         const row = document.createElement('div');
         row.className = 'rounded-2xl bg-white/10 p-5 space-y-3';
         row.innerHTML = `
@@ -358,47 +428,49 @@ async function renderAdmin() {
   }
 
         adminDonations.appendChild(row);
-      });
+      };
 
       // --- Chat Button Logic ---
       document.querySelectorAll('[data-open-thread]').forEach(btn => {
         btn.addEventListener('click', async () => {
-          const donationCode = btn.getAttribute('data-open-thread');
+        const donationCode = btn.getAttribute('data-open-thread');
 
-          // 1. Check if conversation already exists
-          const { data: existingConversation, error } = await supabase
-            .from('conversations')
-            .select('*')
-            .eq('donation_code', donationCode)
-            .maybeSingle();
+    // 1. Check if conversation already exists
+    const { data: existingConversation, error } = await supabase
+      .from('conversations')
+      .select('*')
+      .eq('donation_code', donationCode)
+      .maybeSingle();
 
-          if (error) {
-            console.error("Error checking conversation:", error);
-            return;
-          }
+    if (error) {
+      console.error("Error checking conversation:", error);
+      return;
+    }
 
-          let conversation;
-          if (existingConversation) {
-            conversation = existingConversation;
-            console.log("Opening existing conversation:", conversation);
-          } else {
-            const { data: newConversation, error: insertErr } = await supabase
-              .from('conversations')
-              .insert([{ donation_code: donationCode }])
-              .select()
-              .single();
+    let conversation;
+    if (existingConversation) {
+      conversation = existingConversation;
+      console.log("Opening existing conversation:", conversation);
+    } else {
+      const { data: newConversation, error: insertErr } = await supabase
+        .from('conversations')
+        .insert([{ donation_code: donationCode, title: `Donation ${donationCode}` }])
+        .select()
+        .single();
 
-            if (insertErr) {
-              console.error("Error creating conversation:", insertErr);
-              return;
-            }
-            conversation = newConversation;
-            console.log("Created new conversation:", conversation);
-          }
+      if (insertErr) {
+        console.error("Error creating conversation:", insertErr);
+        return;
+      }
+      conversation = newConversation;
+      console.log("Created new conversation:", conversation);
+    }
 
-          openThreadUI(conversation); // existing function
-        });
-      });
+    // ✅ Switch to inbox and open the conversation
+    switchAdminTab('inbox');
+    openAdminThread(conversation.id, conversation.title || `Donation ${donationCode}`);
+  });
+});
 
       // --- Delete Button Logic ---
 document.querySelectorAll('[data-delete-donation]').forEach(btn => {
@@ -427,6 +499,7 @@ document.querySelectorAll('[data-slider]').forEach(slider => {
     const donationCode = slider.getAttribute('data-slider');
     const newPhase = parseInt(slider.value, 10);
 
+    console.log("changing");
     const { error: updateErr } = await supabase
       .from('donations')
       .update({ status_phase: newPhase })
@@ -624,9 +697,6 @@ if (resetBtn) resetBtn.addEventListener('click', async () => {
 });
 
 
-// ----------------------
-// Admin Inbox functions
-// ----------------------
 // ----------------------
 // Admin Inbox functions
 // ----------------------

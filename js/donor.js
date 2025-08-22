@@ -539,6 +539,8 @@ console.log("All donation codes:", donations.map(d => d.code));
   refreshBallHighlights();
 });
 
+
+
 // Inbox rendering + thread open
 async function renderInbox() {
   const { data: convos, error } = await supabase
