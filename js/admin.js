@@ -797,55 +797,83 @@ if (resetBtn) resetBtn.addEventListener('click', async () => {
 // Admin Inbox functions
 // ----------------------
 async function renderAdminInbox() {
-  const threads = await loadConversations();
+  const { data: threads, error } = await supabase
+    .from('conversations')
+    .select(`
+      id,
+      title,
+      created_at,
+      donor_id,
+      donations(donor)
+    `)
+    .order('created_at', { ascending: false });
+
   const listEl = document.getElementById('adminThreadList');
   const badge = document.getElementById('adminInboxBadge');
+
   if (!listEl) return;
+  if (error) {
+    console.error("Error loading conversations:", error);
+    listEl.innerHTML = `<div class="p-4 text-red-400">Failed to load inbox.</div>`;
+    return;
+  }
 
   listEl.innerHTML = threads.length ? '' : `<div class="p-4 text-white/80">No conversations yet.</div>`;
 
-  threads.forEach(t => {
-    const donorName = t.donations?.donor?.displayName || 'Anonymous Donor';
+  for (const t of threads) {
+    const donorName = t.donations?.[0]?.donor?.displayName || 'Anonymous Donor';
+
+    // --- Fetch last message preview ---
+    const { data: lastMsg } = await supabase
+      .from('messages')
+      .select('body, created_at, sender_name')
+      .eq('conversation_id', t.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const previewText = lastMsg ? lastMsg.body.slice(0, 40) : "No messages yet";
+    const previewSender = lastMsg ? (lastMsg.sender_name || "Donor") : "";
+
     const el = document.createElement('div');
     el.className = 'px-4 py-3 hover:bg-white/5 flex justify-between items-center';
 
     el.innerHTML = `
-      <div class="cursor-pointer">
+      <div class="cursor-pointer w-full">
         <div class="font-semibold">${t.title}</div>
         <div class="text-xs opacity-80">Donor: ${donorName}</div>
-        <div class="text-xs opacity-60">${new Date(t.created_at).toLocaleString()}</div>
+        <div class="text-xs opacity-70">
+          ${previewSender ? previewSender + ": " : ""}${previewText}
+        </div>
+        <div class="text-xs opacity-50">${new Date(t.created_at).toLocaleString()}</div>
       </div>
       <button class="delete-convo px-2 py-1 rounded-md bg-red-600/80 hover:bg-red-700 text-white text-xs" data-id="${t.id}">
         🗑️
       </button>
     `;
 
-    // click anywhere except the trash button opens the thread
-    el.querySelector('div.cursor-pointer').addEventListener('click', () => openAdminThread(t.id, t.title));
+    // --- open conversation ---
+    el.querySelector('div.cursor-pointer').addEventListener('click', () =>
+      openAdminThread(t.id, t.title)
+    );
 
     listEl.appendChild(el);
-  });
+  }
 
-  // attach delete handlers
+  // --- delete handlers ---
   document.querySelectorAll('.delete-convo').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const convoId = btn.getAttribute('data-id');
       if (!confirm("Are you sure you want to delete this conversation?")) return;
 
-      const { error } = await supabase
-        .from('conversations')
-        .delete()
-        .eq('id', convoId);
-
+      const { error } = await supabase.from('conversations').delete().eq('id', convoId);
       if (error) {
         console.error("Failed to delete conversation:", error);
         alert("Could not delete conversation.");
       } else {
-        // remove from DOM immediately
         btn.closest('div').remove();
-        if (badge) badge.textContent = `${listEl.children.length} thread(s)`;
-        clearAdminChatView();
+        renderAdminInbox(); // re-render after deletion
       }
     });
   });
@@ -904,6 +932,27 @@ function clearAdminChatView() {
   const chatForm = document.getElementById('adminChatForm');
   if (chatForm) chatForm.onsubmit = (e) => e.preventDefault();
 }
+
+function subscribeToConversations() {
+  supabase
+    .channel('conversations-realtime')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversations' }, 
+      (payload) => {
+        console.log("New conversation detected:", payload.new);
+        renderAdminInbox(); // refresh inbox when new thread arrives
+      }
+    )
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'conversations' }, 
+      (payload) => {
+        console.log("Conversation deleted:", payload.old);
+        renderAdminInbox(); // refresh inbox on deletion
+      }
+    )
+    .subscribe();
+}
+
+// Call once on page init
+subscribeToConversations();
 
 // Initial render calls
 switchAdminTab('track');
