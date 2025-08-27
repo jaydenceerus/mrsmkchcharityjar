@@ -24,8 +24,16 @@ const CATEGORY_ICON = { shoes:'👟', stationery:'✏️', meals:'🧃', data:'�
 
 
 // Utilities
+let activeChannel = null;
+
 function subscribeToMessages(conversationId, userId, donorDisplayName) {
-  supabase
+  // Remove old channel if any
+  if (activeChannel) {
+    supabase.removeChannel(activeChannel);
+    activeChannel = null;
+  }
+
+  activeChannel = supabase
     .channel(`messages-${conversationId}`)
     .on(
       'postgres_changes',
@@ -54,12 +62,12 @@ function subscribeToMessages(conversationId, userId, donorDisplayName) {
           <div class="mt-1">${m.body}</div>
         `;
         messagesEl.appendChild(item);
-
-        // auto-scroll
         messagesEl.scrollTop = messagesEl.scrollHeight;
       }
     )
-    .subscribe();
+    .subscribe((status) => {
+      console.log("Realtime channel status:", status);
+    });
 }
 
 async function getActiveUser() {
@@ -659,9 +667,7 @@ async function openThread(conversationId, title) {
     const senderId = user?.id || null;
     const senderName = donorDisplayName || user?.username || 'Anonymous';
     await saveMessage(conversationId, senderId, txt, senderName);
-
     document.getElementById('chatInput').value = '';
-    openThread(conversationId, title); // re-render messages
   };
 }
 
