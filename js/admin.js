@@ -418,7 +418,7 @@ if (wishes && wishes.length > 0) {
         <div class="flex items-center gap-2">
           <span class="px-3 py-1 rounded-full ${isGranted ? 'bg-green-400 text-green-900' : 'bg-white/20'} font-semibold text-sm">
             ${isGranted ? 'Granted' : 'Pending'}
-          </span>
+          </span> 
           <button 
             class="showStudentBtn px-3 py-1 text-xs rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white"
             data-wishid="${w.id}">
@@ -432,29 +432,40 @@ if (wishes && wishes.length > 0) {
   });
 
   // attach event listeners AFTER appending
-  adminWishes.querySelectorAll('.showStudentBtn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const wishId = btn.dataset.wishid;
-      const { data, error } = await supabase
-        .from('donations')
-        .select('studentname, student_class')
-        .eq('wish_id', wishId)
-        .maybeSingle();
+  adminWishes.querySelectorAll('.show-student').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const wishId = btn.dataset.wishid;
+    const detailsDiv = document.getElementById(`student-${wishId}`);
 
-      const detailsDiv = btn.closest('div.rounded-xl').querySelector('.studentDetails');
+    if (!detailsDiv.classList.contains('hidden')) {
+      // Hide if already visible
+      detailsDiv.classList.add('hidden');
+      detailsDiv.innerHTML = '';
+      btn.textContent = 'Show Student';
+      return;
+    }
 
-      if (error || !data) {
-        detailsDiv.innerHTML = `<div class="text-red-300">No student details found.</div>`;
-      } else {
-        detailsDiv.innerHTML = `
-          <div><strong>Name:</strong> ${data.student_name || 'N/A'}</div>
-          <div><strong>Class:</strong> ${data.student_class || 'N/A'}</div>
-        `;
-      }
+    // Fetch student details
+    const { data, error } = await supabase
+      .from('wishes')
+      .select('studentname, student_class')
+      .eq('id', wishId)
+      .maybeSingle();
 
-      detailsDiv.classList.toggle('hidden');
-    });
+    if (error) {
+      detailsDiv.innerHTML = `<div class="text-red-400">Failed to load student details.</div>`;
+    } else if (data) {
+      detailsDiv.innerHTML = `
+        <div><span class="font-medium">Student:</span> ${data.studentname || 'Unknown'}</div>
+        <div><span class="font-medium">Class:</span> ${data.student_class || 'Unknown'}</div>
+      `;
+    }
+
+    detailsDiv.classList.remove('hidden');
+    btn.textContent = 'Hide Student';
   });
+});
+
 } else {
   adminWishes.innerHTML = `<div class="text-white/80 p-4">No wishes yet!</div>`;
 }
