@@ -804,7 +804,7 @@ async function renderAdminInbox() {
       title,
       created_at,
       donor_id,
-      donations(donor)
+      donations(donation_code)
     `)
     .order('created_at', { ascending: false });
 
