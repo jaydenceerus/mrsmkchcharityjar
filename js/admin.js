@@ -798,15 +798,18 @@ if (resetBtn) resetBtn.addEventListener('click', async () => {
 // ----------------------
 async function renderAdminInbox() {
   const { data: threads, error } = await supabase
-    .from('conversations')
-    .select(`
-      id,
-      title,
-      created_at,
-      donor_id,
-      donations(donation_code)
-    `)
-    .order('created_at', { ascending: false });
+  .from('conversations')
+  .select(`
+    id,
+    title,
+    created_at,
+    donation_code,
+    donations (
+      code,
+      donor
+    )
+  `)
+  .order('created_at', { ascending: false });
 
   const listEl = document.getElementById('adminThreadList');
   const badge = document.getElementById('adminInboxBadge');
@@ -821,7 +824,8 @@ async function renderAdminInbox() {
   listEl.innerHTML = threads.length ? '' : `<div class="p-4 text-white/80">No conversations yet.</div>`;
 
   for (const t of threads) {
-    const donorName = t.donations?.[0]?.donor?.displayName || 'Anonymous Donor';
+     const donorJson = t.donations?.donor || {};
+    const donorName = donorJson.displayName || donorJson.fullName || donorJson.nickname || "Anonymous Donor";
 
     // --- Fetch last message preview ---
     const { data: lastMsg } = await supabase
