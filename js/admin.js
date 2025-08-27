@@ -437,7 +437,7 @@ if (wishes && wishes.length > 0) {
       const wishId = btn.dataset.wishid;
       const { data, error } = await supabase
         .from('donations')
-        .select('student_name, student_class')
+        .select('studentname, student_class')
         .eq('wish_id', wishId)
         .maybeSingle();
 
