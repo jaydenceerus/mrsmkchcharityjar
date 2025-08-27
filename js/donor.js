@@ -589,14 +589,20 @@ console.log("All donation codes:", donations.map(d => d.code));
 
 // Inbox rendering + thread open
 async function renderInbox() {
+  const user = await getActiveUser();
+  if (!user) return;
+
   const { data: convos, error } = await supabase
     .from('conversations')
     .select('*')
+    .eq('donor_id', user.id)   // 👈 only their conversations
     .order('created_at', { ascending: false });
+
   if (error) { console.error(error); return; }
 
   const list = document.getElementById('threadList');
   list.innerHTML = convos.length ? '' : `<div class="p-4 text-white/80">No conversations yet.</div>`;
+
   convos.forEach(c => {
     const el = document.createElement('div');
     el.className = 'px-4 py-3 hover:bg-white/5 cursor-pointer';

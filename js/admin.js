@@ -431,40 +431,42 @@ if (wishes && wishes.length > 0) {
     adminWishes.appendChild(block);
   });
 
-  // attach event listeners AFTER appending
-  adminWishes.querySelectorAll('.show-student').forEach(btn => {
-  btn.addEventListener('click', async () => {
-    const wishId = btn.dataset.wishid;
-    const detailsDiv = document.getElementById(`student-${wishId}`);
+  // ✅ match the class correctly
+  adminWishes.querySelectorAll('.showStudentBtn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const wishId = btn.dataset.wishid;
+      // ✅ use the sibling details div instead of getElementById
+      const detailsDiv = btn.closest('.flex').parentElement.querySelector('.studentDetails');
 
-    if (!detailsDiv.classList.contains('hidden')) {
-      // Hide if already visible
-      detailsDiv.classList.add('hidden');
-      detailsDiv.innerHTML = '';
-      btn.textContent = 'Show Student';
-      return;
-    }
+      if (!detailsDiv.classList.contains('hidden')) {
+        detailsDiv.classList.add('hidden');
+        detailsDiv.innerHTML = '';
+        btn.textContent = 'Show Student';
+        return;
+      }
 
-    // Fetch student details
-    const { data, error } = await supabase
-      .from('wishes')
-      .select('studentname, student_class')
-      .eq('id', wishId)
-      .maybeSingle();
+      // Fetch student details
+      const { data, error } = await supabase
+        .from('wishes')
+        .select('studentname, student_class')
+        .eq('id', wishId)
+        .maybeSingle();
 
-    if (error) {
-      detailsDiv.innerHTML = `<div class="text-red-400">Failed to load student details.</div>`;
-    } else if (data) {
-      detailsDiv.innerHTML = `
-        <div><span class="font-medium">Student:</span> ${data.studentname || 'Unknown'}</div>
-        <div><span class="font-medium">Class:</span> ${data.student_class || 'Unknown'}</div>
-      `;
-    }
+      if (error) {
+        detailsDiv.innerHTML = `<div class="text-red-400">Failed to load student details.</div>`;
+      } else if (data) {
+        detailsDiv.innerHTML = `
+          <div><span class="font-medium">Student:</span> ${data.studentname || 'Unknown'}</div>
+          <div><span class="font-medium">Class:</span> ${data.student_class || 'Unknown'}</div>
+        `;
+      } else {
+        detailsDiv.innerHTML = `<div class="text-yellow-400">No student details found.</div>`;
+      }
 
-    detailsDiv.classList.remove('hidden');
-    btn.textContent = 'Hide Student';
+      detailsDiv.classList.remove('hidden');
+      btn.textContent = 'Hide Student';
+    });
   });
-});
 
 } else {
   adminWishes.innerHTML = `<div class="text-white/80 p-4">No wishes yet!</div>`;
@@ -804,7 +806,7 @@ async function renderAdminInbox() {
     title,
     created_at,
     donation_code,
-    donations (
+    donations!conversations_donation_code_fkey (
       code,
       donor
     )
@@ -883,7 +885,7 @@ async function renderAdminInbox() {
   });
 
   if (badge) badge.textContent = `${threads.length} thread(s)`;
-  clearAdminChatView();
+  if (!activeChannel) clearAdminChatView();
 }
 
 
