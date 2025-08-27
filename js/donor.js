@@ -473,6 +473,15 @@ donorForm.addEventListener('submit', async (e) =>{
   await saveDonation(donation);
   await setLatestCode(code);
 
+  const { error: wishUpdateError } = await supabase
+  .from("wishes")
+  .update({ donationcode: code })   // 👈 set donationcode
+  .eq("id", target.id);             // 👈 match the selected wish
+
+if (wishUpdateError) {
+  console.error("Error updating wish with donation code:", wishUpdateError);
+}
+
   // ✅ Create conversation
   // After pledge is submitted
 

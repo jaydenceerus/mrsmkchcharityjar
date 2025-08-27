@@ -436,7 +436,7 @@ if (wishes && wishes.length > 0) {
     btn.addEventListener('click', async () => {
       const wishId = btn.dataset.wishid;
       // ✅ use the sibling details div instead of getElementById
-      const detailsDiv = btn.closest('.flex').parentElement.querySelector('.studentDetails');
+      const detailsDiv = btn.closest('.rounded-xl').querySelector('.studentDetails');
 
       if (!detailsDiv.classList.contains('hidden')) {
         detailsDiv.classList.add('hidden');
@@ -594,7 +594,9 @@ document.querySelectorAll('[data-slider]').forEach(slider => {
     const donationCode = slider.getAttribute('data-slider');
     const newPhase = parseInt(slider.value, 10);
 
-    console.log("changing");
+    console.log("changing", donationCode, newPhase);
+
+    // update donation status_phase
     const { error: updateErr } = await supabase
       .from('donations')
       .update({ status_phase: newPhase })
@@ -603,20 +605,91 @@ document.querySelectorAll('[data-slider]').forEach(slider => {
     if (updateErr) {
       console.error("Error updating status:", updateErr);
       alert("Failed to update donation status.");
-    } else {
-      // Update the status badge UI
-      const badge = slider.closest('.rounded-2xl')
-        .querySelector('span.px-3'); // status badge span
-      if (badge) {
-        badge.textContent =
-          newPhase === 2 ? 'Granted' :
-          newPhase === 1 ? 'Received' : 'Pledged';
-        badge.className =
-          `px-3 py-1 rounded-full font-semibold text-sm ${
-            newPhase === 2 ? 'bg-green-400 text-green-900' :
-            newPhase === 1 ? 'bg-blue-300 text-blue-900' :
-            'bg-yellow-300 text-yellow-900'
-          }`;
+      return;
+    }
+
+    // UI: update the status badge immediately
+    const badge = slider.closest('.rounded-2xl')
+      .querySelector('span.px-3'); // status badge span
+    if (badge) {
+      badge.textContent =
+        newPhase === 2 ? 'Granted' :
+        newPhase === 1 ? 'Received' : 'Pledged';
+      badge.className =
+        `px-3 py-1 rounded-full font-semibold text-sm ${
+          newPhase === 2 ? 'bg-green-400 text-green-900' :
+          newPhase === 1 ? 'bg-blue-300 text-blue-900' :
+          'bg-yellow-300 text-yellow-900'
+        }`;
+    }
+
+    // If the donation was moved to "Granted", update wish + profile totals
+    if (newPhase === 2) {
+      try {
+        // 1) Fetch the donation to get donor_id and wish_id & donor.amount
+        const { data: donation, error: dErr } = await supabase
+          .from('donations')
+          .select('*')
+          .eq('code', donationCode)
+          .maybeSingle();
+
+        if (dErr) {
+          console.error("Failed to fetch donation for post-grant updates:", dErr);
+        } else if (donation) {
+          const donorId = donation.donor_id;
+          const wishId = donation.wish_id;
+
+          // 2) Mark wish as granted and store donation code on wish
+          if (wishId) {
+            const { error: wishErr } = await supabase
+              .from('wishes')
+              .update({ granted: true, donationcode: donationCode })
+              .eq('id', wishId);
+            if (wishErr) console.error("Failed to update wish.granted:", wishErr);
+          }
+
+          // 3) Update profile counters for donor (if donor_id exists)
+          if (donorId) {
+            // Fetch current profile counters
+            const { data: profile, error: pErr } = await supabase
+              .from('profiles')
+              .select('wishes_granted, total_pledges, total_donated')
+              .eq('id', donorId)
+              .maybeSingle();
+
+            if (pErr) {
+              console.error("Error loading profile for donor:", pErr);
+            } else {
+              // parse donation amount from donation.donor.amount (safe parsing)
+              let donationAmount = 0;
+              try {
+                const raw = (donation.donor && donation.donor.amount) ? String(donation.donor.amount) : '';
+                donationAmount = parseFloat(raw.replace(/[^0-9.-]+/g, '')) || 0;
+              } catch (e) { donationAmount = 0; }
+
+              const newWishesGranted = (profile?.wishes_granted || 0) + 1;
+              const newTotalPledges = (profile?.total_pledges || 0) + 1;
+              const newTotalDonated = (parseFloat(profile?.total_donated || 0) || 0) + donationAmount;
+
+              const { error: updErr } = await supabase
+                .from('profiles')
+                .update({
+                  wishes_granted: newWishesGranted,
+                  total_pledges: newTotalPledges,
+                  total_donated: newTotalDonated
+                })
+                .eq('id', donorId);
+
+              if (updErr) console.error("Error updating profile counters:", updErr);
+            }
+          } else {
+            console.log("Donation has no donor_id; skipping profile updates.");
+          }
+        } else {
+          console.warn("Donation not found when trying to perform grant-side updates.");
+        }
+      } catch (e) {
+        console.error("Unexpected error while performing grant updates:", e);
       }
     }
   });
