@@ -15,6 +15,52 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // --- DATABASE CONNECTION TEST ---
 // This code will run automatically as soon as admin.js is loaded
 
+let activeChannel = null;
+
+function subscribeToMessages(conversationId, userId, senderLabel, containerId) {
+  // remove old channel if it exists
+  if (activeChannel) {
+    supabase.removeChannel(activeChannel);
+    activeChannel = null;
+  }
+
+  activeChannel = supabase
+    .channel(`messages-${conversationId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `conversation_id=eq.${conversationId}`
+      },
+      (payload) => {
+        const m = payload.new;
+        const isMine = m.sender_id === userId;
+
+        const msgContainer = document.getElementById(containerId);
+        const bubble = document.createElement('div');
+        bubble.className = `p-3 rounded-lg max-w-[80%] my-1 ${
+          isMine
+            ? (senderLabel === 'Admin'
+                ? 'bg-indigo-600 ml-auto text-white'
+                : 'bg-blue-500 ml-auto text-white')
+            : 'bg-white/10 text-white'
+        }`;
+        bubble.innerHTML = `
+          <div class="text-xs opacity-80">
+            ${isMine ? `You (${senderLabel})` : m.sender_name || 'Other'}
+            • ${new Date(m.created_at).toLocaleString()}
+          </div>
+          <div class="mt-1">${m.body.replace(/</g, "&lt;")}</div>
+        `;
+        msgContainer.appendChild(bubble);
+        msgContainer.scrollTop = msgContainer.scrollHeight;
+      }
+    )
+    .subscribe();
+}
+
 function generateRandomNickname() {
   const adjectives = ["Star", "Brave", "Happy", "Gentle", "Wise", "Lucky", "Kind", "Shiny", "Mighty", "Calm"];
   const animals = ["Panda", "Tiger", "Eagle", "Dolphin", "Fox", "Owl", "Lion", "Rabbit", "Whale", "Koala"];
@@ -765,10 +811,8 @@ async function renderAdminInbox() {
 
 async function openAdminThread(conversationId, title) {
   switchAdminTab('inbox');
-  
   document.querySelector('#adminChatHeader .font-semibold').textContent = title;
   document.getElementById('adminChatMeta').textContent = `ID: ${conversationId}`;
-
   const msgContainer = document.getElementById('adminChatMessages');
   msgContainer.innerHTML = '<div>Loading messages...</div>';
 
@@ -777,25 +821,29 @@ async function openAdminThread(conversationId, title) {
   messages.forEach(m => {
     const isAdmin = m.sender_id === currentUser.id;
     const div = document.createElement('div');
-    div.className = `p-3 rounded-lg max-w-[80%] ${isAdmin ? 'bg-indigo-600 ml-auto' : 'bg-white/10'}`;
+    div.className = `p-3 rounded-lg max-w-[80%] my-1 ${
+      isAdmin ? 'bg-indigo-600 ml-auto text-white' : 'bg-white/10 text-white'
+    }`;
     div.innerHTML = `
-      <div class="text-xs opacity-80">${isAdmin ? 'You (Admin)' : 'Donor'} • ${new Date(m.created_at).toLocaleString()}</div>
+      <div class="text-xs opacity-80">${isAdmin ? 'You (Admin)' : m.sender_name || 'Donor'} • ${new Date(m.created_at).toLocaleString()}</div>
       <div class="mt-1">${m.body.replace(/</g, "&lt;")}</div>
     `;
     msgContainer.appendChild(div);
   });
   msgContainer.scrollTop = msgContainer.scrollHeight;
 
+  // subscribe to realtime updates
+  subscribeToMessages(conversationId, currentUser.id, 'Admin', 'adminChatMessages');
+
+  // setup form
   const chatForm = document.getElementById('adminChatForm');
   chatForm.onsubmit = async (e) => {
     e.preventDefault();
     const input = document.getElementById('adminChatInput');
     const txt = input.value.trim();
     if (!txt) return;
-
     await sendMessage(conversationId, txt);
     input.value = '';
-    openAdminThread(conversationId, title); // Re-render
   };
 }
 

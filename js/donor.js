@@ -678,12 +678,10 @@ async function openThread(conversationId, title) {
     const txt = (document.getElementById('chatInput').value||'').trim();
     if (!txt) return;
     const { data: { user } } = await supabase.auth.getUser();
-  const senderId = user.id || null;
-  const senderName = donorDisplayName || user?.email || 'Anonymous';
-  await saveMessage(conversationId, senderId, txt, senderName);
-
+    const senderId = user.id || null;
+    const senderName = donorDisplayName || user?.email || 'Anonymous';
+    await saveMessage(conversationId, senderId, txt, senderName);
     document.getElementById('chatInput').value = '';
-    openThread(conversationId, title);
   };
 
 
