@@ -58,7 +58,9 @@ function subscribeToMessages(conversationId, userId, senderLabel, containerId) {
         msgContainer.scrollTop = msgContainer.scrollHeight;
       }
     )
-    .subscribe();
+    .subscribe((status) => {
+      console.log("Realtime channel status:", status);
+    });
 }
 
 function generateRandomNickname() {
@@ -398,30 +400,64 @@ async function renderAdmin() {
     const [wishes, donations] = await Promise.all([loadWishes(), loadDonations()]);
     console.log('Black');
 
-    // --- Render Wishes Summary ---
-    adminWishes.innerHTML = '';
-    if (wishes && wishes.length > 0) {
-      wishes.forEach(w => {
-        const isGranted = donations && donations.some(d => d.wish_id === w.id && d.status_phase === 2);
-        const block = document.createElement('div');
-        block.className = 'rounded-xl bg-white/10 p-4';
-        block.innerHTML = `
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="font-semibold">${w.nickname} <span class="text-xs opacity-70">(${w.category}, ${w.emotion || 'hope'})</span></div>
-              <div class="text-sm opacity-80">${w.wish}</div>
-            </div>
-            <div>
-              <span class="px-3 py-1 rounded-full ${isGranted ? 'bg-green-400 text-green-900' : 'bg-white/20'} font-semibold text-sm">
-                ${isGranted ? 'Granted' : 'Pending'}
-              </span>
-            </div>
-          </div>`;
-        adminWishes.appendChild(block);
-      });
-    } else {
-      adminWishes.innerHTML = `<div class="text-white/80 p-4">No wishes yet!</div>`;
-    }
+// --- Render Wishes Summary ---
+adminWishes.innerHTML = '';
+if (wishes && wishes.length > 0) {
+  wishes.forEach(w => {
+    const isGranted = donations && donations.some(d => d.wish_id === w.id && d.status_phase === 2);
+    const block = document.createElement('div');
+    block.className = 'rounded-xl bg-white/10 p-4 mb-3';
+    block.innerHTML = `
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="font-semibold">${w.nickname} 
+            <span class="text-xs opacity-70">(${w.category}, ${w.emotion || 'hope'})</span>
+          </div>
+          <div class="text-sm opacity-80">${w.wish}</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="px-3 py-1 rounded-full ${isGranted ? 'bg-green-400 text-green-900' : 'bg-white/20'} font-semibold text-sm">
+            ${isGranted ? 'Granted' : 'Pending'}
+          </span>
+          <button 
+            class="showStudentBtn px-3 py-1 text-xs rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white"
+            data-wishid="${w.id}">
+            Show Student
+          </button>
+        </div>
+      </div>
+      <div class="studentDetails hidden mt-2 p-2 rounded-lg bg-white/5 text-sm"></div>
+    `;
+    adminWishes.appendChild(block);
+  });
+
+  // attach event listeners AFTER appending
+  adminWishes.querySelectorAll('.showStudentBtn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const wishId = btn.dataset.wishid;
+      const { data, error } = await supabase
+        .from('donations')
+        .select('student_name, student_class')
+        .eq('wish_id', wishId)
+        .maybeSingle();
+
+      const detailsDiv = btn.closest('div.rounded-xl').querySelector('.studentDetails');
+
+      if (error || !data) {
+        detailsDiv.innerHTML = `<div class="text-red-300">No student details found.</div>`;
+      } else {
+        detailsDiv.innerHTML = `
+          <div><strong>Name:</strong> ${data.student_name || 'N/A'}</div>
+          <div><strong>Class:</strong> ${data.student_class || 'N/A'}</div>
+        `;
+      }
+
+      detailsDiv.classList.toggle('hidden');
+    });
+  });
+} else {
+  adminWishes.innerHTML = `<div class="text-white/80 p-4">No wishes yet!</div>`;
+}
 
     // --- Render Donations Management ---
     adminDonations.innerHTML = '';
