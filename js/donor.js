@@ -24,6 +24,44 @@ const CATEGORY_ICON = { shoes:'👟', stationery:'✏️', meals:'🧃', data:'�
 
 
 // Utilities
+function subscribeToMessages(conversationId, userId, donorDisplayName) {
+  supabase
+    .channel(`messages-${conversationId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `conversation_id=eq.${conversationId}`
+      },
+      (payload) => {
+        const m = payload.new;
+        const isMine = m.sender_id === userId;
+        const from = m.sender_name || (isMine ? donorDisplayName || 'You' : m.sender_id ? 'Staff' : 'System');
+
+        const messagesEl = document.getElementById('chatMessages');
+        const item = document.createElement('div');
+        item.className = `p-3 rounded-xl my-1 max-w-[70%] ${
+          isMine
+            ? 'bg-blue-500/80 text-white text-right ml-auto'
+            : 'bg-white/10 text-white/90 mr-auto'
+        }`;
+        item.innerHTML = `
+          <div class="text-xs opacity-80 ${isMine ? 'text-right' : ''}">
+            ${from} • ${new Date(m.created_at).toLocaleString()}
+          </div>
+          <div class="mt-1">${m.body}</div>
+        `;
+        messagesEl.appendChild(item);
+
+        // auto-scroll
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+    )
+    .subscribe();
+}
+
 async function getActiveUser() {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) return null;
@@ -606,6 +644,8 @@ async function openThread(conversationId, title) {
     `;
     messagesEl.appendChild(item);
   });
+
+  subscribeToMessages(conversationId, user?.id, donorDisplayName);
 
   // Scroll to bottom
   messagesEl.scrollTop = messagesEl.scrollHeight;

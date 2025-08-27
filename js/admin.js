@@ -622,8 +622,11 @@ if (addWishForm) {
       batch: formData.get('batch'),
       situation: formData.get('situation').trim(),
       wish: formData.get('wish').trim(),
+      studentname: formData.get('studentName').trim(),
+      student_class: formData.get('studentClass').trim(),
       granted: false
-    };
+};
+
 
     const added = await addWish(newWish);
     if(added){

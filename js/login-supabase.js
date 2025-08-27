@@ -117,7 +117,7 @@ async function tryInsertPendingProfile(user) {
       phone: pending.phone,
       affiliation: pending.affiliation
     };
-
+    console.log(payload);
     const { data, error } = await supabase
       .from('profiles')
       .insert([payload], { returning: 'minimal' });
@@ -156,11 +156,11 @@ async function tryInsertPendingProfile(user) {
 }
 
 // Main login handler
+// Main login handler
 const form = $('loginForm');
 if (!form) {
   console.error('loginForm not found. Make sure login-supabase.js is loaded after the form and the script tag uses type="module".');
 } else {
-  if (form) {
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
     hide('loginApiError'); hide('emailError'); hide('passwordError');
@@ -194,13 +194,19 @@ if (!form) {
         return;
       }
 
-      // --- UNIFIED ADMIN CHECK ---
-      // Instead of checking a hardcoded email list, we now check the database.
+      // ✅ Try to insert any pending profile (from register.js)
+      const result = await tryInsertPendingProfile(user);
+
+      if (result && !result.ok) {
+        console.warn('Pending profile could not be inserted:', result.reason);
+        // optional: show user-friendly message
+        // show('loginApiError', 'We could not finish setting up your profile. Please contact support.');
+      }
+
+      // --- ADMIN CHECK ---
       const isAdmin = await isUserAdmin(user.id);
 
-      // We no longer need to set the role in localStorage, as admin.js does its own check.
-      
-      // Redirect based on the database result
+      // redirect based on role
       if (isAdmin) {
         window.location.href = 'admin.html';
       } else {
@@ -214,5 +220,4 @@ if (!form) {
       btn.textContent = orig;
     }
   });
-}
 }

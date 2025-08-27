@@ -60,6 +60,7 @@ async function isUsernameTaken(username){
 
 // Insert profile row. Expects userId (uuid).
 async function insertProfile(userId, { username, fullName, hideFullName, phone, affiliation }){
+  console.log(userId);
   const { data, error } = await supabase
     .from('profiles')
     .insert([{
@@ -162,8 +163,7 @@ if (!formEl) {
     const origText = btn.textContent;
     btn.textContent = 'Creating account...';
 
-    try {
-      // Check username availability first (helps avoid creating auth user with taken username)
+      try {
       const taken = await isUsernameTaken(username);
       if (taken) {
         show('usernameError', 'Username already taken.');
@@ -172,8 +172,6 @@ if (!formEl) {
         return;
       }
 
-      // Create Auth user in Supabase
-      // NOTE: use the v2 style signUp call (object + options)
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -182,73 +180,28 @@ if (!formEl) {
 
       if (signUpError) {
         console.error('SignUp error', signUpError);
-
-        // Handle common/known errors more nicely:
         const msg = (signUpError?.message || '').toString();
 
         if (msg.toLowerCase().includes('already') || msg.toLowerCase().includes('registered')) {
-          // User already exists -> suggest login or reset
           show('apiError', 'Email already registered. Try signing in or use password reset.');
-          // optionally redirect to login after small delay
           setTimeout(()=> { window.location.href = 'index.html'; }, 1800);
           return;
         }
 
-        // Generic error
         show('apiError', signUpError.message || 'Unable to create account.');
         btn.disabled = false;
         btn.textContent = origText;
         return;
       }
 
-      // No error from signUp. Two possible states:
-      // 1) signUpData.user exists => an immediate session created (no email confirm required)
-      // 2) signUpData.user is null => email confirmation required (or other flow); we must wait
-      const createdUser = signUpData?.user ?? null;
-
-      if (createdUser && createdUser.id) {
-  // Case 1: Insert profile immediately (but handle RLS failures gracefully)
-  try {
-    await insertProfile(createdUser.id, { username, fullName, hideFullName, phone, affiliation });
-    alert('Registration successful. You may now sign in.');
-    window.location.href = 'index.html';
-    return;
-  } catch (err) {
-    // err may be a Supabase error object or a thrown Error
-    console.error('Profile insert after immediate signup failed', err);
-
-    // Normalize error message/code
-    const code = err?.code || err?.status || null;
-    const msg = (err && err.message) ? err.message.toString() : String(err);
-
-    // Detect RLS/Postgres permission error (code 42501) or message mentioning row-level security
-    const isRls = (code === '42501') || /row[-\s]?level security/i.test(msg) || /violates row-level security/i.test(msg);
-
-    if (isRls) {
-      // Fall back to Option A: save pending profile locally and ask user to confirm email/sign in.
+      // ✅ Unified Case: always save pending profile, regardless of immediate session
       const pending = { email, username, fullName, hideFullName, phone, affiliation };
-      try { localStorage.setItem(PENDING_PROFILE_KEY, JSON.stringify(pending)); } catch(e){ console.warn('Could not save pending profile locally', e); }
+      try { 
+        localStorage.setItem(PENDING_PROFILE_KEY, JSON.stringify(pending)); 
+      } catch(e){     
+        console.warn('Could not save pending profile locally', e); 
+      }
 
-      alert('Account created — please check your email and confirm your address. After confirming, sign in and we will finish creating your profile.');
-      window.location.href = 'index.html';
-      return;
-    }
-
-    // Other errors: show friendly message
-    show('apiError', msg || 'Profile save failed. Contact admin.');
-    btn.disabled = false;
-    btn.textContent = origText;
-    return;
-  }
-}
-
-
-      // Case 2: Email confirmation required (or no immediate user returned)
-      // Save pending profile in localStorage and instruct user to confirm email
-      const pending = { email, username, fullName, hideFullName, phone, affiliation };
-      localStorage.setItem(PENDING_PROFILE_KEY, JSON.stringify(pending));
-
-      // Friendly alert and redirect to login page
       alert('Registration started. Please check your email and confirm your address. After confirming, sign in and your profile will be created automatically.');
       window.location.href = 'index.html';
       return;
