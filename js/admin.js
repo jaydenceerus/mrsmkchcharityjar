@@ -63,6 +63,38 @@ function subscribeToMessages(conversationId, userId, senderLabel, containerId) {
     });
 }
 
+async function uploadFile(file, folder = 'wishes') {
+  if (!file) return null;
+  try {
+    // unique name: timestamp + original name
+    const ts = Date.now();
+    const safeName = `${ts}_${file.name.replace(/\s+/g,'_')}`;
+    const path = `${folder}/${safeName}`;
+
+    // upload
+    const { data: uploadData, error: uploadErr } = await supabase
+      .storage
+      .from('wishes')            // <-- bucket name
+      .upload(path, file, { upsert: false });
+
+    if (uploadErr) {
+      console.error('Upload error:', uploadErr);
+      return null;
+    }
+
+    // get public URL
+    const { data: urlData } = supabase
+      .storage
+      .from('wishes')
+      .getPublicUrl(path);
+
+    return urlData?.publicUrl || null;
+  } catch (err) {
+    console.error('Unexpected upload error', err);
+    return null;
+  }
+}
+
 function generateRandomNickname() {
   const adjectives = ["Star", "Brave", "Happy", "Gentle", "Wise", "Lucky", "Kind", "Shiny", "Mighty", "Calm"];
   const animals = ["Panda", "Tiger", "Eagle", "Dolphin", "Fox", "Owl", "Lion", "Rabbit", "Whale", "Koala"];
@@ -198,11 +230,26 @@ async function addWish(wishData) {
 
 
 
-async function updateWish(wishId, updates) {
-    const { data, error } = await supabase.from('wishes').update(updates).eq('id', wishId);
-    if (error) console.error("Error updating wish:", error);
+async function updateWish(id, updates) {
+  try {
+    const { data, error } = await supabase
+      .from('wishes')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      console.error('updateWish error', error);
+      return null;
+    }
     return data;
+  } catch (err) {
+    console.error(err);
+    return null;
+  }
 }
+
 
 async function loadDonations() {
   const { data, error } = await supabase.from('donations').select('*').order('pledged_at', { ascending: false });
@@ -643,7 +690,7 @@ document.querySelectorAll('[data-slider]').forEach(slider => {
           if (wishId) {
             const { error: wishErr } = await supabase
               .from('wishes')
-              .update({ granted: true, donationcode: donationCode })
+              .update({ granted: true })
               .eq('id', wishId);
             if (wishErr) console.error("Failed to update wish.granted:", wishErr);
           }
@@ -821,25 +868,180 @@ async function renderManageWishes() {
                 <span class="text-xs opacity-70">(${w.batch || 'no batch'})</span>
                 <p class="text-sm">${w.wish}</p>
             </div>
-            <button data-delete-id="${w.id}" class="px-3 py-1 text-xs rounded-lg bg-red-500/20 text-red-200 hover:bg-red-500/50">Delete</button>
+            <div class="flex gap-2 items-center">
+              <button data-edit-id="${w.id}" class="px-3 py-1 text-xs rounded-lg bg-indigo-500/20 text-indigo-200 hover:bg-indigo-500/40">Edit</button>
+              <button data-delete-id="${w.id}" class="px-3 py-1 text-xs rounded-lg bg-red-500/20 text-red-200 hover:bg-red-500/50">Delete</button>
+            </div>
         `;
         listEl.appendChild(item);
     });
 
-    // Add delete listeners
+    // Edit listeners
+    listEl.querySelectorAll('[data-edit-id]').forEach(btn => {
+        btn.onclick = async () => {
+            const id = btn.dataset.editId;
+            // find the wish object
+            const wishesLocal = await loadWishes();
+            const w = wishesLocal.find(x => x.id === id);
+            if (!w) { alert('Could not load wish for editing.'); return; }
+            openEditWishModal(w);
+        };
+    });
+
+    // Delete listeners (preserves existing delete logic)
     listEl.querySelectorAll('[data-delete-id]').forEach(btn => {
         btn.onclick = async () => {
             const id = btn.dataset.deleteId;
             if (confirm(`Are you sure you want to delete wish ${id}? This cannot be undone.`)) {
                 const { error } = await supabase.from('wishes').delete().eq('id', id);
                 if (error) {
-                    alert('Error deleting wish: ' + error.message);
+                    alert('Error deleting wish: ' + (error.message || error));
                 } else {
                     renderManageWishes(); // Refresh
                 }
             }
         };
     });
+}
+
+function openEditWishModal(wish) {
+    // close any existing modal
+    closeEditModal();
+
+    const modal = document.createElement('div');
+    modal.id = 'editWishModal';
+    modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4';
+
+    // NOTE: the overlay below has inline styles for backdrop-filter to ensure blur works
+    modal.innerHTML = `
+      <div
+        class="absolute inset-0"
+        style="
+          background: rgba(0,0,0,0.45);
+          -webkit-backdrop-filter: blur(6px);
+          backdrop-filter: blur(6px);
+        "
+      ></div>
+
+      <div class="relative w-full max-w-2xl bg-white/5 p-6 rounded-2xl">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold">Edit Wish — ${wish.id}</h3>
+          <button id="closeEditBtn" class="px-2 py-1 rounded bg-white/10">✕</button>
+        </div>
+        <form id="editWishForm" class="space-y-3 text-sm">
+          <div class="grid grid-cols-2 gap-3">
+            <label class="block">
+              <div class="text-xs opacity-80">Nickname</div>
+              <input name="nickname" value="${(wish.nickname||'').replace(/"/g,'&quot;')}" class="w-full p-2 rounded bg-white/10" />
+            </label>
+            <label class="block">
+              <div class="text-xs opacity-80">Category</div>
+              <input name="category" value="${(wish.category||'').replace(/"/g,'&quot;')}" class="w-full p-2 rounded bg-white/10" />
+            </label>
+            <label class="block">
+              <div class="text-xs opacity-80">Emotion</div>
+              <input name="emotion" value="${(wish.emotion||'').replace(/"/g,'&quot;')}" class="w-full p-2 rounded bg-white/10" />
+            </label>
+            <label class="block">
+              <div class="text-xs opacity-80">Batch</div>
+              <input name="batch" value="${(wish.batch||'').replace(/"/g,'&quot;')}" class="w-full p-2 rounded bg-white/10" />
+            </label>
+          </div>
+
+          <label class="block">
+            <div class="text-xs opacity-80">Situation (short)</div>
+            <input name="situation" value="${(wish.situation||'').replace(/"/g,'&quot;')}" class="w-full p-2 rounded bg-white/10" />
+          </label>
+
+          <label class="block">
+            <div class="text-xs opacity-80">Wish (detailed)</div>
+            <textarea name="wish" class="w-full p-2 rounded bg-white/10" rows="3">${(wish.wish||'').replace(/</g,'&lt;')}</textarea>
+          </label>
+
+          <div class="grid grid-cols-2 gap-3">
+            <label class="block">
+              <div class="text-xs opacity-80">Student name</div>
+              <input name="studentname" value="${(wish.studentname||'').replace(/"/g,'&quot;')}" class="w-full p-2 rounded bg-white/10" />
+            </label>
+            <label class="block">
+              <div class="text-xs opacity-80">Student class</div>
+              <input name="student_class" value="${(wish.student_class||'').replace(/"/g,'&quot;')}" class="w-full p-2 rounded bg-white/10" />
+            </label>
+          </div>
+
+          <label class="flex items-center gap-2">
+            <input type="checkbox" name="granted" ${wish.granted ? 'checked' : ''} />
+            <span class="text-xs opacity-80">Granted</span>
+          </label>
+
+          <div class="flex justify-end gap-2 mt-4">
+            <button type="button" id="cancelEditBtn" class="px-4 py-2 rounded bg-white/10">Cancel</button>
+            <button type="submit" class="px-4 py-2 rounded bg-indigo-600 text-white">Save changes</button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById('closeEditBtn').onclick = closeEditModal;
+    document.getElementById('cancelEditBtn').onclick = closeEditModal;
+
+    const form = document.getElementById('editWishForm');
+    form.onsubmit = async (e) => {
+  e.preventDefault();
+  const fd = new FormData(form);
+
+  // first: read selected File objects (if any)
+  const studentFile = form.querySelector('input[name="student_image"]')?.files?.[0] || null;
+  const situationFile = form.querySelector('input[name="situation_image"]')?.files?.[0] || null;
+
+  // optionally show a "Uploading..." UI; omitted here for brevity
+
+  // upload files in parallel
+  const [studentUrl, situationUrl] = await Promise.all([
+    studentFile ? uploadFile(studentFile, 'student_images') : Promise.resolve(null),
+    situationFile ? uploadFile(situationFile, 'situation_images') : Promise.resolve(null),
+  ]);
+
+  // Build updates (only include fields you want to change)
+  const updates = {
+    nickname: (fd.get('nickname') || '').trim(),
+    category: (fd.get('category') || '').trim(),
+    emotion: (fd.get('emotion') || '').trim(),
+    batch: (fd.get('batch') || '').trim(),
+    situation: (fd.get('situation') || '').trim(),
+    wish: (fd.get('wish') || '').trim(),
+    studentname: (fd.get('studentname') || '').trim(),
+    student_class: (fd.get('student_class') || '').trim(),
+    granted: !!fd.get('granted')
+  };
+
+  // only set image URLs if an upload occurred, otherwise leave existing DB values
+  if (studentUrl) updates.student_image_url = studentUrl;
+  if (situationUrl) updates.situation_image_url = situationUrl;
+
+  // call your existing update function (make sure it accepts the new fields)
+  try {
+    const res = await updateWish(wish.id, updates);
+    if (!res) {
+      alert('Failed to update wish. Check console for details.');
+    } else {
+      alert('Wish updated successfully.');
+      closeEditModal();
+      renderManageWishes();
+    }
+  } catch (err) {
+    console.error('Error updating wish:', err);
+    alert('Unexpected error while updating. See console.');
+  }
+};
+
+}
+
+function closeEditModal() {
+    const existing = document.getElementById('editWishModal');
+    if (existing) existing.remove();
 }
 
 

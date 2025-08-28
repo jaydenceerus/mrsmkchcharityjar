@@ -645,7 +645,7 @@ async function openThread(conversationId, title) {
       .from('donations')
       .select('donor') // Select the entire jsonb column
       .eq('donor_id', user.id)
-      .limit(1); // Pick the latest if multiple donations exist
+      .limit(1); //   Pick the latest if multiple donations exist
 
     if (!donationError && donations.length) {
       // Access the displayName key from the JSONB object
