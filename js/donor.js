@@ -413,65 +413,12 @@ async function renderJar() {
         clip = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
         clip.setAttribute("id", clipId);
         const cc = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-=======
-  const map = Object.fromEntries(wishes.map(w => [w.id, w]));
-
-  // Clear old contents in each wrapper except the circle itself
-  ballsGroup.querySelectorAll("g.ballWrap").forEach(wrap => {
-    [...wrap.children].forEach(child => {
-      if (child.tagName !== "circle") child.remove();
-    });
-  });
-
-  // Apply wish data
-  ballsGroup.querySelectorAll("circle[data-id]").forEach(c => {
-    const id = c.dataset.id;
-    const w = map[id];
-
-    if (!w) {
-      c.style.display = "none";
-      return;
-    }
-    c.style.display = "block";
-
-    const cx = +c.getAttribute("cx");
-    const cy = +c.getAttribute("cy");
-    const r  = +c.getAttribute("r");
-
-    // circle fill & style
-    c.setAttribute("fill", EMOTION_COLORS[w.emotion] || "#FDE047");
-    c.style.opacity = w.granted ? "1" : ".85";
-    c.style.filter = w.granted
-      ? "drop-shadow(0 0 12px rgba(255,255,255,0.95))"
-      : "none";
-    c.style.stroke = w.granted ? "rgba(255,255,255,0.95)" : "none";
-    c.style.strokeWidth = w.granted ? "3" : "0";
-
-    // get wrapper group
-    const wrap = c.parentNode;
-
-    if (w.situation_image_url) {
-      const defs = ballsGroup.querySelector("defs") || (() => {
-        const d = document.createElementNS("http://www.w3.org/2000/svg","defs");
-        ballsGroup.prepend(d);
-        return d;
-      })();
-
-      // unique clip path
-      const clipId = `clip-${id}`;
-      let clip = document.getElementById(clipId);
-      if (!clip) {
-        clip = document.createElementNS("http://www.w3.org/2000/svg","clipPath");
-        clip.setAttribute("id", clipId);
-        const cc = document.createElementNS("http://www.w3.org/2000/svg","circle");
->>>>>>> cb61661664ac4d7eb177f18c533967ad8ff0befe
         cc.setAttribute("cx", cx);
         cc.setAttribute("cy", cy);
         cc.setAttribute("r", r);
         clip.appendChild(cc);
         defs.appendChild(clip);
       } else {
-<<<<<<< HEAD
         // ensure clip circle matches coordinates
         const cc = clip.querySelector('circle');
         if (cc) { cc.setAttribute('cx', cx); cc.setAttribute('cy', cy); cc.setAttribute('r', r); }
@@ -479,22 +426,11 @@ async function renderJar() {
 
       // create image element (below the circle)
       const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
-=======
-        const cc = clip.querySelector("circle");
-        cc.setAttribute("cx", cx);
-        cc.setAttribute("cy", cy);
-        cc.setAttribute("r", r);
-      }
-
-      // image inside wrapper, clipped
-      const img = document.createElementNS("http://www.w3.org/2000/svg","image");
->>>>>>> cb61661664ac4d7eb177f18c533967ad8ff0befe
       img.setAttribute("href", w.situation_image_url);
       img.setAttribute("x", cx - r);
       img.setAttribute("y", cy - r);
       img.setAttribute("width", r * 2);
       img.setAttribute("height", r * 2);
-<<<<<<< HEAD
       img.setAttribute("preserveAspectRatio", "xMidYMid slice");
       img.setAttribute("clip-path", `url(#${clipId})`);
       img.style.opacity = "1";
@@ -545,26 +481,6 @@ async function renderJar() {
     });
 
     wrap.appendChild(hit);
-=======
-      img.setAttribute("preserveAspectRatio","xMidYMid slice");
-      img.setAttribute("clip-path", `url(#${clipId})`);
-      img.style.opacity = "0.45";
-
-      wrap.appendChild(img);
-    } else {
-      // fallback emoji
-      const txt = document.createElementNS("http://www.w3.org/2000/svg","text");
-      txt.setAttribute("x", cx);
-      txt.setAttribute("y", cy);
-      txt.setAttribute("fill","#fff");
-      txt.setAttribute("text-anchor","middle");
-      txt.setAttribute("dominant-baseline","central");
-      txt.setAttribute("font-weight","700");
-      txt.setAttribute("font-size","12");
-      txt.textContent = CATEGORY_ICON[w.category] || "🎒";
-      wrap.appendChild(txt);
-    }
->>>>>>> cb61661664ac4d7eb177f18c533967ad8ff0befe
   });
 
   await refreshBallHighlights();
@@ -575,10 +491,7 @@ async function renderJar() {
 
 
 
-<<<<<<< HEAD
 
-=======
->>>>>>> cb61661664ac4d7eb177f18c533967ad8ff0befe
 // Modal open/close
 const modal = document.getElementById('wishModal');
 const modalBackdrop = document.getElementById('modalBackdrop');
@@ -744,7 +657,6 @@ if (wishUpdateError) {
   }])
   .select()
   .single();
-showPaymentPrompt(code);
 
 if (convoError) {
   console.error("Error creating conversation:", convoError);
