@@ -70,6 +70,57 @@ function subscribeToMessages(conversationId, userId, donorDisplayName) {
     });
 }
 
+function startPaymentFlow(donationCode) {
+  // TODO: hook this to your real payment integration.
+  // Default behavior: open a new page /pay?code=... (you can change)
+  console.log("Starting payment flow for", donationCode);
+  // Example: redirect to a payment page (replace with real route)
+  // window.location.href = `/pay?code=${encodeURIComponent(donationCode)}`;
+  // For demo / placeholder:
+  alert('Payment flow placeholder for donation ' + donationCode);
+}
+
+function showPaymentPrompt(donationCode) {
+  // avoid duplicating prompt
+  if (document.getElementById('paymentPrompt')) return;
+
+  const container = document.createElement('div');
+  container.id = 'paymentPrompt';
+  container.className = 'fixed bottom-6 right-6 z-[9999]';
+  container.style.width = '320px';
+  container.style.transition = 'transform .18s ease, opacity .18s ease';
+  container.innerHTML = `
+    <div class="rounded-2xl bg-white/10 border border-white/10 p-4 shadow-xl backdrop-blur">
+      <div class="font-semibold mb-1">Thanks — your pledge is recorded</div>
+      <div class="text-sm opacity-85 mb-3">Would you like to pay for your donation now?</div>
+      <div class="flex gap-2">
+        <button id="payNowBtn" class="flex-1 px-3 py-2 rounded-xl bg-indigo-600 text-white font-semibold">Pay</button>
+        <button id="payLaterBtn" class="px-3 py-2 rounded-xl bg-white/10 border border-white/10">Later</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(container);
+
+  // animate in
+  requestAnimationFrame(() => {
+    container.style.transform = 'translateY(0)';
+    container.style.opacity = '1';
+  });
+
+  document.getElementById('payNowBtn').addEventListener('click', () => {
+    container.remove();
+    startPaymentFlow(donationCode);
+  });
+  document.getElementById('payLaterBtn').addEventListener('click', () => {
+    container.remove();
+  });
+
+  // auto-dismiss after 25s
+  setTimeout(() => { container.remove(); }, 25000);
+}
+
+
 async function getActiveUser() {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) return null;
@@ -297,37 +348,148 @@ document.getElementById('logoutBtn').addEventListener('click', ()=>{
 });
 
 // Jar rendering
-const ballsGroup = document.getElementById('ballsGroup');
-const iconsLayer = document.getElementById('iconsLayer');
-
 async function renderJar() {
-  const circles = ballsGroup.querySelectorAll('circle[data-id]');
-  const wishes = await loadWishes();   // ⬅️ FIXED
-  const map = Object.fromEntries(wishes.map(w => [w.id, w]));
-  const icons = [];
-  console.log(wishes)
-  circles.forEach(c => {
-    const id = c.dataset.id;
-    const w = map[id];
-    if (w) {
-      c.style.display = '';
-      c.setAttribute('fill', EMOTION_COLORS[w.emotion] || '#FDE047');
-      c.style.opacity = w.granted ? '1' : '.85';
-      c.style.filter = w.granted ? 'drop-shadow(0 0 12px rgba(255,255,255,0.95))' : 'none';
-      c.style.stroke = w.granted ? 'rgba(255,255,255,0.95)' : 'none';
-      c.style.strokeWidth = w.granted ? '3' : '0';
-      const cx = +c.getAttribute('cx'), cy = +c.getAttribute('cy');
-      icons.push(
-        `<text x="${cx}" y="${cy}" fill="#fff" text-anchor="middle" dominant-baseline="central" font-weight="700" font-size="12">${CATEGORY_ICON[w.category] || '🎒'}</text>`
-      );
-    } else {
-      c.style.display = 'none';
-    }
+  const ballsGroup = document.getElementById('ballsGroup');
+  const wishes = await loadWishes();
+  const map = Object.fromEntries((wishes || []).map(w => [w.id, w]));
+
+  // Remove any leftover injected children except the base circle inside each wrapper
+  ballsGroup.querySelectorAll("g.ballWrap").forEach(wrap => {
+    [...wrap.children].forEach(child => {
+      // keep the circle (base) only, remove others (images, text, hit areas)
+      if (child.tagName.toLowerCase() !== 'circle') child.remove();
+    });
   });
 
-  iconsLayer.innerHTML = icons.join('');
+  // Ensure defs exist for clipPaths
+  let defs = ballsGroup.querySelector('defs');
+  if (!defs) {
+    defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+    ballsGroup.prepend(defs);
+  }
+
+  // For each base circle (they are inside their ballWrap)
+  ballsGroup.querySelectorAll("g.ballWrap > circle[data-id]").forEach(baseCircle => {
+    const id = baseCircle.dataset.id;
+    const w = map[id];
+
+    if (!w) {
+      baseCircle.style.display = 'none';
+      return;
+    }
+    baseCircle.style.display = 'block';
+
+    const cx = +baseCircle.getAttribute('cx');
+    const cy = +baseCircle.getAttribute('cy');
+    const r  = +baseCircle.getAttribute('r');
+
+    // find wrapper group
+    const wrap = baseCircle.parentNode;
+
+    // update base circle outline/highlight (but make it non-event-capturing so our hit circle sees clicks)
+    baseCircle.style.pointerEvents = 'none'; // important: let the hit area handle clicks
+    baseCircle.style.filter = w.granted
+      ? "drop-shadow(0 0 12px rgba(255,255,255,0.95))"
+      : "none";
+    baseCircle.style.stroke = w.granted ? "rgba(255,255,255,0.95)" : "none";
+    baseCircle.style.strokeWidth = w.granted ? "3" : "0";
+
+    // Ensure wrap carries the bob animation (in case HTML doesn't)
+    // If animation is on the circle or elsewhere, copy it to wrapper for consistent movement
+    const cAnim = baseCircle.style.animation || baseCircle.getAttribute('style')?.match(/animation:[^;]+/)?.[0] || '';
+    if (cAnim && !wrap.style.animation) wrap.style.animation = baseCircle.style.animation;
+
+    // Remove any previous image/text/hit inside the wrap (we already removed above, but double-check)
+    [...wrap.querySelectorAll('image, text, .ball-hit')].forEach(el => el.remove());
+
+    // If there's an image URL, add clipped image under the circle and tint overlay via the circle's fill
+    if (w.situation_image_url) {
+      // clip path id
+      const clipId = `clip-${id}`;
+
+      // Create or update clip path circle
+      let clip = document.getElementById(clipId);
+      if (!clip) {
+        clip = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
+        clip.setAttribute("id", clipId);
+        const cc = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        cc.setAttribute("cx", cx);
+        cc.setAttribute("cy", cy);
+        cc.setAttribute("r", r);
+        clip.appendChild(cc);
+        defs.appendChild(clip);
+      } else {
+        // ensure clip circle matches coordinates
+        const cc = clip.querySelector('circle');
+        if (cc) { cc.setAttribute('cx', cx); cc.setAttribute('cy', cy); cc.setAttribute('r', r); }
+      }
+
+      // create image element (below the circle)
+      const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+      img.setAttribute("href", w.situation_image_url);
+      img.setAttribute("x", cx - r);
+      img.setAttribute("y", cy - r);
+      img.setAttribute("width", r * 2);
+      img.setAttribute("height", r * 2);
+      img.setAttribute("preserveAspectRatio", "xMidYMid slice");
+      img.setAttribute("clip-path", `url(#${clipId})`);
+      img.style.opacity = "1";
+      wrap.insertBefore(img, baseCircle); // make sure image is below the circle visually
+
+      // use the base circle as the tint overlay
+      baseCircle.setAttribute("fill", EMOTION_COLORS[w.emotion] || "#FDE047");
+      baseCircle.style.mixBlendMode = "multiply";
+      baseCircle.style.opacity = w.granted ? "0.9" : "0.65";
+      // ensure the circle itself doesn't intercept clicks
+      baseCircle.style.pointerEvents = 'none';
+
+    } else {
+      // no image: circle is the visible ball, make it solid & add emoji text
+      baseCircle.setAttribute("fill", EMOTION_COLORS[w.emotion] || "#FDE047");
+      baseCircle.style.mixBlendMode = "normal";
+      baseCircle.style.opacity = w.granted ? "1" : "0.85";
+      baseCircle.style.pointerEvents = 'none'; // still let our top hit area handle clicks
+
+      // fallback emoji centered on circle
+      const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      txt.setAttribute("x", cx);
+      txt.setAttribute("y", cy);
+      txt.setAttribute("fill", "#fff");
+      txt.setAttribute("text-anchor", "middle");
+      txt.setAttribute("dominant-baseline", "central");
+      txt.setAttribute("font-weight", "700");
+      txt.setAttribute("font-size", Math.max(10, Math.floor(r * 0.6)));
+      txt.textContent = CATEGORY_ICON[w.category] || "🎒";
+      wrap.appendChild(txt);
+    }
+
+    // TOP HIT AREA: invisible circle on top to capture clicks reliably
+    const hit = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    hit.classList.add('ball-hit');
+    hit.setAttribute('cx', cx);
+    hit.setAttribute('cy', cy);
+    hit.setAttribute('r', r);
+    hit.setAttribute('fill', 'transparent'); // invisible but captures pointer events
+    hit.style.cursor = 'pointer';
+    // Ensure hit area receives pointer events on all browsers
+    hit.style.pointerEvents = 'all';
+
+    // click handler — openModal is your existing function
+    hit.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      try { openModal(id); } catch (e) { console.log('openModal missing', e); }
+    });
+
+    wrap.appendChild(hit);
+  });
+
   await refreshBallHighlights();
 }
+
+
+
+
+
 
 
 // Modal open/close

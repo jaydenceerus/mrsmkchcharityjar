@@ -156,7 +156,6 @@ async function tryInsertPendingProfile(user) {
 }
 
 // Main login handler
-// Main login handler
 const form = $('loginForm');
 if (!form) {
   console.error('loginForm not found. Make sure login-supabase.js is loaded after the form and the script tag uses type="module".');
