@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Wish Jar — Donor</title>
+  <title>DreamDrops — Donor</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
@@ -103,60 +103,105 @@
               <g clip-path="url(#jarClip)" id="ballsGroup">
   <ellipse cx="180" cy="520" rx="170" ry="70" fill="rgba(255,255,255,0.08)"/>
 
-  <!-- 6 rows × 5 balls = 30 -->
-  <!-- Row 1 -->
-  <g class="row" data-row="1">
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w1"  cx="90"  cy="500" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w2"  cx="140" cy="500" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w3"  cx="190" cy="500" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w4"  cx="240" cy="500" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w5"  cx="290" cy="500" r="24"/></g>
+  <!-- 30 hard-coded circles, all shifted left -->
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:.1s; cursor:pointer;">
+    <circle data-id="w1" cx="75" cy="500" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:.3s; cursor:pointer;">
+    <circle data-id="w2" cx="125" cy="505" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:.6s; cursor:pointer;">
+    <circle data-id="w3" cx="175" cy="510" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:.9s; cursor:pointer;">
+    <circle data-id="w4" cx="225" cy="500" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:1.2s; cursor:pointer;">
+    <circle data-id="w5" cx="275" cy="495" r="24" />
   </g>
 
-  <!-- Row 2 -->
-  <g class="row" data-row="2">
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w6"  cx="90"  cy="460" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w7"  cx="140" cy="460" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w8"  cx="190" cy="460" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w9"  cx="240" cy="460" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w10" cx="290" cy="460" r="24"/></g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:.15s; cursor:pointer;">
+    <circle data-id="w6" cx="95" cy="465" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:.35s; cursor:pointer;">
+    <circle data-id="w7" cx="145" cy="470" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:.65s; cursor:pointer;">
+    <circle data-id="w8" cx="195" cy="468" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:.95s; cursor:pointer;">
+    <circle data-id="w9" cx="245" cy="460" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:1.25s; cursor:pointer;">
+    <circle data-id="w10" cx="295" cy="465" r="24" />
   </g>
 
-  <!-- Row 3 -->
-  <g class="row" data-row="3">
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w11" cx="90"  cy="420" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w12" cx="140" cy="420" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w13" cx="190" cy="420" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w14" cx="240" cy="420" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w15" cx="290" cy="420" r="24"/></g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:.2s; cursor:pointer;">
+    <circle data-id="w11" cx="85" cy="430" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:.4s; cursor:pointer;">
+    <circle data-id="w12" cx="135" cy="435" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:.7s; cursor:pointer;">
+    <circle data-id="w13" cx="185" cy="432" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:1s; cursor:pointer;">
+    <circle data-id="w14" cx="235" cy="430" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:1.3s; cursor:pointer;">
+    <circle data-id="w15" cx="285" cy="435" r="24" />
   </g>
 
-  <!-- Row 4 -->
-  <g class="row" data-row="4">
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w16" cx="90"  cy="380" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w17" cx="140" cy="380" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w18" cx="190" cy="380" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w19" cx="240" cy="380" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w20" cx="290" cy="380" r="24"/></g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:.25s; cursor:pointer;">
+    <circle data-id="w16" cx="75" cy="395" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:.45s; cursor:pointer;">
+    <circle data-id="w17" cx="125" cy="398" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:.75s; cursor:pointer;">
+    <circle data-id="w18" cx="175" cy="400" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:1.05s; cursor:pointer;">
+    <circle data-id="w19" cx="225" cy="398" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:1.35s; cursor:pointer;">
+    <circle data-id="w20" cx="275" cy="395" r="24" />
   </g>
 
-  <!-- Row 5 -->
-  <g class="row" data-row="5">
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w21" cx="90"  cy="340" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w22" cx="140" cy="340" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w23" cx="190" cy="340" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w24" cx="240" cy="340" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w25" cx="290" cy="340" r="24"/></g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:.3s; cursor:pointer;">
+    <circle data-id="w21" cx="95" cy="360" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:.5s; cursor:pointer;">
+    <circle data-id="w22" cx="145" cy="362" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:.8s; cursor:pointer;">
+    <circle data-id="w23" cx="195" cy="364" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:1.1s; cursor:pointer;">
+    <circle data-id="w24" cx="245" cy="362" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:1.4s; cursor:pointer;">
+    <circle data-id="w25" cx="295" cy="360" r="24" />
   </g>
 
-  <!-- Row 6 -->
-  <g class="row" data-row="6">
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w26" cx="90"  cy="300" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w27" cx="140" cy="300" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w28" cx="190" cy="300" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w29" cx="240" cy="300" r="24"/></g>
-    <g class="ballWrap" style="animation: bob 3.3s ease-in-out infinite; cursor:pointer;"><circle data-id="w30" cx="290" cy="300" r="24"/></g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:.35s; cursor:pointer;">
+    <circle data-id="w26" cx="115" cy="325" r="24" />
   </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:.55s; cursor:pointer;">
+    <circle data-id="w27" cx="165" cy="327" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:.85s; cursor:pointer;">
+    <circle data-id="w28" cx="215" cy="325" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:1.15s; cursor:pointer;">
+    <circle data-id="w29" cx="265" cy="327" r="24" />
+  </g>
+  <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:1.45s; cursor:pointer;">
+    <circle data-id="w30" cx="315" cy="325" r="24" />
+  </g>
+</g>
+
+
 
   <!-- Icons injected here -->
   <g id="iconsLayer"></g>
