@@ -351,7 +351,6 @@ document.getElementById('logoutBtn').addEventListener('click', ()=>{
 async function renderJar() {
   const ballsGroup = document.getElementById('ballsGroup');
   const wishes = await loadWishes();
-<<<<<<< HEAD
   const map = Object.fromEntries((wishes || []).map(w => [w.id, w]));
 
   // Remove any leftover injected children except the base circle inside each wrapper
