@@ -657,6 +657,7 @@ if (wishUpdateError) {
   }])
   .select()
   .single();
+showPaymentPrompt(code);
 
 if (convoError) {
   console.error("Error creating conversation:", convoError);
