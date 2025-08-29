@@ -675,6 +675,7 @@ if (convoError) {
   routeTo('inbox');
   renderInbox();
   openThread(convo.id, convo.title);
+  showPaymentPrompt(code);
 });
 
 // Cancel donate
