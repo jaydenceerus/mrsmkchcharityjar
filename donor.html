@@ -20,7 +20,36 @@
     @keyframes glowPulse { 0%{box-shadow:0 0 0 0 rgba(255,255,255,0.35)} 70%{box-shadow:0 0 40px 8px rgba(255,255,255,0.15)} 100%{box-shadow:0 0 0 0 rgba(255,255,255,0)} }
   </style>
 </head>
-<body class="min-h-screen text-white overflow-x-hidden" style="background: radial-gradient(circle at 20% 20%, #60A5FA 0%, transparent 25%), radial-gradient(circle at 80% 20%, #A78BFA 0%, transparent 25%), radial-gradient(circle at 20% 80%, #F472B6 0%, transparent 25%), radial-gradient(circle at 80% 80%, #34D399 0%, transparent 25%), radial-gradient(circle at 50% 50%, #FCA5A5 0%, #6d28d9 60%);">
+<body class="min-h-screen text-white overflow-x-hidden relative"
+ style="background:#6d28d9;">
+
+  <!-- Background spheres with characters -->
+  <div class="absolute inset-0 overflow-hidden z-10">
+    <!-- Top-left (green boy) -->
+    <div class="absolute top-[10%] left-[5%] w-64 h-64 rounded-full 
+                bg-green-400/30 blur-3xl flex items-center justify-center">
+      <img src="assets/envy.png" alt="Green boy" class="h-40 drop-shadow-lg">
+    </div>
+
+    <!-- Top-right (green boy alt pose) -->
+    <div class="absolute top-[8%] right-[8%] w-64 h-64 rounded-full 
+                bg-orange-300/25 blur-3xl flex items-center justify-center">
+      <img src="assets/gratitude.png" alt="Green boy pose 2" class="h-36 drop-shadow-lg">
+    </div>
+
+    <!-- Bottom-left (pink girl sitting) -->
+    <div class="absolute bottom-[12%] left-[6%] w-64 h-64 rounded-full 
+                bg-pink-300/30 blur-3xl flex items-center justify-center">
+      <img src="assets/shy.png" alt="Pink girl sitting" class="h-36 drop-shadow-lg">
+    </div>
+
+    <!-- Bottom-right (pink girl standing) -->
+    <div class="absolute bottom-[10%] right-[10%] w-64 h-64 rounded-full 
+                bg-yellow-400/25 blur-3xl flex items-center justify-center">
+      <img src="assets/chirpy.png" alt="Pink girl standing" class="h-36 drop-shadow-lg">
+    </div>
+  </div>
+
 
   <!-- Top Navigation -->
   <header class="sticky top-0 z-40 bg-white/10 backdrop-blur border-b border-white/10">

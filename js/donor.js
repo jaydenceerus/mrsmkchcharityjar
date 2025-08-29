@@ -88,7 +88,7 @@ function showPaymentPrompt(donationCode) {
   container.id = 'paymentPrompt';
   container.className = 'fixed bottom-6 right-6 z-[9999]';
   container.style.width = '320px';
-  container.style.transition = 'transform .18s ease, opacity .18s ease';
+  container.style.transition = 'transform .5s ease, opacity .5s ease';
   container.innerHTML = `
     <div class="rounded-2xl bg-white/10 border border-white/10 p-4 shadow-xl backdrop-blur">
       <div class="font-semibold mb-1">Thanks — your pledge is recorded</div>
