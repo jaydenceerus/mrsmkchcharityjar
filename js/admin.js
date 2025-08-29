@@ -905,30 +905,33 @@ async function renderManageWishes() {
 }
 
 function openEditWishModal(wish) {
-    // close any existing modal
-    closeEditModal();
+  // close any existing modal
+  closeEditModal();
 
-    const modal = document.createElement('div');
-    modal.id = 'editWishModal';
-    modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4';
+  const modal = document.createElement('div');
+  modal.id = 'editWishModal';
+  modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4';
 
-    // NOTE: the overlay below has inline styles for backdrop-filter to ensure blur works
-    modal.innerHTML = `
-      <div
-        class="absolute inset-0"
-        style="
-          background: rgba(0,0,0,0.45);
-          -webkit-backdrop-filter: blur(6px);
-          backdrop-filter: blur(6px);
-        "
-      ></div>
+  modal.innerHTML = `
+    <div
+      class="absolute inset-0"
+      style="
+        background: rgba(0,0,0,0.45);
+        -webkit-backdrop-filter: blur(6px);
+        backdrop-filter: blur(6px);
+      "
+    ></div>
 
-      <div class="relative w-full max-w-2xl bg-white/5 p-6 rounded-2xl">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-semibold">Edit Wish — ${wish.id}</h3>
-          <button id="closeEditBtn" class="px-2 py-1 rounded bg-white/10">✕</button>
-        </div>
-        <form id="editWishForm" class="space-y-3 text-sm">
+    <div class="relative w-full max-w-2xl bg-white/5 rounded-2xl shadow-xl flex flex-col max-h-[90vh]">
+      <!-- Header -->
+      <div class="flex justify-between items-center p-6 border-b border-white/10 flex-shrink-0">
+        <h3 class="text-lg font-semibold">Edit Wish — ${wish.id}</h3>
+        <button id="closeEditBtn" class="px-2 py-1 rounded bg-white/10">✕</button>
+      </div>
+
+         <!-- Scrollable content -->
+      <div class="overflow-y-auto p-6 space-y-3 text-sm flex-1">
+        <form id="editWishForm" class="space-y-3" enctype="multipart/form-data">
           <div class="grid grid-cols-2 gap-3">
             <label class="block">
               <div class="text-xs opacity-80">Nickname</div>
@@ -974,70 +977,126 @@ function openEditWishModal(wish) {
             <span class="text-xs opacity-80">Granted</span>
           </label>
 
-          <div class="flex justify-end gap-2 mt-4">
+          <!-- CURRENT IMAGES -->
+          <div class="grid grid-cols-2 gap-4 mt-2">
+            <div>
+              <div class="text-xs opacity-80">Current student photo</div>
+              ${wish.student_image_url ? 
+                `<img id="currentStudentImage" src="${wish.student_image_url}" class="w-28 h-28 object-cover rounded mt-2" />` :
+                `<div id="currentStudentImage" class="w-28 h-28 bg-white/5 rounded mt-2 flex items-center justify-center text-xs">No photo</div>`
+              }
+            </div>
+            <div>
+              <div class="text-xs opacity-80">Current situation photo</div>
+              ${wish.situation_image_url ? 
+                `<img id="currentSituationImage" src="${wish.situation_image_url}" class="w-28 h-28 object-cover rounded mt-2" />` :
+                `<div id="currentSituationImage" class="w-28 h-28 bg-white/5 rounded mt-2 flex items-center justify-center text-xs">No photo</div>`
+              }
+            </div>
+          </div>
+
+          <!-- FILE INPUTS -->
+          <div>
+            <div class="text-xs opacity-80">Replace student photo (optional)</div>
+            <input type="file" id="editStudentImage" name="student_image" accept="image/*" class="mt-1" />
+            <div id="editStudentImagePreview" class="mt-2"></div>
+          </div>
+
+          <div>
+            <div class="text-xs opacity-80">Replace situation photo (optional)</div>
+            <input type="file" id="editSituationImage" name="situation_image" accept="image/*" class="mt-1" />
+            <div id="editSituationImagePreview" class="mt-2"></div>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-4">
             <button type="button" id="cancelEditBtn" class="px-4 py-2 rounded bg-white/10">Cancel</button>
             <button type="submit" class="px-4 py-2 rounded bg-indigo-600 text-white">Save changes</button>
           </div>
         </form>
       </div>
-    `;
+    </div>
+  `;
 
-    document.body.appendChild(modal);
+  document.body.appendChild(modal);
 
-    document.getElementById('closeEditBtn').onclick = closeEditModal;
-    document.getElementById('cancelEditBtn').onclick = closeEditModal;
+  // close handlers
+  document.getElementById('closeEditBtn').onclick = closeEditModal;
+  document.getElementById('cancelEditBtn').onclick = closeEditModal;
 
-    const form = document.getElementById('editWishForm');
-    form.onsubmit = async (e) => {
-  e.preventDefault();
-  const fd = new FormData(form);
+  // --- preview helpers (same as before) ---
+  const studentInput = document.getElementById('editStudentImage');
+  const situationInput = document.getElementById('editSituationImage');
+  const studentPreview = document.getElementById('editStudentImagePreview');
+  const situationPreview = document.getElementById('editSituationImagePreview');
 
-  // first: read selected File objects (if any)
-  const studentFile = form.querySelector('input[name="student_image"]')?.files?.[0] || null;
-  const situationFile = form.querySelector('input[name="situation_image"]')?.files?.[0] || null;
-
-  // optionally show a "Uploading..." UI; omitted here for brevity
-
-  // upload files in parallel
-  const [studentUrl, situationUrl] = await Promise.all([
-    studentFile ? uploadFile(studentFile, 'student_images') : Promise.resolve(null),
-    situationFile ? uploadFile(situationFile, 'situation_images') : Promise.resolve(null),
-  ]);
-
-  // Build updates (only include fields you want to change)
-  const updates = {
-    nickname: (fd.get('nickname') || '').trim(),
-    category: (fd.get('category') || '').trim(),
-    emotion: (fd.get('emotion') || '').trim(),
-    batch: (fd.get('batch') || '').trim(),
-    situation: (fd.get('situation') || '').trim(),
-    wish: (fd.get('wish') || '').trim(),
-    studentname: (fd.get('studentname') || '').trim(),
-    student_class: (fd.get('student_class') || '').trim(),
-    granted: !!fd.get('granted')
-  };
-
-  // only set image URLs if an upload occurred, otherwise leave existing DB values
-  if (studentUrl) updates.student_image_url = studentUrl;
-  if (situationUrl) updates.situation_image_url = situationUrl;
-
-  // call your existing update function (make sure it accepts the new fields)
-  try {
-    const res = await updateWish(wish.id, updates);
-    if (!res) {
-      alert('Failed to update wish. Check console for details.');
-    } else {
-      alert('Wish updated successfully.');
-      closeEditModal();
-      renderManageWishes();
-    }
-  } catch (err) {
-    console.error('Error updating wish:', err);
-    alert('Unexpected error while updating. See console.');
+  function showPreview(file, targetPreview, replaceCurrentId) {
+    targetPreview.innerHTML = '';
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    targetPreview.innerHTML = `<img src="${url}" class="w-28 h-28 object-cover rounded" />`;
+    const current = document.getElementById(replaceCurrentId);
+    if (current) current.style.display = 'none';
   }
-};
 
-}
+  studentInput?.addEventListener('change', (e) =>
+    showPreview(e.target.files?.[0], studentPreview, 'currentStudentImage')
+  );
+  situationInput?.addEventListener('change', (e) =>
+    showPreview(e.target.files?.[0], situationPreview, 'currentSituationImage')
+  );
+
+  // --- submit handler (your existing update logic) ---
+  const form = document.getElementById('editWishForm');
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const fd = new FormData(form);
+
+    const studentFile = studentInput?.files?.[0] || null;
+    const situationFile = situationInput?.files?.[0] || null;
+
+    let studentUrl = null, situationUrl = null;
+    try {
+      const [sUrl, sitUrl] = await Promise.all([
+        studentFile ? uploadFile(studentFile, 'student_images') : null,
+        situationFile ? uploadFile(situationFile, 'situation_images') : null,
+      ]);
+      studentUrl = sUrl; situationUrl = sitUrl;
+    } catch (err) {
+      console.error('Edit image upload error', err);
+      alert('Failed to upload images.');
+      return;
+    }
+
+    const updates = {
+      nickname: (fd.get('nickname') || '').trim(),
+      category: (fd.get('category') || '').trim(),
+      emotion: (fd.get('emotion') || '').trim(),
+      batch: (fd.get('batch') || '').trim(),
+      situation: (fd.get('situation') || '').trim(),
+      wish: (fd.get('wish') || '').trim(),
+      studentname: (fd.get('studentname') || '').trim(),
+      student_class: (fd.get('student_class') || '').trim(),
+      granted: !!fd.get('granted'),
+    };
+    if (studentUrl) updates.student_image_url = studentUrl;
+    if (situationUrl) updates.situation_image_url = situationUrl;
+
+    try {
+      const res = await updateWish(wish.id, updates);
+      if (res) {
+        alert('Wish updated successfully.');
+        closeEditModal();
+        renderManageWishes();
+      } else {
+        alert('Failed to update wish.');
+      }
+    } catch (err) {
+      console.error('Error updating wish:', err);
+      alert('Unexpected error.');
+    }
+  };
+} 
+
 
 function closeEditModal() {
     const existing = document.getElementById('editWishModal');

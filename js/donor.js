@@ -297,37 +297,104 @@ document.getElementById('logoutBtn').addEventListener('click', ()=>{
 });
 
 // Jar rendering
-const ballsGroup = document.getElementById('ballsGroup');
-const iconsLayer = document.getElementById('iconsLayer');
-
 async function renderJar() {
-  const circles = ballsGroup.querySelectorAll('circle[data-id]');
-  const wishes = await loadWishes();   // ⬅️ FIXED
+  const ballsGroup = document.getElementById('ballsGroup');
+  const wishes = await loadWishes();
   const map = Object.fromEntries(wishes.map(w => [w.id, w]));
-  const icons = [];
-  console.log(wishes)
-  circles.forEach(c => {
+
+  // Clear old contents in each wrapper except the circle itself
+  ballsGroup.querySelectorAll("g.ballWrap").forEach(wrap => {
+    [...wrap.children].forEach(child => {
+      if (child.tagName !== "circle") child.remove();
+    });
+  });
+
+  // Apply wish data
+  ballsGroup.querySelectorAll("circle[data-id]").forEach(c => {
     const id = c.dataset.id;
     const w = map[id];
-    if (w) {
-      c.style.display = '';
-      c.setAttribute('fill', EMOTION_COLORS[w.emotion] || '#FDE047');
-      c.style.opacity = w.granted ? '1' : '.85';
-      c.style.filter = w.granted ? 'drop-shadow(0 0 12px rgba(255,255,255,0.95))' : 'none';
-      c.style.stroke = w.granted ? 'rgba(255,255,255,0.95)' : 'none';
-      c.style.strokeWidth = w.granted ? '3' : '0';
-      const cx = +c.getAttribute('cx'), cy = +c.getAttribute('cy');
-      icons.push(
-        `<text x="${cx}" y="${cy}" fill="#fff" text-anchor="middle" dominant-baseline="central" font-weight="700" font-size="12">${CATEGORY_ICON[w.category] || '🎒'}</text>`
-      );
+
+    if (!w) {
+      c.style.display = "none";
+      return;
+    }
+    c.style.display = "block";
+
+    const cx = +c.getAttribute("cx");
+    const cy = +c.getAttribute("cy");
+    const r  = +c.getAttribute("r");
+
+    // circle fill & style
+    c.setAttribute("fill", EMOTION_COLORS[w.emotion] || "#FDE047");
+    c.style.opacity = w.granted ? "1" : ".85";
+    c.style.filter = w.granted
+      ? "drop-shadow(0 0 12px rgba(255,255,255,0.95))"
+      : "none";
+    c.style.stroke = w.granted ? "rgba(255,255,255,0.95)" : "none";
+    c.style.strokeWidth = w.granted ? "3" : "0";
+
+    // get wrapper group
+    const wrap = c.parentNode;
+
+    if (w.situation_image_url) {
+      const defs = ballsGroup.querySelector("defs") || (() => {
+        const d = document.createElementNS("http://www.w3.org/2000/svg","defs");
+        ballsGroup.prepend(d);
+        return d;
+      })();
+
+      // unique clip path
+      const clipId = `clip-${id}`;
+      let clip = document.getElementById(clipId);
+      if (!clip) {
+        clip = document.createElementNS("http://www.w3.org/2000/svg","clipPath");
+        clip.setAttribute("id", clipId);
+        const cc = document.createElementNS("http://www.w3.org/2000/svg","circle");
+        cc.setAttribute("cx", cx);
+        cc.setAttribute("cy", cy);
+        cc.setAttribute("r", r);
+        clip.appendChild(cc);
+        defs.appendChild(clip);
+      } else {
+        const cc = clip.querySelector("circle");
+        cc.setAttribute("cx", cx);
+        cc.setAttribute("cy", cy);
+        cc.setAttribute("r", r);
+      }
+
+      // image inside wrapper, clipped
+      const img = document.createElementNS("http://www.w3.org/2000/svg","image");
+      img.setAttribute("href", w.situation_image_url);
+      img.setAttribute("x", cx - r);
+      img.setAttribute("y", cy - r);
+      img.setAttribute("width", r * 2);
+      img.setAttribute("height", r * 2);
+      img.setAttribute("preserveAspectRatio","xMidYMid slice");
+      img.setAttribute("clip-path", `url(#${clipId})`);
+      img.style.opacity = "0.45";
+
+      wrap.appendChild(img);
     } else {
-      c.style.display = 'none';
+      // fallback emoji
+      const txt = document.createElementNS("http://www.w3.org/2000/svg","text");
+      txt.setAttribute("x", cx);
+      txt.setAttribute("y", cy);
+      txt.setAttribute("fill","#fff");
+      txt.setAttribute("text-anchor","middle");
+      txt.setAttribute("dominant-baseline","central");
+      txt.setAttribute("font-weight","700");
+      txt.setAttribute("font-size","12");
+      txt.textContent = CATEGORY_ICON[w.category] || "🎒";
+      wrap.appendChild(txt);
     }
   });
 
-  iconsLayer.innerHTML = icons.join('');
   await refreshBallHighlights();
 }
+
+
+
+
 
 
 // Modal open/close
