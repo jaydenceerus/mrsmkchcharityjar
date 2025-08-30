@@ -420,74 +420,77 @@ async function renderJar() {
     [...wrap.querySelectorAll('image, text, .ball-hit')].forEach(el => el.remove());
 
     if (w.situation_image_url) {
-      const clipId = `clip-${id}`;
-      let clip = document.getElementById(clipId);
-      if (!clip) {
-        clip = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
-        clip.setAttribute("id", clipId);
-        const cc = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        cc.setAttribute("cx", cx);
-        cc.setAttribute("cy", cy);
-        cc.setAttribute("r", r);
-        clip.appendChild(cc);
-        defs.appendChild(clip);
-      } else {
-        const cc = clip.querySelector('circle');
-        if (cc) { cc.setAttribute('cx', cx); cc.setAttribute('cy', cy); cc.setAttribute('r', r); }
-      }
+  const clipId = `clip-${id}`;
+  let clip = document.getElementById(clipId);
+  if (!clip) {
+    clip = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
+    clip.setAttribute("id", clipId);
+    const cc = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    cc.setAttribute("cx", cx);
+    cc.setAttribute("cy", cy);
+    cc.setAttribute("r", r);
+    clip.appendChild(cc);
+    defs.appendChild(clip);
+  } else {
+    const cc = clip.querySelector('circle');
+    if (cc) { cc.setAttribute('cx', cx); cc.setAttribute('cy', cy); cc.setAttribute('r', r); }
+  }
 
-      const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
-      img.setAttribute("href", w.situation_image_url);
-      img.setAttribute("x", cx - r);
-      img.setAttribute("y", cy - r);
-      img.setAttribute("width", r * 2);
-      img.setAttribute("height", r * 2);
-      img.setAttribute("preserveAspectRatio", "xMidYMid slice");
-      img.setAttribute("clip-path", `url(#${clipId})`);
-      img.style.opacity = "1";
-      wrap.appendChild(img);
+  // Place image first
+  const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+  img.setAttribute("href", w.situation_image_url);
+  img.setAttribute("x", cx - r);
+  img.setAttribute("y", cy - r);
+  img.setAttribute("width", r * 2);
+  img.setAttribute("height", r * 2);
+  img.setAttribute("preserveAspectRatio", "xMidYMid slice");
+  img.setAttribute("clip-path", `url(#${clipId})`);
+  wrap.appendChild(img);
 
-      baseCircle.setAttribute("fill", EMOTION_COLORS[w.emotion] || "#FDE047");
-      baseCircle.style.mixBlendMode = "multiply";
-      baseCircle.style.opacity = w.granted ? "0.9" : "0.65";
-      baseCircle.style.pointerEvents = 'none';
+  // Circle always on top
+  baseCircle.setAttribute("fill", EMOTION_COLORS[w.emotion] || "#FDE047");
+  baseCircle.style.mixBlendMode = "multiply";
+  baseCircle.style.opacity = w.granted ? "0.9" : "0.65";
+  wrap.appendChild(baseCircle);
 
-    } else {
-      baseCircle.setAttribute("fill", EMOTION_COLORS[w.emotion] || "#FDE047");
-      baseCircle.style.mixBlendMode = "normal";
-      baseCircle.style.opacity = w.granted ? "1" : "0.85";
-      baseCircle.style.pointerEvents = 'none';
+} else {
+  baseCircle.setAttribute("fill", EMOTION_COLORS[w.emotion] || "#FDE047");
+  baseCircle.style.mixBlendMode = "normal";
+  baseCircle.style.opacity = w.granted ? "1" : "0.85";
+  wrap.appendChild(baseCircle);
 
-      const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      txt.setAttribute("x", cx);
-      txt.setAttribute("y", cy);
-      txt.setAttribute("fill", "#fff");
-      txt.setAttribute("text-anchor", "middle");
-      txt.setAttribute("dominant-baseline", "central");
-      txt.setAttribute("font-weight", "700");
-      txt.setAttribute("font-size", Math.max(10, Math.floor(r * 0.6)));
-      txt.textContent = CATEGORY_ICON[w.category] || "🎒";
-      wrap.appendChild(txt);
-    }
+  // Emoji fallback sits on top of circle
+  const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  txt.setAttribute("x", cx);
+  txt.setAttribute("y", cy);
+  txt.setAttribute("fill", "#fff");
+  txt.setAttribute("text-anchor", "middle");
+  txt.setAttribute("dominant-baseline", "central");
+  txt.setAttribute("font-weight", "700");
+  txt.setAttribute("font-size", Math.max(10, Math.floor(r * 0.6)));
+  txt.textContent = CATEGORY_ICON[w.category] || "🎒";
+  wrap.appendChild(txt);
+}
 
-    // 🌟 Apply inside-out glow filter + pulse animation
-    baseCircle.setAttribute("filter", "url(#insideOutGlow)");
-    baseCircle.style.animation = "pulseGlow 3s infinite ease-in-out";
+// Inside-out glow always applied
+baseCircle.setAttribute("filter", "url(#insideOutGlow)");
+baseCircle.style.animation = "pulseGlow 3s infinite ease-in-out";
 
-    const hit = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    hit.classList.add('ball-hit');
-    hit.setAttribute('cx', cx);
-    hit.setAttribute('cy', cy);
-    hit.setAttribute('r', r);
-    hit.setAttribute('fill', 'transparent');
-    hit.style.cursor = 'pointer';
-    hit.style.pointerEvents = 'all';
-    hit.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      try { openModal(id); } catch (e) { console.log('openModal missing', e); }
-    });
+// Hit target always last
+const hit = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+hit.classList.add('ball-hit');
+hit.setAttribute('cx', cx);
+hit.setAttribute('cy', cy);
+hit.setAttribute('r', r);
+hit.setAttribute('fill', 'transparent');
+hit.style.cursor = 'pointer';
+hit.style.pointerEvents = 'all';
+hit.addEventListener('click', (ev) => {
+  ev.stopPropagation();
+  try { openModal(id); } catch (e) { console.log('openModal missing', e); }
+});
+wrap.appendChild(hit);
 
-    wrap.appendChild(hit);
   });
 
   await refreshBallHighlights();
