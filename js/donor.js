@@ -445,7 +445,7 @@ async function renderJar() {
       img.setAttribute("preserveAspectRatio", "xMidYMid slice");
       img.setAttribute("clip-path", `url(#${clipId})`);
       img.style.opacity = "1";
-      wrap.insertBefore(img, baseCircle);
+      wrap.appendChild(img);
 
       baseCircle.setAttribute("fill", EMOTION_COLORS[w.emotion] || "#FDE047");
       baseCircle.style.mixBlendMode = "multiply";
