@@ -19,7 +19,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 
 // Demo defaults (copied from original full.html)
-const EMOTION_COLORS = { hope:'#60A5FA', determination:'#34D399', sadness:'#A78BFA', embarrassment:'#F472B6', anxiety:'#FCA5A5' };
+const EMOTION_COLORS = { envy:'#2E8B57', shy:'#FF6EC7', worry:'#6A5ACD', serenity:'#FEFEFA', chirpy:'#FFFF00', gratitude:'#FFAD00' };
 const CATEGORY_ICON = { shoes:'👟', stationery:'✏️', meals:'🧃', data:'📶', transport:'🚲', other:'🎒' };
 
 
@@ -396,7 +396,7 @@ async function renderJar() {
     filter.setAttribute("id", "orbImageBlur");
 
     const blur = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
-    blur.setAttribute("stdDeviation", "1.5"); // tweak for more/less blur
+    blur.setAttribute("stdDeviation", "0.5"); // tweak for more/less blur
     filter.appendChild(blur);
 
     defs.appendChild(filter);
