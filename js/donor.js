@@ -474,7 +474,6 @@ async function renderJar() {
 
 // Inside-out glow always applied
 baseCircle.setAttribute("filter", "url(#insideOutGlow)");
-baseCircle.style.animation = "pulseGlow 3s infinite ease-in-out";
 
 // Hit target always last
 const hit = document.createElementNS("http://www.w3.org/2000/svg", "circle");
