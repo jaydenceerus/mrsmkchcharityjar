@@ -18,6 +18,15 @@
 
     @keyframes bob { 0%{transform:translateY(0)} 50%{transform:translateY(-6px)} 100%{transform:translateY(0)} }
     @keyframes glowPulse { 0%{box-shadow:0 0 0 0 rgba(255,255,255,0.35)} 70%{box-shadow:0 0 40px 8px rgba(255,255,255,0.15)} 100%{box-shadow:0 0 0 0 rgba(255,255,255,0)} }
+
+    @keyframes pulseGlow {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
   </style>
 </head>
 <body class="min-h-screen text-white overflow-x-hidden relative"
@@ -462,14 +471,6 @@
                   <li>Rotate monthly wish lists and track completions</li>
                   <li>Safeguard student privacy and dignity throughout</li>
                 </ul>
-              </div>
-            </div>
-
-            <div class="mt-6 lg:col-span-2">
-              <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur px-5 py-3 rounded-full text-sm">
-                <span class="hidden sm:inline">Click a ball to open a wish</span>
-                <span class="sm:hidden">Tap a ball to open a wish</span>
-                <span class="opacity-90">→</span>
               </div>
             </div>
           </div>
