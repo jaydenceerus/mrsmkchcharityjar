@@ -461,10 +461,36 @@ async function renderJar() {
       img.setAttribute("filter", "url(#orbImageBlur)");
       wrap.appendChild(img);
 
+      const gradId = `grad-${id}`;
+      let grad = document.getElementById(gradId);
+      if (!grad) {
+        grad = document.createElementNS("http://www.w3.org/2000/svg", "radialGradient");
+        grad.setAttribute("id", gradId);
+        grad.setAttribute("cx", "50%");
+        grad.setAttribute("cy", "50%");
+        grad.setAttribute("r", "50%");
+        grad.setAttribute("fx", "50%");
+        grad.setAttribute("fy", "50%");
+
+        const stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+        stop1.setAttribute("offset", "0%");
+        stop1.setAttribute("stop-color", "#fff");
+        stop1.setAttribute("stop-opacity", "0.4");
+
+        const stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+        stop2.setAttribute("offset", "100%");
+        stop2.setAttribute("stop-color", EMOTION_COLORS[w.emotion] || "#FDE047");
+        stop2.setAttribute("stop-opacity", "0.95");
+
+        grad.appendChild(stop1);
+        grad.appendChild(stop2);
+        defs.appendChild(grad);
+      }
+
       // Circle color overlay (soft multiply)
-      baseCircle.setAttribute("fill", EMOTION_COLORS[w.emotion] || "#FDE047");
-      baseCircle.style.mixBlendMode = "multiply";
-      baseCircle.style.opacity = w.granted ? "0.9" : "0.65";
+      baseCircle.setAttribute("fill", `url(#${gradId})`);
+      baseCircle.style.mixBlendMode = "normal";
+      baseCircle.style.opacity = w.granted ? "1" : "0.85";
       wrap.appendChild(baseCircle);
 
     } else {
