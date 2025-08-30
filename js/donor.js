@@ -390,6 +390,18 @@ async function renderJar() {
     defs.appendChild(filter);
   }
 
+  // Add blur filter for orb images (soft memory effect)
+  if (!document.getElementById('orbImageBlur')) {
+    const filter = document.createElementNS("http://www.w3.org/2000/svg", "filter");
+    filter.setAttribute("id", "orbImageBlur");
+
+    const blur = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
+    blur.setAttribute("stdDeviation", "1.5"); // tweak for more/less blur
+    filter.appendChild(blur);
+
+    defs.appendChild(filter);
+  }
+
   // For each base circle
   ballsGroup.querySelectorAll("g.ballWrap > circle[data-id]").forEach(baseCircle => {
     const id = baseCircle.dataset.id;
@@ -420,76 +432,104 @@ async function renderJar() {
     [...wrap.querySelectorAll('image, text, .ball-hit')].forEach(el => el.remove());
 
     if (w.situation_image_url) {
-  const clipId = `clip-${id}`;
-  let clip = document.getElementById(clipId);
-  if (!clip) {
-    clip = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
-    clip.setAttribute("id", clipId);
-    const cc = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    cc.setAttribute("cx", cx);
-    cc.setAttribute("cy", cy);
-    cc.setAttribute("r", r);
-    clip.appendChild(cc);
-    defs.appendChild(clip);
-  } else {
-    const cc = clip.querySelector('circle');
-    if (cc) { cc.setAttribute('cx', cx); cc.setAttribute('cy', cy); cc.setAttribute('r', r); }
-  }
+      // --- IMAGE ORB ---
+      const clipId = `clip-${id}`;
+      let clip = document.getElementById(clipId);
+      if (!clip) {
+        clip = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
+        clip.setAttribute("id", clipId);
+        const cc = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        cc.setAttribute("cx", cx);
+        cc.setAttribute("cy", cy);
+        cc.setAttribute("r", r);
+        clip.appendChild(cc);
+        defs.appendChild(clip);
+      } else {
+        const cc = clip.querySelector('circle');
+        if (cc) { cc.setAttribute('cx', cx); cc.setAttribute('cy', cy); cc.setAttribute('r', r); }
+      }
 
-  // Place image first
-  const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
-  img.setAttribute("href", w.situation_image_url);
-  img.setAttribute("x", cx - r);
-  img.setAttribute("y", cy - r);
-  img.setAttribute("width", r * 2);
-  img.setAttribute("height", r * 2);
-  img.setAttribute("preserveAspectRatio", "xMidYMid slice");
-  img.setAttribute("clip-path", `url(#${clipId})`);
-  wrap.appendChild(img);
+      // Place blurred image first
+      const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+      img.setAttribute("href", w.situation_image_url);
+      img.setAttribute("x", cx - r);
+      img.setAttribute("y", cy - r);
+      img.setAttribute("width", r * 2);
+      img.setAttribute("height", r * 2);
+      img.setAttribute("preserveAspectRatio", "xMidYMid slice");
+      img.setAttribute("clip-path", `url(#${clipId})`);
+      img.setAttribute("filter", "url(#orbImageBlur)");
+      wrap.appendChild(img);
 
-  // Circle always on top
-  baseCircle.setAttribute("fill", EMOTION_COLORS[w.emotion] || "#FDE047");
-  baseCircle.style.mixBlendMode = "multiply";
-  baseCircle.style.opacity = w.granted ? "0.9" : "0.65";
-  wrap.appendChild(baseCircle);
+      // Circle color overlay (soft multiply)
+      baseCircle.setAttribute("fill", EMOTION_COLORS[w.emotion] || "#FDE047");
+      baseCircle.style.mixBlendMode = "multiply";
+      baseCircle.style.opacity = w.granted ? "0.9" : "0.65";
+      wrap.appendChild(baseCircle);
 
-} else {
-  baseCircle.setAttribute("fill", EMOTION_COLORS[w.emotion] || "#FDE047");
-  baseCircle.style.mixBlendMode = "normal";
-  baseCircle.style.opacity = w.granted ? "1" : "0.85";
-  wrap.appendChild(baseCircle);
+    } else {
+      // --- NO IMAGE → gradient orb ---
+      const gradId = `grad-${id}`;
+      let grad = document.getElementById(gradId);
+      if (!grad) {
+        grad = document.createElementNS("http://www.w3.org/2000/svg", "radialGradient");
+        grad.setAttribute("id", gradId);
+        grad.setAttribute("cx", "50%");
+        grad.setAttribute("cy", "50%");
+        grad.setAttribute("r", "50%");
+        grad.setAttribute("fx", "50%");
+        grad.setAttribute("fy", "50%");
 
-  // Emoji fallback sits on top of circle
-  const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  txt.setAttribute("x", cx);
-  txt.setAttribute("y", cy);
-  txt.setAttribute("fill", "#fff");
-  txt.setAttribute("text-anchor", "middle");
-  txt.setAttribute("dominant-baseline", "central");
-  txt.setAttribute("font-weight", "700");
-  txt.setAttribute("font-size", Math.max(10, Math.floor(r * 0.6)));
-  txt.textContent = CATEGORY_ICON[w.category] || "🎒";
-  wrap.appendChild(txt);
-}
+        const stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+        stop1.setAttribute("offset", "0%");
+        stop1.setAttribute("stop-color", "#fff");
+        stop1.setAttribute("stop-opacity", "0.4");
 
-// Inside-out glow always applied
-baseCircle.setAttribute("filter", "url(#insideOutGlow)");
+        const stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+        stop2.setAttribute("offset", "100%");
+        stop2.setAttribute("stop-color", EMOTION_COLORS[w.emotion] || "#FDE047");
+        stop2.setAttribute("stop-opacity", "0.95");
 
-// Hit target always last
-const hit = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-hit.classList.add('ball-hit');
-hit.setAttribute('cx', cx);
-hit.setAttribute('cy', cy);
-hit.setAttribute('r', r);
-hit.setAttribute('fill', 'transparent');
-hit.style.cursor = 'pointer';
-hit.style.pointerEvents = 'all';
-hit.addEventListener('click', (ev) => {
-  ev.stopPropagation();
-  try { openModal(id); } catch (e) { console.log('openModal missing', e); }
-});
-wrap.appendChild(hit);
+        grad.appendChild(stop1);
+        grad.appendChild(stop2);
+        defs.appendChild(grad);
+      }
 
+      baseCircle.setAttribute("fill", `url(#${gradId})`);
+      baseCircle.style.mixBlendMode = "normal";
+      baseCircle.style.opacity = w.granted ? "1" : "0.85";
+      wrap.appendChild(baseCircle);
+
+      // Emoji fallback on top
+      const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      txt.setAttribute("x", cx);
+      txt.setAttribute("y", cy);
+      txt.setAttribute("fill", "#fff");
+      txt.setAttribute("text-anchor", "middle");
+      txt.setAttribute("dominant-baseline", "central");
+      txt.setAttribute("font-weight", "700");
+      txt.setAttribute("font-size", Math.max(10, Math.floor(r * 0.6)));
+      txt.textContent = CATEGORY_ICON[w.category] || "🎒";
+      wrap.appendChild(txt);
+    }
+
+    // Always apply glow
+    baseCircle.setAttribute("filter", "url(#insideOutGlow)");
+
+    // Click hit target
+    const hit = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    hit.classList.add('ball-hit');
+    hit.setAttribute('cx', cx);
+    hit.setAttribute('cy', cy);
+    hit.setAttribute('r', r);
+    hit.setAttribute('fill', 'transparent');
+    hit.style.cursor = 'pointer';
+    hit.style.pointerEvents = 'all';
+    hit.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      try { openModal(id); } catch (e) { console.log('openModal missing', e); }
+    });
+    wrap.appendChild(hit);
   });
 
   await refreshBallHighlights();
