@@ -504,19 +504,45 @@ const wishSituation = document.getElementById('wishSituation');
 const wishText = document.getElementById('wishText');
 
 let currentWishId = null;
-async function openModal(wishId){
-  const wishes = await loadWishes(); // Await the result of the async function
+async function openModal(wishId) {
+  const wishes = await loadWishes();
+  const w = wishes.find(x => x.id === wishId);
+  if (!w) return;
 
-  const w = wishes.find(x=>x.id===wishId);  
-  if(!w) return;
   currentWishId = wishId;
   wishNickname.textContent = w.nickname || 'Student';
-  wishEmotion.textContent = w.emotion ? (w.emotion[0].toUpperCase()+w.emotion.slice(1)) : '-';
+  wishEmotion.textContent = w.emotion ? (w.emotion[0].toUpperCase() + w.emotion.slice(1)) : '-';
   wishSituation.textContent = w.situation || '';
   wishText.textContent = w.wish || '';
-  modal.classList.remove('modal-hidden'); modal.classList.add('modal-visible');
-  modalBackdrop.classList.remove('opacity-0','pointer-events-none'); modalBackdrop.classList.add('opacity-100');
+
+  // ✅ Student image vs placeholder
+  const imgEl = document.getElementById('wishStudentImage');
+  const placeholder = document.getElementById('wishStudentPlaceholder');
+
+  if (w.student_image_url && w.student_image_url.trim() !== "") {
+    imgEl.src = w.student_image_url;
+    imgEl.classList.remove('hidden');
+    placeholder.classList.add('hidden');
+
+    // if the image fails to load → revert to placeholder
+    imgEl.onerror = () => {
+      imgEl.classList.add('hidden');
+      placeholder.classList.remove('hidden');
+    };
+  } else {
+    imgEl.src = "";
+    imgEl.classList.add('hidden');
+    placeholder.classList.remove('hidden');
+  }
+
+  modal.classList.remove('modal-hidden');
+  modal.classList.add('modal-visible');
+  modalBackdrop.classList.remove('opacity-0', 'pointer-events-none');
+  modalBackdrop.classList.add('opacity-100');
 }
+
+
+
 function closeModal(){
   modal.classList.remove('modal-visible'); modal.classList.add('modal-hidden');
   modalBackdrop.classList.add('opacity-0','pointer-events-none'); modalBackdrop.classList.remove('opacity-100');
