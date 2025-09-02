@@ -396,7 +396,7 @@ async function renderJar() {
     filter.setAttribute("id", "orbImageBlur");
 
     const blur = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
-    blur.setAttribute("stdDeviation", "0.5"); // tweak for more/less blur
+    blur.setAttribute("stdDeviation", "0.2"); // tweak for more/less blur
     filter.appendChild(blur);
 
     defs.appendChild(filter);
@@ -452,10 +452,10 @@ async function renderJar() {
       // Place blurred image first
       const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
       img.setAttribute("href", w.situation_image_url);
-      img.setAttribute("x", cx - r);
-      img.setAttribute("y", cy - r);
-      img.setAttribute("width", r * 2);
-      img.setAttribute("height", r * 2);
+      img.setAttribute("x", cx - r + 1);
+      img.setAttribute("y", cy - r + 1);
+      img.setAttribute("width", r * 2 - 4);
+      img.setAttribute("height", r * 2 - 4);
       img.setAttribute("preserveAspectRatio", "xMidYMid slice");
       img.setAttribute("clip-path", `url(#${clipId})`);
       img.setAttribute("filter", "url(#orbImageBlur)");
