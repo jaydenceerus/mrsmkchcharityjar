@@ -452,8 +452,8 @@ async function renderJar() {
       // Place blurred image first
       const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
       img.setAttribute("href", w.situation_image_url);
-      img.setAttribute("x", cx - r + 1);
-      img.setAttribute("y", cy - r + 1);
+      img.setAttribute("x", cx - r + 2);
+      img.setAttribute("y", cy - r + 2);
       img.setAttribute("width", r * 2 - 4);
       img.setAttribute("height", r * 2 - 4);
       img.setAttribute("preserveAspectRatio", "xMidYMid slice");
