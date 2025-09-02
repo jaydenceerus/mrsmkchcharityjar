@@ -721,7 +721,7 @@ async function renderJar() {
       glow.setAttribute('stroke-opacity', '0.98');
       // brighten base stroke too
       baseCircle.style.stroke = 'rgba(255,255,255,0.98)';
-      baseCircle.style.strokeWidth = '3';
+      baseCircle.style.strokeWidth = '1';
       wrap.classList.add('is-hover');
     };
 
