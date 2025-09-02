@@ -452,16 +452,16 @@ async function renderJar() {
       // Place blurred image first
       const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
       img.setAttribute("href", w.situation_image_url);
-      img.setAttribute("x", cx - r + 2);
-      img.setAttribute("y", cy - r + 2);
-      img.setAttribute("width", r * 2 - 4);
-      img.setAttribute("height", r * 2 - 4);
+      img.setAttribute("x", cx - r + 1);
+      img.setAttribute("y", cy - r + 1);
+      img.setAttribute("width", r * 2 - 2);
+      img.setAttribute("height", r * 2 - 2);
       img.setAttribute("preserveAspectRatio", "xMidYMid slice");
       img.setAttribute("clip-path", `url(#${clipId})`);
       img.setAttribute("filter", "url(#orbImageBlur)");
       wrap.appendChild(img);
 
-       const gradId = `grad-img-${id}`;
+      const gradId = `grad-${id}`;
       let grad = document.getElementById(gradId);
       if (!grad) {
         grad = document.createElementNS("http://www.w3.org/2000/svg", "radialGradient");
@@ -474,13 +474,13 @@ async function renderJar() {
 
         const stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
         stop1.setAttribute("offset", "0%");
-        stop1.setAttribute("stop-color", EMOTION_COLORS[w.emotion] || "#FDE047");
-        stop1.setAttribute("stop-opacity", "0"); // fully transparent in center
+        stop1.setAttribute("stop-color", "#fff");
+        stop1.setAttribute("stop-opacity", "0.2");
 
         const stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
         stop2.setAttribute("offset", "100%");
         stop2.setAttribute("stop-color", EMOTION_COLORS[w.emotion] || "#FDE047");
-        stop2.setAttribute("stop-opacity", "0.9"); // solid at edge
+        stop2.setAttribute("stop-opacity", "0.95");
 
         grad.appendChild(stop1);
         grad.appendChild(stop2);
