@@ -396,93 +396,39 @@ async function renderJar() {
   }
 
   // Base and hover filters (kept)
-  if (!document.getElementById('insideOutGlow')) {
-    // 1) base glow (soft)
-    const filter = document.createElementNS("http://www.w3.org/2000/svg", "filter");
-    filter.setAttribute("id", "insideOutGlow");
-    filter.setAttribute("x", "-50%");
-    filter.setAttribute("y", "-50%");
-    filter.setAttribute("width", "200%");
-    filter.setAttribute("height", "200%");
-    const blur = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
-    blur.setAttribute("in", "SourceGraphic");
-    blur.setAttribute("stdDeviation", "4");
-    blur.setAttribute("result", "blur");
-    filter.appendChild(blur);
-    const merge = document.createElementNS("http://www.w3.org/2000/svg", "feMerge");
-    const mergeNode1 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
-    mergeNode1.setAttribute("in", "blur");
-    const mergeNode2 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
-    mergeNode2.setAttribute("in", "SourceGraphic");
-    merge.appendChild(mergeNode1);
-    merge.appendChild(mergeNode2);
-    filter.appendChild(merge);
-    defs.appendChild(filter);
+ if (!document.getElementById('insideOutGlow')) {
+  const filter = document.createElementNS("http://www.w3.org/2000/svg", "filter");
+  filter.setAttribute("id", "insideOutGlow");
 
-    // 2) stronger hover glow (generic white-ish) - kept for added halo if needed
-    const filterHover = document.createElementNS("http://www.w3.org/2000/svg", "filter");
-    filterHover.setAttribute("id", "insideOutGlowHover");
-    filterHover.setAttribute("x", "-80%");
-    filterHover.setAttribute("y", "-80%");
-    filterHover.setAttribute("width", "260%");
-    filterHover.setAttribute("height", "260%");
-    const blurHover = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
-    blurHover.setAttribute("in", "SourceGraphic");
-    blurHover.setAttribute("stdDeviation", "8");
-    blurHover.setAttribute("result", "blurHover");
-    filterHover.appendChild(blurHover);
-    const mergeHover = document.createElementNS("http://www.w3.org/2000/svg", "feMerge");
-    const mHn1 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
-    mHn1.setAttribute("in", "blurHover");
-    const mHn2 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
-    mHn2.setAttribute("in", "SourceGraphic");
-    mergeHover.appendChild(mHn1);
-    mergeHover.appendChild(mHn2);
-    filterHover.appendChild(mergeHover);
-    defs.appendChild(filterHover);
+  // Blur the orb
+  const blur = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
+  blur.setAttribute("in", "SourceAlpha");
+  blur.setAttribute("stdDeviation", "3"); // smaller = tighter glow
+  blur.setAttribute("result", "blur");
+  filter.appendChild(blur);
 
-    // 3) colored hover factory (keeps ability to colorize)
-    window.__ensureEmotionHoverFilters = function (emotionColorMap = {}) {
-      Object.entries(emotionColorMap).forEach(([emotion, color]) => {
-        const id = `hoverGlow-${emotion}`;
-        if (document.getElementById(id)) return;
-        const f = document.createElementNS("http://www.w3.org/2000/svg", "filter");
-        f.setAttribute("id", id);
-        f.setAttribute("x", "-80%");
-        f.setAttribute("y", "-80%");
-        f.setAttribute("width", "260%");
-        f.setAttribute("height", "260%");
-        const ga = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
-        ga.setAttribute("in", "SourceAlpha");
-        ga.setAttribute("stdDeviation", "8");
-        ga.setAttribute("result", "alphaBlur");
-        f.appendChild(ga);
-        const flood = document.createElementNS("http://www.w3.org/2000/svg", "feFlood");
-        flood.setAttribute("flood-color", color);
-        flood.setAttribute("flood-opacity", "0.85");
-        flood.setAttribute("result", "floodColor");
-        f.appendChild(flood);
-        const comp = document.createElementNS("http://www.w3.org/2000/svg", "feComposite");
-        comp.setAttribute("in", "floodColor");
-        comp.setAttribute("in2", "alphaBlur");
-        comp.setAttribute("operator", "in");
-        comp.setAttribute("result", "coloredHalo");
-        f.appendChild(comp);
-        const mergeF = document.createElementNS("http://www.w3.org/2000/svg", "feMerge");
-        const mn1 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
-        mn1.setAttribute("in", "coloredHalo");
-        const mn2 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
-        mn2.setAttribute("in", "SourceGraphic");
-        mergeF.appendChild(mn1);
-        mergeF.appendChild(mn2);
-        f.appendChild(mergeF);
-        defs.appendChild(f);
-      });
-    };
-    if (window.EMOTION_COLORS) {
-      try { window.__ensureEmotionHoverFilters(window.EMOTION_COLORS); } catch (e) { /* ignore */ }
-    }
-  }
+  // Limit the blur to the shape of the orb
+  const composite = document.createElementNS("http://www.w3.org/2000/svg", "feComposite");
+  composite.setAttribute("in", "blur");
+  composite.setAttribute("in2", "SourceAlpha");
+  composite.setAttribute("operator", "arithmetic");
+  composite.setAttribute("k2", "1");
+  composite.setAttribute("k3", "1");
+  composite.setAttribute("result", "glow");
+  filter.appendChild(composite);
+
+  // Merge back with original orb
+  const merge = document.createElementNS("http://www.w3.org/2000/svg", "feMerge");
+  const mergeNode1 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
+  mergeNode1.setAttribute("in", "glow");
+  const mergeNode2 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
+  mergeNode2.setAttribute("in", "SourceGraphic");
+  merge.appendChild(mergeNode1);
+  merge.appendChild(mergeNode2);
+
+  filter.appendChild(merge);
+  defs.appendChild(filter);
+}
 
   // add a small outline-blur filter used for the stroke halo (not a filled disc)
   if (!document.getElementById('orbOutlineBlur')) {
