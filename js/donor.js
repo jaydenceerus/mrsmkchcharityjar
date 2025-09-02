@@ -378,52 +378,41 @@ async function renderJar() {
   const radius = 24;
   const maxOrbs = 30;
   let tries = 0;
-  const placed = [];
-const radius = 24;
-const maxOrbs = 30;
-let tries = 0;
-
-while (placed.length < Math.min(maxOrbs, wishes.length) && tries < 10000) {
-  tries++;
-
-  // --- Bias cy toward bottom ---
-  // Math.pow(Math.random(), 2) skews numbers closer to 0
-  // Multiply by height, then invert so 0 = top, max = bottom
-  let cx = Math.random() * (vb.width - 2 * radius) + radius;
-  let cy = vb.height - (Math.pow(Math.random(), 2) * (vb.height - 2 * radius) + radius);
-
-  if (!isInsideJar(cx, cy)) continue;
-
-  let ok = true;
-  for (let orb of placed) {
-    let dx = cx - orb.cx;
-    let dy = cy - orb.cy;
-    if (Math.sqrt(dx * dx + dy * dy) < radius * 2 + 4) {
-      ok = false;
-      break;
+  while (placed.length < Math.min(maxOrbs, wishes.length) && tries < 10000) {
+    tries++;
+    let cx = Math.random() * (vb.width - 2 * radius) + radius;
+    let r = Math.random();
+  let cy = (1 - r * r) * (vb.height - 2 * radius) + radius;
+    
+    if (!isInsideJar(cx, cy)) continue;
+    let ok = true;
+    for (let orb of placed) {
+      let dx = cx - orb.cx;
+      let dy = cy - orb.cy;
+      if (Math.sqrt(dx * dx + dy * dy) < radius * 2 + 4) {
+        ok = false;
+        break;
+      }
     }
+    if (!ok) continue;
+    placed.push({ cx, cy });
   }
-  if (!ok) continue;
 
-  placed.push({ cx, cy });
-}
+  placed.forEach((pos, i) => {
+    const w = wishes[i];
+    if (!w) return;
+    const wrap = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    wrap.classList.add("ballWrap");
+    wrap.style.animation = "bob 3s ease-in-out infinite, sway 5s ease-in-out infinite";
 
-placed.forEach((pos, i) => {
-  const w = wishes[i];
-  if (!w) return;
-  const wrap = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  wrap.classList.add("ballWrap");
-  wrap.style.animation = "bob 3s ease-in-out infinite, sway 5s ease-in-out infinite";
-
-  const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-  c.setAttribute("cx", pos.cx);
-  c.setAttribute("cy", pos.cy);
-  c.setAttribute("r", radius);
-  c.dataset.id = w.id;
-  wrap.appendChild(c);
-  ballsGroup.appendChild(wrap);
-});
-
+    const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    c.setAttribute("cx", pos.cx);
+    c.setAttribute("cy", pos.cy);
+    c.setAttribute("r", radius);
+    c.dataset.id = w.id; // crucial for the render pipeline
+    wrap.appendChild(c);
+    ballsGroup.appendChild(wrap);
+  });
 
   // Ensure defs exist for clipPaths and filters
   let defs = ballsGroup.querySelector('defs');
