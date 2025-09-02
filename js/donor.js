@@ -374,6 +374,21 @@ async function renderJar() {
     return ctx.isPointInPath(jarShape, x, y);
   }
 
+function isCircleInsideJar(x, y, r) {
+  // Check multiple points around the circle’s edge
+  const steps = 12; // more steps = more accurate
+  for (let i = 0; i < steps; i++) {
+    const angle = (i / steps) * 2 * Math.PI;
+    const px = x + r * Math.cos(angle);
+    const py = y + r * Math.sin(angle);
+    if (!ctx.isPointInPath(jarShape, px, py)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
   const placed = [];
   const radius = 24;
   const maxOrbs = 30;
@@ -383,8 +398,8 @@ async function renderJar() {
     let cx = Math.random() * (vb.width - 2 * radius) + radius;
     let r = Math.random();
   let cy = (1 - r * r) * (vb.height - 2 * radius) + radius;
-    
-    if (!isInsideJar(cx, cy)) continue;
+
+      if (!isCircleInsideJar(cx, cy, radius)) continue;
     let ok = true;
     for (let orb of placed) {
       let dx = cx - orb.cx;
