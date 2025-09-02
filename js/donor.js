@@ -368,27 +368,123 @@ async function renderJar() {
   }
 
   // Add inside-out orb filter if not already present
-  if (!document.getElementById('insideOutGlow')) {
-    const filter = document.createElementNS("http://www.w3.org/2000/svg", "filter");
-    filter.setAttribute("id", "insideOutGlow");
+// --- filters + helpers (replace your existing insideOutGlow block with this) ---
+if (!document.getElementById('dd-orb-filters')) {
+  const container = document.createElement('div');
+  container.id = 'dd-orb-filters';
+  // keep it off-DOM visually, we'll still insert filters into SVG defs below
+  container.style.display = 'none';
+  document.body.appendChild(container);
+}
 
-    const blur = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
-    blur.setAttribute("in", "SourceGraphic");
-    blur.setAttribute("stdDeviation", "4");
-    blur.setAttribute("result", "blur");
-    filter.appendChild(blur);
+// Ensure defs variable points to the SVG <defs> you're using (you already have defs in scope)
+if (!document.getElementById('insideOutGlow')) {
+  // 1) base glow (soft)
+  const filter = document.createElementNS("http://www.w3.org/2000/svg", "filter");
+  filter.setAttribute("id", "insideOutGlow");
+  filter.setAttribute("x", "-50%");
+  filter.setAttribute("y", "-50%");
+  filter.setAttribute("width", "200%");
+  filter.setAttribute("height", "200%");
 
-    const merge = document.createElementNS("http://www.w3.org/2000/svg", "feMerge");
-    const mergeNode1 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
-    mergeNode1.setAttribute("in", "blur");
-    const mergeNode2 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
-    mergeNode2.setAttribute("in", "SourceGraphic");
-    merge.appendChild(mergeNode1);
-    merge.appendChild(mergeNode2);
+  const blur = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
+  blur.setAttribute("in", "SourceGraphic");
+  blur.setAttribute("stdDeviation", "4");
+  blur.setAttribute("result", "blur");
+  filter.appendChild(blur);
 
-    filter.appendChild(merge);
-    defs.appendChild(filter);
+  const merge = document.createElementNS("http://www.w3.org/2000/svg", "feMerge");
+  const mergeNode1 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
+  mergeNode1.setAttribute("in", "blur");
+  const mergeNode2 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
+  mergeNode2.setAttribute("in", "SourceGraphic");
+  merge.appendChild(mergeNode1);
+  merge.appendChild(mergeNode2);
+
+  filter.appendChild(merge);
+  defs.appendChild(filter);
+
+  // 2) stronger hover glow (generic white-ish)
+  const filterHover = document.createElementNS("http://www.w3.org/2000/svg", "filter");
+  filterHover.setAttribute("id", "insideOutGlowHover");
+  filterHover.setAttribute("x", "-80%");
+  filterHover.setAttribute("y", "-80%");
+  filterHover.setAttribute("width", "260%");
+  filterHover.setAttribute("height", "260%");
+
+  const blurHover = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
+  blurHover.setAttribute("in", "SourceGraphic");
+  blurHover.setAttribute("stdDeviation", "8");
+  blurHover.setAttribute("result", "blurHover");
+  filterHover.appendChild(blurHover);
+
+  const mergeHover = document.createElementNS("http://www.w3.org/2000/svg", "feMerge");
+  const mHn1 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
+  mHn1.setAttribute("in", "blurHover");
+  const mHn2 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
+  mHn2.setAttribute("in", "SourceGraphic");
+  mergeHover.appendChild(mHn1);
+  mergeHover.appendChild(mHn2);
+
+  filterHover.appendChild(mergeHover);
+  defs.appendChild(filterHover);
+
+  // 3) helper factory: create colored hover filter for each emotion
+  //    uses SourceAlpha -> blur -> flood -> composite (in = flood in blur) -> merge with original
+  window.__ensureEmotionHoverFilters = function (emotionColorMap = {}) {
+    // emotionColorMap should be like { happy: "#FFD700", sad: "#60A5FA", ... }
+    Object.entries(emotionColorMap).forEach(([emotion, color]) => {
+      const id = `hoverGlow-${emotion}`;
+      if (document.getElementById(id)) return; // already exists
+
+      const f = document.createElementNS("http://www.w3.org/2000/svg", "filter");
+      f.setAttribute("id", id);
+      f.setAttribute("x", "-80%");
+      f.setAttribute("y", "-80%");
+      f.setAttribute("width", "260%");
+      f.setAttribute("height", "260%");
+
+      // blur only the alpha so we get a clean halo
+      const ga = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
+      ga.setAttribute("in", "SourceAlpha");
+      ga.setAttribute("stdDeviation", "8");
+      ga.setAttribute("result", "alphaBlur");
+      f.appendChild(ga);
+
+      // color flood
+      const flood = document.createElementNS("http://www.w3.org/2000/svg", "feFlood");
+      flood.setAttribute("flood-color", color);
+      flood.setAttribute("flood-opacity", "0.75");
+      flood.setAttribute("result", "floodColor");
+      f.appendChild(flood);
+
+      // composite flood with blurred alpha so color follows shape
+      const comp = document.createElementNS("http://www.w3.org/2000/svg", "feComposite");
+      comp.setAttribute("in", "floodColor");
+      comp.setAttribute("in2", "alphaBlur");
+      comp.setAttribute("operator", "in");
+      comp.setAttribute("result", "coloredHalo");
+      f.appendChild(comp);
+
+      // merge colored halo with original graphic
+      const merge = document.createElementNS("http://www.w3.org/2000/svg", "feMerge");
+      const mn1 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
+      mn1.setAttribute("in", "coloredHalo");
+      const mn2 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
+      mn2.setAttribute("in", "SourceGraphic");
+      merge.appendChild(mn1);
+      merge.appendChild(mn2);
+      f.appendChild(merge);
+
+      defs.appendChild(f);
+    });
+  };
+
+  // fallback: if you want a small set by default, call with your global EMOTION_COLORS map
+  if (window.EMOTION_COLORS) {
+    try { window.__ensureEmotionHoverFilters(window.EMOTION_COLORS); } catch (e) { /* ignore */ }
   }
+}
 
   // Add blur filter for orb images (soft memory effect)
   if (!document.getElementById('orbImageBlur')) {
@@ -541,6 +637,21 @@ async function renderJar() {
     // Always apply glow
     baseCircle.setAttribute("filter", "url(#insideOutGlow)");
 
+    wrap.addEventListener('pointerenter', () => {
+  // prefer color filter if exists
+  const colorFilterId = `hoverGlow-${w.emotion}`;
+  if (document.getElementById(colorFilterId)) {
+    circle.setAttribute('filter', `url(#${colorFilterId})`);
+  } else {
+    circle.setAttribute('filter', 'url(#insideOutGlowHover)');
+  }
+});
+
+wrap.addEventListener('pointerleave', () => {
+  // restore normal glow
+  circle.setAttribute('filter', 'url(#insideOutGlow)');
+});
+    
     // Click hit target
     const hit = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     hit.classList.add('ball-hit');
