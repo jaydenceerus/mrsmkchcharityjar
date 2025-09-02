@@ -378,80 +378,52 @@ async function renderJar() {
   const radius = 24;
   const maxOrbs = 30;
   let tries = 0;
-  while (placed.length < Math.min(maxOrbs, wishes.length) && tries < 10000) {
+  const placed = [];
+const radius = 24;
+const maxOrbs = 30;
+let tries = 0;
+
+while (placed.length < Math.min(maxOrbs, wishes.length) && tries < 10000) {
   tries++;
 
-  // random horizontal position (respect radius padding)
-  const cx = Math.random() * (vb.width - 2 * radius) + radius;
+  // --- Bias cy toward bottom ---
+  // Math.pow(Math.random(), 2) skews numbers closer to 0
+  // Multiply by height, then invert so 0 = top, max = bottom
+  let cx = Math.random() * (vb.width - 2 * radius) + radius;
+  let cy = vb.height - (Math.pow(Math.random(), 2) * (vb.height - 2 * radius) + radius);
 
-  // start right near the bottom of the viewBox
-  let cy = vb.height - radius - (Math.random() * 12); // tiny jitter at bottom
+  if (!isInsideJar(cx, cy)) continue;
 
-  // push upward until we no longer collide with any previously placed orb
-  let iterations = 0;
-  let collided;
-  do {
-    collided = false;
-    iterations++;
-    for (const orb of placed) {
-      const dx = cx - orb.cx;
-      const dy = cy - orb.cy;
-      const dist = Math.hypot(dx, dy);
-      if (dist < minDist) {
-        // push *above* this orb
-        cy = orb.cy - minDist;
-        collided = true;
-        // break and re-check all orbs again after pushing
-        break;
-      }
-    }
-    // safety bail for pathological loops
-    if (iterations > 500) break;
-  } while (collided);
-
-  // quick bounds check
-  if (cy - radius < 0) continue;
-
-  // ensure point is inside jar; if not, nudge upward a bit to try to enter jar interior
-  if (!isInsideJar(cx, cy)) {
-    let found = false;
-    // try nudging upward in small steps (2px) up to a reasonable limit
-    for (let off = 2; off < vb.height; off += 2) {
-      const tryY = cy - off;
-      if (tryY - radius < 0) break;
-      if (isInsideJar(cx, tryY)) { cy = tryY; found = true; break; }
-    }
-    if (!found) continue; // can't place at this x
-  }
-
-  // final collision verification (defensive)
   let ok = true;
-  for (const orb of placed) {
-    const dx = cx - orb.cx;
-    const dy = cy - orb.cy;
-    if (dx * dx + dy * dy < minDist * minDist) { ok = false; break; }
+  for (let orb of placed) {
+    let dx = cx - orb.cx;
+    let dy = cy - orb.cy;
+    if (Math.sqrt(dx * dx + dy * dy) < radius * 2 + 4) {
+      ok = false;
+      break;
+    }
   }
   if (!ok) continue;
 
-  // accept
   placed.push({ cx, cy });
 }
 
-  placed.forEach((pos, i) => {
-    const w = wishes[i];
-    if (!w) return;
-    const wrap = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    wrap.classList.add("ballWrap");
-    wrap.style.animation = "bob 3s ease-in-out infinite, sway 5s ease-in-out infinite";
+placed.forEach((pos, i) => {
+  const w = wishes[i];
+  if (!w) return;
+  const wrap = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  wrap.classList.add("ballWrap");
+  wrap.style.animation = "bob 3s ease-in-out infinite, sway 5s ease-in-out infinite";
 
-    const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    c.setAttribute("cx", pos.cx);
-    c.setAttribute("cy", pos.cy);
-    c.setAttribute("r", radius);
-    c.dataset.id = w.id; // crucial for the render pipeline
-    wrap.appendChild(c);
-    ballsGroup.appendChild(wrap);
-  });
+  const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  c.setAttribute("cx", pos.cx);
+  c.setAttribute("cy", pos.cy);
+  c.setAttribute("r", radius);
+  c.dataset.id = w.id;
+  wrap.appendChild(c);
+  ballsGroup.appendChild(wrap);
+});
+
 
   // Ensure defs exist for clipPaths and filters
   let defs = ballsGroup.querySelector('defs');
