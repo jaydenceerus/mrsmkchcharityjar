@@ -612,7 +612,6 @@ async function renderJar() {
       img.setAttribute("preserveAspectRatio", "xMidYMid slice");
       img.setAttribute("clip-path", `url(#${clipId})`);
       img.setAttribute("filter", "url(#orbImageBlur)");
-      wrap.appendChild(img);
 
       const gradId = `grad-${id}`;
       let grad = document.getElementById(gradId);
@@ -644,6 +643,8 @@ async function renderJar() {
       baseCircle.style.mixBlendMode = "normal";
       baseCircle.style.opacity = w.granted ? "1" : "0.85";
       wrap.appendChild(baseCircle);
+
+      wrap.appendChild(img);
 
     } else {
       // --- NO IMAGE → gradient orb ---
