@@ -391,45 +391,76 @@ function isCircleInsideJar(x, y, r) {
 }
 
 
-  const placed = [];
+    const placed = [];
   const radius = 24;
   const maxOrbs = 30;
-  let tries = 0;
-  while (placed.length < Math.min(maxOrbs, wishes.length) && tries < 10000) {
-    tries++;
-    let cx = Math.random() * (vb.width - 2 * radius) + radius;
-    let r = Math.random();
-  let cy = (1 - r * r) * (vb.height - 2 * radius) + radius;
+  const numWishesToPlace = Math.min(maxOrbs, wishes.length);
+  let totalAttempts = 0;
+  const maxTotalAttempts = 20000; // Safety break to prevent infinite loops
 
-      if (!isCircleInsideJar(cx, cy, radius)) continue;
-    let ok = true;
-    for (let orb of placed) {
-      let dx = cx - orb.cx;
-      let dy = cy - orb.cy;
-      if (Math.sqrt(dx * dx + dy * dy) < radius * 2 + 4) {
-        ok = false;
-        break;
+  // Start from the bottom of the viewBox and move upwards in small layers
+  for (let y = vb.height - radius; y > radius && placed.length < numWishesToPlace; y -= 4) {
+    let attemptsInLayer = 0;
+    const maxAttemptsPerLayer = 300; // Tries to place an orb in the current horizontal slice
+
+    // Attempt to place several orbs in the current layer before moving up
+    while (attemptsInLayer < maxAttemptsPerLayer && placed.length < numWishesToPlace) {
+      totalAttempts++;
+      attemptsInLayer++;
+      if (totalAttempts > maxTotalAttempts) break;
+
+      // Pick a random horizontal position
+      const cx = Math.random() * (vb.width - 2 * radius) + radius;
+      // Use the current 'y' level, but add a small vertical jitter for a less grid-like look
+      const cy = y + (Math.random() - 0.5) * 4;
+
+      // Check 1: Is the proposed circle fully inside the jar's boundaries?
+      if (!isCircleInsideJar(cx, cy, radius)) {
+        continue;
       }
+
+      // Check 2: Does it collide with any orb that has already been placed?
+      let isOverlapping = false;
+      for (const orb of placed) {
+        const dx = cx - orb.cx;
+        const dy = cy - orb.cy;
+        // The minimum distance between centers must be twice the radius (plus a small gap)
+        if (Math.sqrt(dx * dx + dy * dy) < radius * 2 + 2) {
+          isOverlapping = true;
+          break;
+        }
+      }
+
+      if (isOverlapping) {
+        continue;
+      }
+
+      // If all checks pass, this is a valid position. Add the orb.
+      placed.push({ cx, cy });
     }
-    if (!ok) continue;
-    placed.push({ cx, cy });
+    
+    if (totalAttempts > maxTotalAttempts) {
+        console.warn("Max placement attempts reached. Not all orbs may be placed.");
+        break;
+    }
   }
+  // --- END OF PLACEMENT LOGIC ---
 
-  placed.forEach((pos, i) => {
-    const w = wishes[i];
-    if (!w) return;
-    const wrap = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    wrap.classList.add("ballWrap");
-    wrap.style.animation = "bob 3s ease-in-out infinite, sway 5s ease-in-out infinite";
+ placed.forEach((pos, i) => {
+  const w = wishes[i];
+  if (!w) return;
+  const wrap = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  wrap.classList.add("ballWrap");
+  wrap.style.animation = "bob 3s ease-in-out infinite, sway 5s ease-in-out infinite";
 
-    const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    c.setAttribute("cx", pos.cx);
-    c.setAttribute("cy", pos.cy);
-    c.setAttribute("r", radius);
-    c.dataset.id = w.id; // crucial for the render pipeline
-    wrap.appendChild(c);
-    ballsGroup.appendChild(wrap);
-  });
+  const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  c.setAttribute("cx", pos.cx);
+  c.setAttribute("cy", pos.cy);
+  c.setAttribute("r", radius);
+  c.dataset.id = w.id; // crucial for the render pipeline
+  wrap.appendChild(c);
+  ballsGroup.appendChild(wrap);
+ });
 
   // Ensure defs exist for clipPaths and filters
   let defs = ballsGroup.querySelector('defs');
