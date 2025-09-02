@@ -396,7 +396,7 @@ function isCircleInsideJar(x, y, r) {
   const maxOrbs = 30;
   const numWishesToPlace = Math.min(maxOrbs, wishes.length);
   let totalAttempts = 0;
-  const maxTotalAttempts = 20000; // Safety break to prevent infinite loops
+  const maxTotalAttempts = 200000; // Safety break to prevent infinite loops
 
   // Start from the bottom of the viewBox and move upwards in small layers
   for (let y = vb.height - radius; y > radius && placed.length < numWishesToPlace; y -= 4) {
