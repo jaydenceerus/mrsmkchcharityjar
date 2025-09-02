@@ -203,11 +203,32 @@ if (!form) {
       }
 
       // --- ADMIN CHECK ---
-      const isAdmin = await isUserAdmin(user.id);
+      // --- ADMIN CHECK ---
+const isAdmin = await isUserAdmin(user.id);
 
-      // redirect based on role
-      if (isAdmin) {
-        await supabase.auth.signInWithOtp({email: email, options:{emailRedirectTo: window.location.href = 'admin.html'}});
+if (isAdmin) {
+  // Instead of logging them straight in,
+  // we send a magic link and stop here.
+  const { error } = await supabase.auth.signInWithOtp({
+    email: email,
+    options: {
+      shouldCreateUser: false, // don't create new users here
+      emailRedirectTo: window.location.origin + "/admin.html" // redirect target
+    }
+  });
+
+  if (error) {
+    console.error("Error sending magic link:", error);
+    show('loginApiError', 'Could not send magic link. Try again.');
+  } else {
+    // Inform the user to check their email
+    show('loginApiError', 'Magic link sent! Please check your email.');
+  }
+
+  // Important: stop further redirect
+  btn.disabled = false;
+  btn.textContent = orig;
+  return;
       } else {
         window.location.href = 'donor.html';
       }
