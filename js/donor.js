@@ -375,26 +375,44 @@ async function renderJar() {
   }
 
   const placed = [];
-  const radius = 24;
-  const maxOrbs = 30;
-  let tries = 0;
-  while (placed.length < Math.min(maxOrbs, wishes.length) && tries < 10000) {
-    tries++;
-    let cx = Math.random() * (vb.width - 2 * radius) + radius;
-    let cy = Math.random() * (vb.height - 2 * radius) + radius;
-    if (!isInsideJar(cx, cy)) continue;
-    let ok = true;
-    for (let orb of placed) {
-      let dx = cx - orb.cx;
-      let dy = cy - orb.cy;
-      if (Math.sqrt(dx * dx + dy * dy) < radius * 2 + 4) {
-        ok = false;
-        break;
-      }
+const radius = 24;
+const maxOrbs = 30;
+let tries = 0;
+
+// Sort placement attempts so we try lower y first
+const sortedYs = [];
+for (let i = 0; i < 1000; i++) {
+  sortedYs.push(Math.random());
+}
+// bias: smaller random → lower y
+sortedYs.sort((a, b) => a - b);
+
+let yIndex = 0;
+
+while (placed.length < Math.min(maxOrbs, wishes.length) && tries < 20000) {
+  tries++;
+  
+  // pick cy biased towards bottom first
+  const randY = sortedYs[yIndex % sortedYs.length];
+  const cy = vb.height - radius - randY * (vb.height - 2 * radius);
+  const cx = Math.random() * (vb.width - 2 * radius) + radius;
+  
+  if (!isInsideJar(cx, cy)) continue;
+  
+  let ok = true;
+  for (let orb of placed) {
+    let dx = cx - orb.cx;
+    let dy = cy - orb.cy;
+    if (Math.sqrt(dx * dx + dy * dy) < radius * 2 + 4) {
+      ok = false;
+      break;
     }
-    if (!ok) continue;
-    placed.push({ cx, cy });
   }
+  if (!ok) continue;
+  
+  placed.push({ cx, cy });
+  yIndex++;
+}
 
   placed.forEach((pos, i) => {
     const w = wishes[i];
