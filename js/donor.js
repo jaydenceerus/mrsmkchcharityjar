@@ -660,7 +660,10 @@ if (!document.getElementById('insideOutGlow')) {
         baseCircle.setAttribute('filter', 'url(#insideOutGlowHover)');
       }
 
-    })
+    });
+    hit.addEventListener('pointerleave', () => {
+      baseCircle.setAttribute('filter','url(#insideOutGlow)')
+    });
     wrap.appendChild(hit);
   });
 
