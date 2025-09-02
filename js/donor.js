@@ -375,26 +375,43 @@ async function renderJar() {
   }
 
   const placed = [];
-  const radius = 24;
-  const maxOrbs = 30;
+const radius = 24;
+const maxOrbs = 30;
+
+for (let i = 0; i < Math.min(maxOrbs, wishes.length); i++) {
   let tries = 0;
-  while (placed.length < Math.min(maxOrbs, wishes.length) && tries < 10000) {
+  let cx, cy;
+  let placedOk = false;
+
+  while (!placedOk && tries < 5000) {
     tries++;
-    let cx = Math.random() * (vb.width - 2 * radius) + radius;
-    let cy = Math.random() * (vb.height - 2 * radius) + radius;
-    if (!isInsideJar(cx, cy)) continue;
-    let ok = true;
-    for (let orb of placed) {
-      let dx = cx - orb.cx;
-      let dy = cy - orb.cy;
-      if (Math.sqrt(dx * dx + dy * dy) < radius * 2 + 4) {
-        ok = false;
-        break;
+    // start somewhere near bottom
+    cx = Math.random() * (vb.width - 2 * radius) + radius;
+    cy = vb.height - radius - Math.random() * 10; // start near bottom
+
+    // push up until no collisions
+    let pushed = true;
+    while (pushed) {
+      pushed = false;
+      for (let orb of placed) {
+        const dx = cx - orb.cx;
+        const dy = cy - orb.cy;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < radius * 2 + 2) {
+          cy = orb.cy - (radius * 2 + 2); // push upwards
+          pushed = true;
+        }
       }
     }
-    if (!ok) continue;
-    placed.push({ cx, cy });
+
+    // check inside jar
+    if (isInsideJar(cx, cy) && cy - radius > 0) {
+      placedOk = true;
+      placed.push({ cx, cy });
+    }
   }
+}
+
 
   placed.forEach((pos, i) => {
     const w = wishes[i];
