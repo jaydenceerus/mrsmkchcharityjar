@@ -361,6 +361,57 @@ async function renderJar() {
     });
   });
 
+  // --- RANDOM POSITIONING ADDED ---
+  const jarPath = document.querySelector("clipPath#jarClip path");
+  const jarShape = new Path2D(jarPath.getAttribute("d"));
+  const svg = document.querySelector("#jarButton svg");
+  const vb = svg.viewBox.baseVal;
+  const ctx = document.createElement("canvas").getContext("2d");
+  ctx.canvas.width = vb.width;
+  ctx.canvas.height = vb.height;
+
+  function isInsideJar(x, y) {
+    return ctx.isPointInPath(jarShape, x, y);
+  }
+
+  const placed = [];
+  const radius = 24;
+  const maxOrbs = 30;
+  let tries = 0;
+  while (placed.length < Math.min(maxOrbs, wishes.length) && tries < 10000) {
+    tries++;
+    let cx = Math.random() * (vb.width - 2 * radius) + radius;
+    let cy = Math.random() * (vb.height - 2 * radius) + radius;
+    if (!isInsideJar(cx, cy)) continue;
+    let ok = true;
+    for (let orb of placed) {
+      let dx = cx - orb.cx;
+      let dy = cy - orb.cy;
+      if (Math.sqrt(dx * dx + dy * dy) < radius * 2 + 4) {
+        ok = false;
+        break;
+      }
+    }
+    if (!ok) continue;
+    placed.push({ cx, cy });
+  }
+
+  placed.forEach((pos, i) => {
+    const w = wishes[i];
+    if (!w) return;
+    const wrap = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    wrap.classList.add("ballWrap");
+    wrap.style.animation = "bob 3s ease-in-out infinite, sway 5s ease-in-out infinite";
+
+    const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    c.setAttribute("cx", pos.cx);
+    c.setAttribute("cy", pos.cy);
+    c.setAttribute("r", radius);
+    c.dataset.id = w.id; // crucial for the render pipeline
+    wrap.appendChild(c);
+    ballsGroup.appendChild(wrap);
+  });
+
   // Ensure defs exist for clipPaths and filters
   let defs = ballsGroup.querySelector('defs');
   if (!defs) {
