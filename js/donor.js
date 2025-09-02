@@ -348,6 +348,7 @@ document.getElementById('logoutBtn').addEventListener('click', ()=>{
 });
 
 // Jar rendering
+// Updated renderJar() — adds slow, brighter hover glow via an animating SVG circle
 async function renderJar() {
   const ballsGroup = document.getElementById('ballsGroup');
   const wishes = await loadWishes();
@@ -367,124 +368,137 @@ async function renderJar() {
     ballsGroup.prepend(defs);
   }
 
-  // Add inside-out orb filter if not already present
-// --- filters + helpers (replace your existing insideOutGlow block with this) ---
-if (!document.getElementById('dd-orb-filters')) {
-  const container = document.createElement('div');
-  container.id = 'dd-orb-filters';
-  // keep it off-DOM visually, we'll still insert filters into SVG defs below
-  container.style.display = 'none';
-  document.body.appendChild(container);
-}
-
-// Ensure defs variable points to the SVG <defs> you're using (you already have defs in scope)
-if (!document.getElementById('insideOutGlow')) {
-  // 1) base glow (soft)
-  const filter = document.createElementNS("http://www.w3.org/2000/svg", "filter");
-  filter.setAttribute("id", "insideOutGlow");
-  filter.setAttribute("x", "-50%");
-  filter.setAttribute("y", "-50%");
-  filter.setAttribute("width", "200%");
-  filter.setAttribute("height", "200%");
-
-  const blur = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
-  blur.setAttribute("in", "SourceGraphic");
-  blur.setAttribute("stdDeviation", "4");
-  blur.setAttribute("result", "blur");
-  filter.appendChild(blur);
-
-  const merge = document.createElementNS("http://www.w3.org/2000/svg", "feMerge");
-  const mergeNode1 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
-  mergeNode1.setAttribute("in", "blur");
-  const mergeNode2 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
-  mergeNode2.setAttribute("in", "SourceGraphic");
-  merge.appendChild(mergeNode1);
-  merge.appendChild(mergeNode2);
-
-  filter.appendChild(merge);
-  defs.appendChild(filter);
-
-  // 2) stronger hover glow (generic white-ish)
-  const filterHover = document.createElementNS("http://www.w3.org/2000/svg", "filter");
-  filterHover.setAttribute("id", "insideOutGlowHover");
-  filterHover.setAttribute("x", "-80%");
-  filterHover.setAttribute("y", "-80%");
-  filterHover.setAttribute("width", "260%");
-  filterHover.setAttribute("height", "260%");
-
-  const blurHover = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
-  blurHover.setAttribute("in", "SourceGraphic");
-  blurHover.setAttribute("stdDeviation", "8");
-  blurHover.setAttribute("result", "blurHover");
-  filterHover.appendChild(blurHover);
-
-  const mergeHover = document.createElementNS("http://www.w3.org/2000/svg", "feMerge");
-  const mHn1 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
-  mHn1.setAttribute("in", "blurHover");
-  const mHn2 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
-  mHn2.setAttribute("in", "SourceGraphic");
-  mergeHover.appendChild(mHn1);
-  mergeHover.appendChild(mHn2);
-
-  filterHover.appendChild(mergeHover);
-  defs.appendChild(filterHover);
-
-  // 3) helper factory: create colored hover filter for each emotion
-  //    uses SourceAlpha -> blur -> flood -> composite (in = flood in blur) -> merge with original
-  window.__ensureEmotionHoverFilters = function (emotionColorMap = {}) {
-    // emotionColorMap should be like { happy: "#FFD700", sad: "#60A5FA", ... }
-    Object.entries(emotionColorMap).forEach(([emotion, color]) => {
-      const id = `hoverGlow-${emotion}`;
-      if (document.getElementById(id)) return; // already exists
-
-      const f = document.createElementNS("http://www.w3.org/2000/svg", "filter");
-      f.setAttribute("id", id);
-      f.setAttribute("x", "-80%");
-      f.setAttribute("y", "-80%");
-      f.setAttribute("width", "260%");
-      f.setAttribute("height", "260%");
-
-      // blur only the alpha so we get a clean halo
-      const ga = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
-      ga.setAttribute("in", "SourceAlpha");
-      ga.setAttribute("stdDeviation", "8");
-      ga.setAttribute("result", "alphaBlur");
-      f.appendChild(ga);
-
-      // color flood
-      const flood = document.createElementNS("http://www.w3.org/2000/svg", "feFlood");
-      flood.setAttribute("flood-color", color);
-      flood.setAttribute("flood-opacity", "0.75");
-      flood.setAttribute("result", "floodColor");
-      f.appendChild(flood);
-
-      // composite flood with blurred alpha so color follows shape
-      const comp = document.createElementNS("http://www.w3.org/2000/svg", "feComposite");
-      comp.setAttribute("in", "floodColor");
-      comp.setAttribute("in2", "alphaBlur");
-      comp.setAttribute("operator", "in");
-      comp.setAttribute("result", "coloredHalo");
-      f.appendChild(comp);
-
-      // merge colored halo with original graphic
-      const merge = document.createElementNS("http://www.w3.org/2000/svg", "feMerge");
-      const mn1 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
-      mn1.setAttribute("in", "coloredHalo");
-      const mn2 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
-      mn2.setAttribute("in", "SourceGraphic");
-      merge.appendChild(mn1);
-      merge.appendChild(mn2);
-      f.appendChild(merge);
-
-      defs.appendChild(f);
-    });
-  };
-
-  // fallback: if you want a small set by default, call with your global EMOTION_COLORS map
-  if (window.EMOTION_COLORS) {
-    try { window.__ensureEmotionHoverFilters(window.EMOTION_COLORS); } catch (e) { /* ignore */ }
+  // Inject hover/glow transition CSS once
+  if (!document.getElementById('dd-orb-hover-style')) {
+    const style = document.createElement('style');
+    style.id = 'dd-orb-hover-style';
+    style.textContent = `
+      /* glow circle transitions */
+      .orb-glow {
+        transition: opacity 360ms cubic-bezier(.2,.9,.25,1), transform 360ms cubic-bezier(.2,.9,.25,1);
+        will-change: opacity, transform;
+        opacity: 0;
+        transform-origin: center center;
+      }
+      /* ensure transform-origin/box works for SVG scaling */
+      g.ballWrap, .orb-glow, circle {
+        transform-box: fill-box;
+      }
+      /* optional class to indicate hovering (useful if you toggle on pointer events) */
+      g.ballWrap.is-hover .orb-glow { opacity: 0.95; transform: scale(1.12); }
+      /* pause animation while dragging (if your drag code sets is-dragging) */
+      g.ballWrap.is-dragging.is-hover .orb-glow { opacity: 0.95; transform: scale(1.06); }
+    `;
+    document.head.appendChild(style);
   }
-}
+
+  // --- filters + helpers (your existing enhanced filter factory) ---
+  if (!document.getElementById('dd-orb-filters')) {
+    const container = document.createElement('div');
+    container.id = 'dd-orb-filters';
+    container.style.display = 'none';
+    document.body.appendChild(container);
+  }
+
+  if (!document.getElementById('insideOutGlow')) {
+    // base glow
+    const filter = document.createElementNS("http://www.w3.org/2000/svg", "filter");
+    filter.setAttribute("id", "insideOutGlow");
+    filter.setAttribute("x", "-50%");
+    filter.setAttribute("y", "-50%");
+    filter.setAttribute("width", "200%");
+    filter.setAttribute("height", "200%");
+
+    const blur = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
+    blur.setAttribute("in", "SourceGraphic");
+    blur.setAttribute("stdDeviation", "4");
+    blur.setAttribute("result", "blur");
+    filter.appendChild(blur);
+
+    const merge = document.createElementNS("http://www.w3.org/2000/svg", "feMerge");
+    const mergeNode1 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
+    mergeNode1.setAttribute("in", "blur");
+    const mergeNode2 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
+    mergeNode2.setAttribute("in", "SourceGraphic");
+    merge.appendChild(mergeNode1);
+    merge.appendChild(mergeNode2);
+
+    filter.appendChild(merge);
+    defs.appendChild(filter);
+
+    // stronger hover filter (kept as extra)
+    const filterHover = document.createElementNS("http://www.w3.org/2000/svg", "filter");
+    filterHover.setAttribute("id", "insideOutGlowHover");
+    filterHover.setAttribute("x", "-80%");
+    filterHover.setAttribute("y", "-80%");
+    filterHover.setAttribute("width", "260%");
+    filterHover.setAttribute("height", "260%");
+
+    const blurHover = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
+    blurHover.setAttribute("in", "SourceGraphic");
+    blurHover.setAttribute("stdDeviation", "8");
+    blurHover.setAttribute("result", "blurHover");
+    filterHover.appendChild(blurHover);
+
+    const mergeHover = document.createElementNS("http://www.w3.org/2000/svg", "feMerge");
+    const mHn1 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
+    mHn1.setAttribute("in", "blurHover");
+    const mHn2 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
+    mHn2.setAttribute("in", "SourceGraphic");
+    mergeHover.appendChild(mHn1);
+    mergeHover.appendChild(mHn2);
+
+    filterHover.appendChild(mergeHover);
+    defs.appendChild(filterHover);
+
+    // emotion colored hover filter factory
+    window.__ensureEmotionHoverFilters = function (emotionColorMap = {}) {
+      Object.entries(emotionColorMap).forEach(([emotion, color]) => {
+        const id = `hoverGlow-${emotion}`;
+        if (document.getElementById(id)) return;
+        const f = document.createElementNS("http://www.w3.org/2000/svg", "filter");
+        f.setAttribute("id", id);
+        f.setAttribute("x", "-80%");
+        f.setAttribute("y", "-80%");
+        f.setAttribute("width", "260%");
+        f.setAttribute("height", "260%");
+
+        const ga = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
+        ga.setAttribute("in", "SourceAlpha");
+        ga.setAttribute("stdDeviation", "8");
+        ga.setAttribute("result", "alphaBlur");
+        f.appendChild(ga);
+
+        const flood = document.createElementNS("http://www.w3.org/2000/svg", "feFlood");
+        flood.setAttribute("flood-color", color);
+        flood.setAttribute("flood-opacity", "0.85");
+        flood.setAttribute("result", "floodColor");
+        f.appendChild(flood);
+
+        const comp = document.createElementNS("http://www.w3.org/2000/svg", "feComposite");
+        comp.setAttribute("in", "floodColor");
+        comp.setAttribute("in2", "alphaBlur");
+        comp.setAttribute("operator", "in");
+        comp.setAttribute("result", "coloredHalo");
+        f.appendChild(comp);
+
+        const merge = document.createElementNS("http://www.w3.org/2000/svg", "feMerge");
+        const mn1 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
+        mn1.setAttribute("in", "coloredHalo");
+        const mn2 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
+        mn2.setAttribute("in", "SourceGraphic");
+        merge.appendChild(mn1);
+        merge.appendChild(mn2);
+        f.appendChild(merge);
+
+        defs.appendChild(f);
+      });
+    };
+
+    if (window.EMOTION_COLORS) {
+      try { window.__ensureEmotionHoverFilters(window.EMOTION_COLORS); } catch (e) { /* ignore */ }
+    }
+  }
 
   // Add blur filter for orb images (soft memory effect)
   if (!document.getElementById('orbImageBlur')) {
@@ -526,6 +540,37 @@ if (!document.getElementById('insideOutGlow')) {
     if (cAnim && !wrap.style.animation) wrap.style.animation = baseCircle.style.animation;
 
     [...wrap.querySelectorAll('image, text, .ball-hit')].forEach(el => el.remove());
+
+    // create glow circle (inserted before the baseCircle so it's underneath)
+    // size the glow slightly larger than the orb radius
+    const glowId = `glow-${id}`;
+    let glow = wrap.querySelector(`circle#${glowId}`);
+    if (!glow) {
+      glow = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      glow.setAttribute('id', glowId);
+      glow.classList.add('orb-glow');
+      // larger than orb so halo shows beyond edge
+      const glowR = Math.max(r * 1.35, r + 6);
+      glow.setAttribute('cx', cx);
+      glow.setAttribute('cy', cy);
+      glow.setAttribute('r', glowR);
+      // default fill is emotion color or white fallback
+      const fillColor = (window.EMOTION_COLORS && window.EMOTION_COLORS[w.emotion]) || '#ffffff';
+      glow.setAttribute('fill', fillColor);
+      glow.setAttribute('fill-opacity', '0.85');
+      // ensure it sits under the base circle
+      wrap.insertBefore(glow, baseCircle);
+      // ensure transform handling for smooth scaling
+      glow.style.transformOrigin = `${cx}px ${cy}px`;
+      glow.style.transformBox = 'fill-box';
+      glow.style.opacity = '0';
+      glow.style.transform = 'scale(1)';
+    } else {
+      // update pos/size if glow exists (re-render)
+      glow.setAttribute('cx', cx);
+      glow.setAttribute('cy', cy);
+      glow.setAttribute('r', Math.max(r * 1.35, r + 6));
+    }
 
     if (w.situation_image_url) {
       // --- IMAGE ORB ---
@@ -634,10 +679,8 @@ if (!document.getElementById('insideOutGlow')) {
       wrap.appendChild(txt);
     }
 
-    // Always apply glow
+    // Always apply base glow filter initially
     baseCircle.setAttribute("filter", "url(#insideOutGlow)");
-
-
 
     // Click hit target
     const hit = document.createElementNS("http://www.w3.org/2000/svg", "circle");
@@ -648,34 +691,62 @@ if (!document.getElementById('insideOutGlow')) {
     hit.setAttribute('fill', 'transparent');
     hit.style.cursor = 'pointer';
     hit.style.pointerEvents = 'all';
-    hit.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      try { openModal(id); } catch (e) { console.log('openModal missing', e); }
-    });
-    hit.addEventListener('pointerenter', () => {
+
+    // hover handlers: animate glow circle & swap stronger filter
+    const onEnter = (ev) => {
+      if (wrap.classList.contains('is-dragging')) return; // don't flash while dragging
+      // set stronger filter (prefer colored filter if available)
       const colorFilterId = `hoverGlow-${w.emotion}`;
       if (document.getElementById(colorFilterId)) {
         baseCircle.setAttribute('filter', `url(#${colorFilterId})`);
       } else {
         baseCircle.setAttribute('filter', 'url(#insideOutGlowHover)');
       }
+      // animate glow circle (via CSS transition)
+      glow.style.transition = glow.style.transition || ''; // keep CSS-driven transition
+      glow.style.opacity = '0.95';
+      glow.style.transform = 'scale(1.12)';
+      // brighten stroke
+      baseCircle.style.transition = 'stroke-width 220ms ease, stroke 220ms ease, opacity 220ms ease';
+      baseCircle.style.stroke = 'rgba(255,255,255,0.98)';
+      baseCircle.style.strokeWidth = '3';
+      // add a hover flag
+      wrap.classList.add('is-hover');
+    };
 
+    const onLeave = (ev) => {
+      // restore
+      glow.style.opacity = '0';
+      glow.style.transform = 'scale(1)';
+      baseCircle.setAttribute('filter','url(#insideOutGlow)');
+      // restore stroke depending on granted state
+      baseCircle.style.stroke = w.granted ? "rgba(255,255,255,0.95)" : "none";
+      baseCircle.style.strokeWidth = w.granted ? "3" : "0";
+      wrap.classList.remove('is-hover');
+    };
+
+    // pointerenter/leave for mouse + pointer devices
+    hit.addEventListener('pointerenter', onEnter);
+    hit.addEventListener('pointerleave', onLeave);
+
+    // also consider pointerdown/up so quick taps show effect briefly (touch-friendly)
+    hit.addEventListener('pointerdown', () => {
+      // show hover quickly on touch, but keep it until pointerup
+      onEnter();
     });
-    hit.addEventListener('pointerleave', () => {
-      baseCircle.setAttribute('filter','url(#insideOutGlow)')
+    hit.addEventListener('pointerup', () => {
+      // if dragging started, onLeave will be handled by drag end; otherwise hide quickly
+      if (!wrap.classList.contains('is-dragging')) {
+        // small delay to allow visual feedback
+        setTimeout(onLeave, 150);
+      }
     });
+
     wrap.appendChild(hit);
   });
 
   await refreshBallHighlights();
 }
-
-
-
-
-
-
-
 
 // Modal open/close
 const modal = document.getElementById('wishModal');
