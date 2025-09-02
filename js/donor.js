@@ -637,21 +637,8 @@ if (!document.getElementById('insideOutGlow')) {
     // Always apply glow
     baseCircle.setAttribute("filter", "url(#insideOutGlow)");
 
-    wrap.addEventListener('pointerenter', () => {
-  // prefer color filter if exists
-  const colorFilterId = `hoverGlow-${w.emotion}`;
-  if (document.getElementById(colorFilterId)) {
-    circle.setAttribute('filter', `url(#${colorFilterId})`);
-  } else {
-    circle.setAttribute('filter', 'url(#insideOutGlowHover)');
-  }
-});
 
-wrap.addEventListener('pointerleave', () => {
-  // restore normal glow
-  circle.setAttribute('filter', 'url(#insideOutGlow)');
-});
-    
+
     // Click hit target
     const hit = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     hit.classList.add('ball-hit');
@@ -665,6 +652,15 @@ wrap.addEventListener('pointerleave', () => {
       ev.stopPropagation();
       try { openModal(id); } catch (e) { console.log('openModal missing', e); }
     });
+    hit.addEventListener('pointerenter', () => {
+      const colorFilterId = `hoverGlow-${w.emotion}`;
+      if (document.getElementById(colorFilterId)) {
+        baseCircle.setAttribute('filter', `url(#${colorFilterId})`);
+      } else {
+        baseCircle.setAttribute('filter', 'url(#insideOutGlowHover)');
+      }
+
+    })
     wrap.appendChild(hit);
   });
 
