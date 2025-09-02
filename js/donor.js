@@ -641,8 +641,8 @@ async function renderJar() {
       }
 
       baseCircle.setAttribute("fill", `url(#${gradId})`);
-      baseCircle.style.mixBlendMode = "multiply";
-      baseCircle.style.opacity = w.granted ? "0.9" : "0.65";
+      baseCircle.style.mixBlendMode = "normal";
+      baseCircle.style.opacity = w.granted ? "1" : "0.85";
       wrap.appendChild(baseCircle);
 
     } else {
