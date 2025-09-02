@@ -375,8 +375,8 @@ async function renderJar() {
   }
 
   const placed = [];
-  const radius = 24;
-  const maxOrbs = 30;
+const radius = 24;
+const maxOrbs = 30;
 
 for (let i = 0; i < Math.min(maxOrbs, wishes.length); i++) {
   let tries = 0;
