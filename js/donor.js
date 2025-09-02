@@ -361,6 +361,8 @@ async function renderJar() {
     });
   });
 
+  ballsGroup.querySelectorAll("g.ballWrap").forEach(wrap => wrap.remove());
+
   // --- RANDOM POSITIONING ADDED ---
   const jarPath = document.querySelector("clipPath#jarClip path");
   const jarShape = new Path2D(jarPath.getAttribute("d"));

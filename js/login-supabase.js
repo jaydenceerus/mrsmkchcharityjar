@@ -207,7 +207,7 @@ if (!form) {
 
       // redirect based on role
       if (isAdmin) {
-        window.location.href = 'admin.html';
+        await supabase.auth.signInWithOtp({email: email, options:{emailRedirectTo: window.location.href = 'admin.html'}});
       } else {
         window.location.href = 'donor.html';
       }
