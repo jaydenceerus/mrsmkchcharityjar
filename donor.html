@@ -17,6 +17,7 @@
     .modal-visible { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); transition: all .18s ease; }
 
     @keyframes bob { 0%{transform:translateY(0)} 50%{transform:translateY(-6px)} 100%{transform:translateY(0)} }
+    
     @keyframes glowPulse { 0%{box-shadow:0 0 0 0 rgba(255,255,255,0.35)} 70%{box-shadow:0 0 40px 8px rgba(255,255,255,0.15)} 100%{box-shadow:0 0 0 0 rgba(255,255,255,0)} }
 
     @keyframes pulseGlow {
@@ -27,6 +28,7 @@
     transform: scale(1.05);
   }
 }
+
   </style>
 </head>
 <body class="min-h-screen text-white overflow-x-hidden relative"
@@ -147,7 +149,6 @@
     <!-- ellipse base -->
   <ellipse cx="180" cy="520" rx="170" ry="70" fill="rgba(255,255,255,0.08)"/>
 
-  <!-- 30 hard-coded circles (6 rows × 5 columns) — more spaced out and moved up -->
   <!-- 30 hard-coded circles arranged in curved rows (6 rows × 5) -->
 <g class="ballWrap" style="animation: bob 3s ease-in-out infinite; animation-delay:.10s; cursor:pointer;">
   <circle data-id="w1"  cx="80"  cy="485" r="24" />
