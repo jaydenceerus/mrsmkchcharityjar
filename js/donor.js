@@ -341,6 +341,8 @@ function routeTo(name){
 }
 navlinks.forEach(btn => btn.addEventListener('click', ()=> routeTo(btn.dataset.route)));
 
+
+
 // Logout
 document.getElementById('logoutBtn').addEventListener('click', ()=>{
   try { localStorage.removeItem(LS_ROLE); localStorage.removeItem(LS_ACTIVE_USER); } catch(e){}
