@@ -375,43 +375,66 @@ async function renderJar() {
   }
 
   const placed = [];
-const radius = 24;
-const maxOrbs = 30;
-let tries = 0;
-
-// Sort placement attempts so we try lower y first
-const sortedYs = [];
-for (let i = 0; i < 1000; i++) {
-  sortedYs.push(Math.random());
-}
-// bias: smaller random → lower y
-sortedYs.sort((a, b) => a - b);
-
-let yIndex = 0;
-
-while (placed.length < Math.min(maxOrbs, wishes.length) && tries < 20000) {
+  const radius = 24;
+  const maxOrbs = 30;
+  let tries = 0;
+  while (placed.length < Math.min(maxOrbs, wishes.length) && tries < 10000) {
   tries++;
-  
-  // pick cy biased towards bottom first
-  const randY = sortedYs[yIndex % sortedYs.length];
-  const cy = vb.height - radius - randY * (vb.height - 2 * radius);
+
+  // random horizontal position (respect radius padding)
   const cx = Math.random() * (vb.width - 2 * radius) + radius;
-  
-  if (!isInsideJar(cx, cy)) continue;
-  
-  let ok = true;
-  for (let orb of placed) {
-    let dx = cx - orb.cx;
-    let dy = cy - orb.cy;
-    if (Math.sqrt(dx * dx + dy * dy) < radius * 2 + 4) {
-      ok = false;
-      break;
+
+  // start right near the bottom of the viewBox
+  let cy = vb.height - radius - (Math.random() * 12); // tiny jitter at bottom
+
+  // push upward until we no longer collide with any previously placed orb
+  let iterations = 0;
+  let collided;
+  do {
+    collided = false;
+    iterations++;
+    for (const orb of placed) {
+      const dx = cx - orb.cx;
+      const dy = cy - orb.cy;
+      const dist = Math.hypot(dx, dy);
+      if (dist < minDist) {
+        // push *above* this orb
+        cy = orb.cy - minDist;
+        collided = true;
+        // break and re-check all orbs again after pushing
+        break;
+      }
     }
+    // safety bail for pathological loops
+    if (iterations > 500) break;
+  } while (collided);
+
+  // quick bounds check
+  if (cy - radius < 0) continue;
+
+  // ensure point is inside jar; if not, nudge upward a bit to try to enter jar interior
+  if (!isInsideJar(cx, cy)) {
+    let found = false;
+    // try nudging upward in small steps (2px) up to a reasonable limit
+    for (let off = 2; off < vb.height; off += 2) {
+      const tryY = cy - off;
+      if (tryY - radius < 0) break;
+      if (isInsideJar(cx, tryY)) { cy = tryY; found = true; break; }
+    }
+    if (!found) continue; // can't place at this x
+  }
+
+  // final collision verification (defensive)
+  let ok = true;
+  for (const orb of placed) {
+    const dx = cx - orb.cx;
+    const dy = cy - orb.cy;
+    if (dx * dx + dy * dy < minDist * minDist) { ok = false; break; }
   }
   if (!ok) continue;
-  
+
+  // accept
   placed.push({ cx, cy });
-  yIndex++;
 }
 
   placed.forEach((pos, i) => {
