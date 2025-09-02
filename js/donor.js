@@ -402,127 +402,7 @@ async function renderJar() {
     defs.appendChild(filter);
   }
 
-   (function ensureCSS() {
-    if (document.getElementById('dreamdrops-orb-animations')) return;
-    const style = document.createElement('style');
-    style.id = 'dreamdrops-orb-animations';
-    style.textContent = `
-    @keyframes bob {
-      0%   { transform: translateY(0) rotate(0deg); }
-      50%  { transform: translateY(-6px) rotate(0deg); }
-      100% { transform: translateY(0) rotate(0deg); }
-    }
-    @keyframes sway {
-      0%   { transform: rotate(-3deg); }
-      50%  { transform: rotate(3deg); }
-      100% { transform: rotate(-3deg); }
-    }
-    /* Pause animation while dragging */
-    g.ballWrap.is-dragging { animation-play-state: paused !important; }
-    /* Make sure CSS transform-origin uses the element's box */
-    g.ballWrap { transform-box: fill-box; }
-    `;
-    document.head.appendChild(style);
-  })();
-
-  // small helper: attach drag handlers to a wrap
-  function attachDragHandlers(wrap, svg) {
-    // cleanup holder
-    if (!wrap.__dragHandlers) wrap.__dragHandlers = {};
-    const state = {
-      dragging: false,
-      pointerId: null,
-      startPointSvg: null, // SVGPoint at pointerdown
-      startTx: 0,
-      startTy: 0,
-    };
-
-    const getTranslation = () => {
-      // read persisted translation from dataset or attribute
-      const tx = parseFloat(wrap.dataset.tx || '0');
-      const ty = parseFloat(wrap.dataset.ty || '0');
-      return [tx, ty];
-    };
-
-    const setTranslation = (tx, ty) => {
-      wrap.dataset.tx = String(tx);
-      wrap.dataset.ty = String(ty);
-      // set SVG transform attribute (this composes with CSS transform)
-      wrap.setAttribute('transform', `translate(${tx} ${ty})`);
-    };
-
-    function clientToSvgPoint(clientX, clientY) {
-      // convert client coords to SVG coordinates
-      const pt = svg.createSVGPoint();
-      pt.x = clientX; pt.y = clientY;
-      const ctm = svg.getScreenCTM();
-      if (!ctm) return pt; // fallback
-      return pt.matrixTransform(ctm.inverse());
-    }
-
-    function onPointerDown(ev) {
-      // left button only or pointer (touch)
-      ev.preventDefault();
-      wrap.classList.add('is-dragging');
-      state.dragging = true;
-      state.pointerId = ev.pointerId;
-      wrap.setPointerCapture(state.pointerId);
-
-      // pause CSS animations while dragging for predictable behavior
-      wrap.style.animationPlayState = 'paused';
-
-      const [tx, ty] = getTranslation();
-      state.startTx = tx;
-      state.startTy = ty;
-      state.startPointSvg = clientToSvgPoint(ev.clientX, ev.clientY);
-    }
-
-    function onPointerMove(ev) {
-      if (!state.dragging || ev.pointerId !== state.pointerId) return;
-      ev.preventDefault();
-      const p = clientToSvgPoint(ev.clientX, ev.clientY);
-      const dx = p.x - state.startPointSvg.x;
-      const dy = p.y - state.startPointSvg.y;
-      const newTx = state.startTx + dx;
-      const newTy = state.startTy + dy;
-      setTranslation(newTx, newTy);
-    }
-
-    function endDrag(ev) {
-      if (!state.dragging) return;
-      // release pointer capture if we have it
-      try { wrap.releasePointerCapture(state.pointerId); } catch(e){}
-      state.dragging = false;
-      state.pointerId = null;
-      state.startPointSvg = null;
-      wrap.classList.remove('is-dragging');
-      // resume CSS animation
-      wrap.style.animationPlayState = '';
-      // optional: add a tiny smooth transition back to "settle" into animations (disabled by default)
-      // wrap.style.transition = 'transform 160ms ease-out';
-      // setTimeout(()=> wrap.style.transition = '', 200);
-    }
-
-    // attach
-    wrap.addEventListener('pointerdown', onPointerDown);
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', endDrag);
-    window.addEventListener('pointercancel', endDrag);
-
-    // store cleanup
-    wrap.__dragHandlers.cleanup = () => {
-      wrap.removeEventListener('pointerdown', onPointerDown);
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerup', endDrag);
-      window.removeEventListener('pointercancel', endDrag);
-    };
-
-    // expose helpers in case you want programmatic moves later
-    wrap.__dragHandlers.setTranslation = (tx, ty) => setTranslation(tx, ty);
-  }
-
   // For each base circle
-  const svg = ballsGroup.ownerSVGElement || document.querySelector('svg');
   ballsGroup.querySelectorAll("g.ballWrap > circle[data-id]").forEach(baseCircle => {
     const id = baseCircle.dataset.id;
     const w = map[id];
@@ -539,10 +419,6 @@ async function renderJar() {
 
     const wrap = baseCircle.parentNode;
 
-    // ensure transform-box & origin so CSS rotate anchors properly
-    wrap.style.transformBox = 'fill-box';
-    wrap.style.transformOrigin = `${cx}px ${cy}px`;
-
     baseCircle.style.pointerEvents = 'none';
     baseCircle.style.filter = w.granted
       ? "drop-shadow(0 0 12px rgba(255,255,255,0.95))"
@@ -550,68 +426,122 @@ async function renderJar() {
     baseCircle.style.stroke = w.granted ? "rgba(255,255,255,0.95)" : "none";
     baseCircle.style.strokeWidth = w.granted ? "3" : "0";
 
-    // preserve any animation on baseCircle, but override with our combined bob + sway if not present
     const cAnim = baseCircle.style.animation || baseCircle.getAttribute('style')?.match(/animation:[^;]+/)?.[0] || '';
-    // randomize bob + sway so they don't sync
-    const bobDuration = 3 + Math.random(); // 3–4s
-    const swayDuration = 5 + Math.random() * 2; // 5–7s
-    const bobDelay = Math.random() * 2;
-    const swayDelay = Math.random() * 3;
-    // apply combined animation on the wrap (not the circle) so images/text within move together
-    wrap.style.animation = `bob ${bobDuration}s ease-in-out infinite ${bobDelay}s, sway ${swayDuration}s ease-in-out infinite ${swayDelay}s`;
+    if (cAnim && !wrap.style.animation) wrap.style.animation = baseCircle.style.animation;
 
-    // remove any previous injected children we will re-insert
     [...wrap.querySelectorAll('image, text, .ball-hit')].forEach(el => el.remove());
 
-    // unified orb design (no-image style). Keeps your gradient + emoji for every orb:
-    const gradId = `grad-${id}`;
-    let grad = document.getElementById(gradId);
-    if (!grad) {
-      grad = document.createElementNS("http://www.w3.org/2000/svg", "radialGradient");
-      grad.setAttribute("id", gradId);
-      grad.setAttribute("cx", "50%");
-      grad.setAttribute("cy", "50%");
-      grad.setAttribute("r", "50%");
-      grad.setAttribute("fx", "50%");
-      grad.setAttribute("fy", "50%");
+    if (w.situation_image_url) {
+      // --- IMAGE ORB ---
+      const clipId = `clip-${id}`;
+      let clip = document.getElementById(clipId);
+      if (!clip) {
+        clip = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
+        clip.setAttribute("id", clipId);
+        const cc = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        cc.setAttribute("cx", cx);
+        cc.setAttribute("cy", cy);
+        cc.setAttribute("r", r);
+        clip.appendChild(cc);
+        defs.appendChild(clip);
+      } else {
+        const cc = clip.querySelector('circle');
+        if (cc) { cc.setAttribute('cx', cx); cc.setAttribute('cy', cy); cc.setAttribute('r', r); }
+      }
 
-      const stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-      stop1.setAttribute("offset", "0%");
-      stop1.setAttribute("stop-color", "#fff");
-      stop1.setAttribute("stop-opacity", "0.2");
+      // Place blurred image first
+      const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+      img.setAttribute("href", w.situation_image_url);
+      img.setAttribute("x", cx - r + 1);
+      img.setAttribute("y", cy - r + 1);
+      img.setAttribute("width", r * 2 - 2);
+      img.setAttribute("height", r * 2 - 2);
+      img.setAttribute("preserveAspectRatio", "xMidYMid slice");
+      img.setAttribute("clip-path", `url(#${clipId})`);
+      img.setAttribute("filter", "url(#orbImageBlur)");
+      wrap.appendChild(img);
 
-      const stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-      stop2.setAttribute("offset", "100%");
-      stop2.setAttribute("stop-color", EMOTION_COLORS[w.emotion] || "#FDE047");
-      stop2.setAttribute("stop-opacity", "0.95");
+      const gradId = `grad-${id}`;
+      let grad = document.getElementById(gradId);
+      if (!grad) {
+        grad = document.createElementNS("http://www.w3.org/2000/svg", "radialGradient");
+        grad.setAttribute("id", gradId);
+        grad.setAttribute("cx", "50%");
+        grad.setAttribute("cy", "50%");
+        grad.setAttribute("r", "50%");
+        grad.setAttribute("fx", "50%");
+        grad.setAttribute("fy", "50%");
 
-      grad.appendChild(stop1);
-      grad.appendChild(stop2);
-      defs.appendChild(grad);
+        const stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+        stop1.setAttribute("offset", "0%");
+        stop1.setAttribute("stop-color", "#fff");
+        stop1.setAttribute("stop-opacity", "0.2");
+
+        const stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+        stop2.setAttribute("offset", "100%");
+        stop2.setAttribute("stop-color", EMOTION_COLORS[w.emotion] || "#FDE047");
+        stop2.setAttribute("stop-opacity", "0.95");
+
+        grad.appendChild(stop1);
+        grad.appendChild(stop2);
+        defs.appendChild(grad);
+      }
+
+      baseCircle.setAttribute("fill", `url(#${gradId})`);
+      baseCircle.style.mixBlendMode = "multiply";
+      baseCircle.style.opacity = w.granted ? "0.9" : "0.65";
+      wrap.appendChild(baseCircle);
+
+    } else {
+      // --- NO IMAGE → gradient orb ---
+      const gradId = `grad-${id}`;
+      let grad = document.getElementById(gradId);
+      if (!grad) {
+        grad = document.createElementNS("http://www.w3.org/2000/svg", "radialGradient");
+        grad.setAttribute("id", gradId);
+        grad.setAttribute("cx", "50%");
+        grad.setAttribute("cy", "50%");
+        grad.setAttribute("r", "50%");
+        grad.setAttribute("fx", "50%");
+        grad.setAttribute("fy", "50%");
+
+        const stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+        stop1.setAttribute("offset", "0%");
+        stop1.setAttribute("stop-color", "#fff");
+        stop1.setAttribute("stop-opacity", "0.2");
+
+        const stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+        stop2.setAttribute("offset", "100%");
+        stop2.setAttribute("stop-color", EMOTION_COLORS[w.emotion] || "#FDE047");
+        stop2.setAttribute("stop-opacity", "0.95");
+
+        grad.appendChild(stop1);
+        grad.appendChild(stop2);
+        defs.appendChild(grad);
+      }
+
+      baseCircle.setAttribute("fill", `url(#${gradId})`);
+      baseCircle.style.mixBlendMode = "normal";
+      baseCircle.style.opacity = w.granted ? "1" : "0.85";
+      wrap.appendChild(baseCircle);
+
+      // Emoji fallback on top
+      const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      txt.setAttribute("x", cx);
+      txt.setAttribute("y", cy);
+      txt.setAttribute("fill", "#fff");
+      txt.setAttribute("text-anchor", "middle");
+      txt.setAttribute("dominant-baseline", "central");
+      txt.setAttribute("font-weight", "700");
+      txt.setAttribute("font-size", Math.max(10, Math.floor(r * 0.6)));
+      txt.textContent = CATEGORY_ICON[w.category] || "🎒";
+      wrap.appendChild(txt);
     }
-
-    baseCircle.setAttribute("fill", `url(#${gradId})`);
-    baseCircle.style.mixBlendMode = "normal";
-    baseCircle.style.opacity = w.granted ? "1" : "0.85";
-    // make sure base circle is appended after potential image (we removed earlier)
-    wrap.appendChild(baseCircle);
-
-    // Emoji on top
-    const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    txt.setAttribute("x", cx);
-    txt.setAttribute("y", cy);
-    txt.setAttribute("fill", "#fff");
-    txt.setAttribute("text-anchor", "middle");
-    txt.setAttribute("dominant-baseline", "central");
-    txt.setAttribute("font-weight", "700");
-    txt.setAttribute("font-size", Math.max(10, Math.floor(r * 0.6)));
-    txt.textContent = CATEGORY_ICON[w.category] || "🎒";
-    wrap.appendChild(txt);
 
     // Always apply glow
     baseCircle.setAttribute("filter", "url(#insideOutGlow)");
 
-    // Click hit target (transparent circle)
+    // Click hit target
     const hit = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     hit.classList.add('ball-hit');
     hit.setAttribute('cx', cx);
@@ -625,14 +555,6 @@ async function renderJar() {
       try { openModal(id); } catch (e) { console.log('openModal missing', e); }
     });
     wrap.appendChild(hit);
-
-    // Restore previous translation if present (so re-render doesn't forget drag)
-    const prevTx = parseFloat(wrap.dataset.tx || '0');
-    const prevTy = parseFloat(wrap.dataset.ty || '0');
-    if (prevTx || prevTy) wrap.setAttribute('transform', `translate(${prevTx} ${prevTy})`);
-
-    // Attach drag handlers (pass svg root)
-    attachDragHandlers(wrap, svg);
   });
 
   await refreshBallHighlights();
