@@ -750,11 +750,25 @@ document.querySelectorAll('[data-slider]').forEach(slider => {
         console.error("Unexpected error while performing grant updates:", e);
       }
     } else {
-      const { error: wishErr } = await supabase
+      try {
+        const { data: donation, error: dErr } = await supabase
+          .from('donations')
+          .select('*')
+          .eq('code', donationCode)
+          .maybeSingle();
+          if (dErr) {
+          console.error("Failed to fetch donation for post-grant updates:", dErr);
+        } else if (donation) {
+          const wishId = donation.wish_id;
+        const { error: wishErr } = await supabase
           .from('wishes')
           .update({ granted: false })
           .eq('id', wishId);
-      if (wishErr) console.error("Failed to update wish.granted:", wishErr);
+        if (wishErr) console.error("Failed to update wish.granted:", wishErr);
+      }
+      } catch (e) {
+        console.error("Unexpected error while performing grant updates:", e);
+      }
     }
   });
 });
