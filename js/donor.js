@@ -801,31 +801,41 @@ donorForm?.addEventListener('submit', async (e) => {
   const target = wishes.find(w => w.id === currentWishId);
   if (!target) { alert('Selected wish not found.'); return; }
 
-  const donation = {
-    code,
-    wish_id: target.id,
-    wish_nickname: target.nickname,
-    timestamp: now,
-    donor_id: user.id,
-    donor: {
-      displayName: fullName || nick || user.username,
-      fullName,
-      nickname: nick,
-      email: fd.get('email'),
-      phone: fd.get('phone') || '',
-      type: fd.get('type'),
-      amount: fd.get('amount') || '',
-      timeline: fd.get('timeline') || '',
-      message: fd.get('message') || ''
-    },
-    status_phase: 0,
-    pledged_at: now,
-    received_at: null,
-    granted_at: null
-  };
+  const donationUuid = uuidv4(); // uses your existing uuidv4() helper
 
-  await saveDonation(donation);
-  await setLatestCode(code);
+const donation = {
+  // keep your human-readable code for legacy / UI
+  code,
+  // optional: a top-level field the JS will carry — won't fail the insert,
+  // but if your DB has no donation_uuid column it will be ignored by Postgres insert
+  donation_uuid: donationUuid,
+
+  wish_id: target.id,
+  wish_nickname: target.nickname,
+  timestamp: now,
+  donor_id: user.id,
+  donor: {
+    // embed the uuid inside the donor jsonb so it's stored safely without changing schema
+    donation_uuid: donationUuid,
+    displayName: fullName || nick || user.username,
+    fullName,
+    nickname: nick,
+    email: fd.get('email'),
+    phone: fd.get('phone') || '',
+    type: fd.get('type'),
+    amount: fd.get('amount') || '',
+    timeline: fd.get('timeline') || '',
+    message: fd.get('message') || ''
+  },
+  status_phase: 0,
+  pledged_at: now,
+  received_at: null,
+  granted_at: null
+};
+
+await saveDonation(donation); // your saveDonation inserts the object
+await setLatestCode(code);
+
 
   const { error: wishUpdateError } = await supabase
     .from("wishes")
