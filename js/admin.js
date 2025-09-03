@@ -545,7 +545,7 @@ if (wishes && wishes.length > 0) {
     <span class="text-xs">Pledged</span>
     <input data-slider="${d.code}" type="range" min="0" max="2" step="1" value="${d.status_phase ?? 0}" class="w-full accent-amber-300">
     <span class="text-xs">Granted</span>
-    <button data-open-thread='${d.code}' class="ml-3 px-3 py-2 rounded-lg bg-white/10 text-sm">Chat</button>
+    <button data-open-thread='${d.code}' data-donor-id='${d.donor_id}' class="ml-3 px-3 py-2 rounded-lg bg-white/10 text-sm">Chat</button>
     <button data-delete-donation='${d.code}' class="ml-2 px-3 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm">🗑️ Delete</button>
   </div>
 `;
@@ -576,6 +576,7 @@ if (wishes && wishes.length > 0) {
       document.querySelectorAll('[data-open-thread]').forEach(btn => {
         btn.addEventListener('click', async () => {
         const donationCode = btn.getAttribute('data-open-thread');
+        const donorId = btn.getAttribute('data-donor-id');
 
     // 1. Check if conversation already exists
     const { data: existingConversation, error } = await supabase
@@ -594,9 +595,10 @@ if (wishes && wishes.length > 0) {
       conversation = existingConversation;
       console.log("Opening existing conversation:", conversation);
     } else {
+      console.log(donorId);
       const { data: newConversation, error: insertErr } = await supabase
         .from('conversations')
-        .insert([{ donation_code: donationCode, title: `Donation ${donationCode}` }])
+        .insert([{ donation_code: donationCode, title: `Donation ${donationCode}`, donor_id: donorId }])
         .select()
         .single();
 
