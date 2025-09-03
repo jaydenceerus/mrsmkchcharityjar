@@ -679,6 +679,18 @@ document.querySelectorAll('[data-slider]').forEach(slider => {
       // Mark as granted
       updateData.granted_at = new Date().toISOString();
     }
+    const { error: updateErr } = await supabase
+      .from('donations')
+      .update(updateData)
+      .eq('code', donationCode);
+
+      if (updateErr) {
+      console.error("Error updating status:", updateErr);
+      alert("Failed to update donation status.");
+      return;
+    }
+
+
     // If the donation was moved to "Granted", update wish + profile totals
     if (newPhase === 2) {
       try {
