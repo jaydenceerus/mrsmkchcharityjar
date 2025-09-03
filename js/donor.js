@@ -1184,7 +1184,7 @@ async function renderInbox() {
 }
 
 async function openThread(conversationId, title) {
-  console.log(conservationId);
+  console.log(conversationId);
   console.log(title);
   document.getElementById('chatHeader').querySelector('.font-semibold').textContent = title;
 

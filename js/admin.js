@@ -652,12 +652,6 @@ document.querySelectorAll('[data-slider]').forEach(slider => {
       .update({ status_phase: newPhase })
       .eq('code', donationCode);
 
-    if (updateErr) {
-      console.error("Error updating status:", updateErr);
-      alert("Failed to update donation status.");
-      return;
-    }
-
     // UI: update the status badge immediately
     const badge = slider.closest('.rounded-2xl')
       .querySelector('span.px-3'); // status badge span
