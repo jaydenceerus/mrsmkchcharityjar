@@ -1,4 +1,6 @@
-// js/donor.js
+// js/donor.anonymous.js
+// Drop-in replacement to run the app anonymously (no supabase auth required)
+
 // Keys
 const LS_ROLE = 'wishjar_role';
 const LS_ACTIVE_USER = 'wishjar_active_user';
@@ -11,25 +13,274 @@ const LS_THANKS = 'wishjar_thankyou';
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 // ---------- CONFIG ----------
-const SUPABASE_URL = "https://eaivuhgvzdvvxscqqqji.supabase.co"; // replace
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhaXZ1aGd2emR2dnhzY3FxcWppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1OTMxNDIsImV4cCI6MjA3MTE2OTE0Mn0.ru1S0ZiYQluFFzYkrbFxqzk2v315xAA29iXlviy3Y1E";                          // replace
+// Replace with your own values if needed
+const SUPABASE_URL = "https://eaivuhgvzdvvxscqqqji.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhaXZ1aGd2emR2dnhzY3FxcWppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1OTMxNDIsImV4cCI6MjA3MTE2OTE0Mn0.ru1S0ZiYQluFFzYkrbFxqzk2v315xAA29iXlviy3Y1E";
 // ----------------------------
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
 
 // Demo defaults (copied from original full.html)
 const EMOTION_COLORS = { envy:'#2E8B57', shy:'#FF6EC7', worry:'#6A5ACD', serenity:'#FEFEFA', chirpy:'#FFFF00', gratitude:'#FFAD00' };
 const CATEGORY_ICON = { shoes:'👟', stationery:'✏️', meals:'🧃', data:'📶', transport:'🚲', other:'🎒' };
 
-
 // Utilities
 let activeChannel = null;
 
+/* -------------------------
+   Anonymous user helpers
+   ------------------------- */
+
+// Simple UUID v4 generator (compact)
+function uuidv4() {
+  // from https://stackoverflow.com/a/2117523/119527
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+function makeAnonName() {
+  // e.g. Anon-7421
+  return `Anon-${Math.floor(1000 + Math.random() * 9000)}`;
+}
+
+// Returns a local anon user object (and ensures persisted in localStorage)
+function ensureLocalAnonUser() {
+  let raw = localStorage.getItem(LS_ACTIVE_USER);
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.id) return parsed;
+    } catch (e) { /* fallthrough to recreate */ }
+  }
+  const id = uuidv4();
+  const username = makeAnonName();
+  const userObj = { id, username };
+  localStorage.setItem(LS_ACTIVE_USER, JSON.stringify(userObj));
+  return userObj;
+}
+
+// Public: returns {id, username}
+async function getActiveUser() {
+  return ensureLocalAnonUser();
+}
+
+// Allow UI or dev to set anon username (also upserts profile)
+async function setAnonUsername(name) {
+  const user = ensureLocalAnonUser();
+  user.username = name || user.username;
+  localStorage.setItem(LS_ACTIVE_USER, JSON.stringify(user));
+  // upsert into profiles table so the profile shows the new name
+  try {
+    await supabase.from('profiles').upsert({ id: user.id, username: user.username }, { onConflict: 'id' });
+  } catch (e) { console.error('setAnonUsername upsert error', e); }
+}
+
+/* -------------------------
+   Profiles helper (uses anon id)
+   ------------------------- */
+async function getActiveProfile() {
+  const u = ensureLocalAnonUser();
+  try {
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('username, full_name, hide_full_name, phone, affiliation, total_pledges, wishes_granted, total_donated, latest_code')
+      .eq('id', u.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching profile:', error);
+      // return fallback object
+      return {
+        id: u.id,
+        username: u.username,
+        fullName: null,
+        hideFullName: false,
+        phone: null,
+        affiliation: null,
+        totalPledges: 0,
+        wishesGranted: 0,
+        totalDonated: 0,
+        latestCode: null
+      };
+    }
+
+    if (profile) {
+      return {
+        id: u.id,
+        username: profile.username || u.username,
+        fullName: profile.full_name,
+        hideFullName: profile.hide_full_name,
+        phone: profile.phone,
+        affiliation: profile.affiliation,
+        totalPledges: profile.total_pledges,
+        wishesGranted: profile.wishes_granted,
+        totalDonated: profile.total_donated,
+        latestCode: profile.latest_code
+      };
+    }
+
+    // No profile row yet — create a minimal one (so `latest_code` etc work)
+    const up = {
+      id: u.id,
+      username: u.username,
+      full_name: null,
+      hide_full_name: false,
+      phone: null,
+      affiliation: null,
+      total_pledges: 0,
+      wishes_granted: 0,
+      total_donated: 0,
+      latest_code: null,
+      created_at: new Date().toISOString()
+    };
+    const { error: upErr } = await supabase.from('profiles').insert([up]);
+    if (upErr) console.error('Error creating anon profile:', upErr);
+    return {
+      id: u.id,
+      username: u.username,
+      fullName: null,
+      hideFullName: false,
+      phone: null,
+      affiliation: null,
+      totalPledges: 0,
+      wishesGranted: 0,
+      totalDonated: 0,
+      latestCode: null
+    };
+  } catch (e) {
+    console.error('Unexpected error in getActiveProfile', e);
+    return {
+      id: u.id,
+      username: u.username,
+      fullName: null,
+      hideFullName: false,
+      phone: null,
+      affiliation: null,
+      totalPledges: 0,
+      wishesGranted: 0,
+      totalDonated: 0,
+      latestCode: null
+    };
+  }
+}
+
+/* -------------------------
+   Latest code helpers
+   ------------------------- */
+async function setLatestCode(code) {
+  const u = ensureLocalAnonUser();
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ latest_code: code })
+      .eq('id', u.id);
+
+    if (error) {
+      // If update fails because row missing, try upsert
+      console.error("Error updating latest_code in profile:", error);
+      await supabase.from('profiles').upsert({ id: u.id, username: u.username, latest_code: code });
+    } else {
+      console.log(`Updated latest_code for anon user ${u.id}`);
+    }
+  } catch (e) {
+    console.error("Exception setting latest code:", e);
+  }
+}
+
+async function getLatestCode() {
+  const u = ensureLocalAnonUser();
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('latest_code')
+      .eq('id', u.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching latest_code:', error);
+      return null;
+    }
+    return data?.latest_code ?? null;
+  } catch (e) {
+    console.error('Exception in getLatestCode', e);
+    return null;
+  }
+}
+
+/* -------------------------
+   Core DB helpers (unchanged semantics)
+   ------------------------- */
+async function loadWishes() {
+  let { data, error } = await supabase
+    .from('wishes')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error("Error loading wishes:", error);
+    return [];
+  }
+  return data || [];
+}
+
+async function saveWishes(wishes) {
+  for (const w of wishes) {
+    await supabase.from('wishes').upsert(w);
+  }
+}
+
+async function loadDonations() {
+  const { data, error } = await supabase.from('donations').select('*');
+  if (error) { console.error(error); return []; }
+  return data || [];
+}
+
+async function saveDonation(donation) {
+  const { error } = await supabase.from('donations').insert([donation]);
+  if (error) console.error(error);
+}
+
+async function saveMessage(conversationId, senderId, text, senderName) {
+  const { error } = await supabase.from('messages').insert([{
+    conversation_id: conversationId,
+    sender_id: senderId,
+    body: text,
+    sender_name: senderName
+  }]);
+  if (error) console.error(error);
+}
+
+async function loadMessages(conversationId) {
+  const { data, error } = await supabase
+    .from('messages')
+    .select('id, sender_id, sender_name, body, created_at')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true });
+  if (error) { console.error(error); return []; }
+  return data || [];
+}
+
+async function loadThanks() {
+  const { data, error } = await supabase.from('thanks').select('*');
+  if (error) { console.error(error); return {}; }
+  const map = {};
+  (data || []).forEach(row => { map[row.code] = row; });
+  return map;
+}
+
+async function saveThanks(obj) {
+  const { error } = await supabase.from('thanks').upsert(obj);
+  if (error) console.error(error);
+}
+
+/* -------------------------
+   Realtime subscription (keeps your original behavior)
+   ------------------------- */
 function subscribeToMessages(conversationId, userId, donorDisplayName) {
-  // Remove old channel if any
   if (activeChannel) {
-    supabase.removeChannel(activeChannel);
+    try { supabase.removeChannel(activeChannel); } catch (e) { /* ignore */ }
     activeChannel = null;
   }
 
@@ -49,6 +300,7 @@ function subscribeToMessages(conversationId, userId, donorDisplayName) {
         const from = m.sender_name || (isMine ? donorDisplayName || 'You' : m.sender_id ? 'Staff' : 'System');
 
         const messagesEl = document.getElementById('chatMessages');
+        if (!messagesEl) return;
         const item = document.createElement('div');
         item.className = `p-3 rounded-xl my-1 max-w-[70%] ${
           isMine
@@ -70,18 +322,15 @@ function subscribeToMessages(conversationId, userId, donorDisplayName) {
     });
 }
 
+/* -------------------------
+   UI helpers (payment prompt etc)
+   ------------------------- */
 function startPaymentFlow(donationCode) {
-  // TODO: hook this to your real payment integration.
-  // Default behavior: open a new page /pay?code=... (you can change)
   console.log("Starting payment flow for", donationCode);
-  // Example: redirect to a payment page (replace with real route)
-  // window.location.href = `/pay?code=${encodeURIComponent(donationCode)}`;
-  // For demo / placeholder:
   alert('Payment flow placeholder for donation ' + donationCode);
 }
 
 function showPaymentPrompt(donationCode) {
-  // avoid duplicating prompt
   if (document.getElementById('paymentPrompt')) return;
 
   const container = document.createElement('div');
@@ -102,7 +351,6 @@ function showPaymentPrompt(donationCode) {
 
   document.body.appendChild(container);
 
-  // animate in
   requestAnimationFrame(() => {
     container.style.transform = 'translateY(0)';
     container.style.opacity = '1';
@@ -116,206 +364,12 @@ function showPaymentPrompt(donationCode) {
     container.remove();
   });
 
-  // auto-dismiss after 25s
   setTimeout(() => { container.remove(); }, 25000);
 }
 
-
-async function getActiveUser() {
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) return null;
-  console.log(data.user.id)
-  return {
-    id: data.user.id, // UUID
-    username: data.user.user_metadata?.username || data.user.email || "Anonymous"
-  };
-}
-
-(async () => {
-  const user = await getActiveUser();
-  if (!user) {
-    alert('Please sign in first. Redirecting to login.');
-    window.location.href = 'index.html';
-  }
-})();
-
-async function getActiveProfile() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  // Fetch the full profile from your profiles table
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    // Select all the columns from your new table structure
-    .select('username, full_name, hide_full_name, phone, affiliation, total_pledges, wishes_granted, total_donated, latest_code')
-    .eq('id', user.id)
-    .maybeSingle(); // Use maybeSingle() to prevent errors if a profile is missing
-
-  if (error) {
-    console.error("Error fetching profile:", error);
-    // Return a default object based on auth user if the query fails
-    return { 
-      id: user.id, 
-      username: user.email || 'Anonymous',
-      fullName: null,
-      hideFullName: false,
-      phone: null,
-      affiliation: null,
-      totalPledges: 0,
-      wishesGranted: 0,
-      totalDonated: 0,
-      latestCode: null
-    };
-  }
-
-  // If a profile exists, return its data.
-  if (profile) {
-    return {
-      id: user.id,
-      username: profile.username || user.email || 'Anonymous',
-      fullName: profile.full_name,
-      hideFullName: profile.hide_full_name,
-      phone: profile.phone,
-      affiliation: profile.affiliation,
-      totalPledges: profile.total_pledges,
-      wishesGranted: profile.wishes_granted,
-      totalDonated: profile.total_donated,
-      latestCode: profile.latest_code
-    };
-  }
-
-  // Fallback for new users who might not have a profile row yet
-  return {
-    id: user.id,
-    username: user.email || 'Anonymous',
-    fullName: null,
-    hideFullName: false,
-    phone: null,
-    affiliation: null,
-    totalPledges: 0,
-    wishesGranted: 0,
-    totalDonated: 0,
-    latestCode: null
-  };
-}
-
-
-async function loadWishes() {
-  console.log("Attempting to load wishes from Supabase...");
-  
-  let { data, error } = await supabase
-    .from('wishes')
-    .select('*')
-    .order('created_at', { ascending: false }); // Optional: order by date
-
-  if (error) {
-    console.error("Error loading wishes:", error);
-    console.error("Error details:", error.message, error.code);
-    return [];
-  }
-  
-  console.log("Wishes loaded successfully:", data);
-  console.log("Number of wishes:", data?.length || 0);
-  
-  return data || [];
-}
-
-async function saveWishes(wishes) {
-  for (const w of wishes) {
-    await supabase.from('wishes').upsert(w);
-  }
-}
-
-// DONATIONS
-async function loadDonations() {
-  const { data, error } = await supabase.from('donations').select('*');
-  if (error) { console.error(error); return []; }
-  return data;
-}
-async function saveDonation(donation) {
-  const { error } = await supabase.from('donations').insert([donation]);
-  if (error) console.error(error);
-}
-
-// MESSAGES
-async function saveMessage(conversationId, senderId, text, senderName) {
-  const { error } = await supabase.from('messages').insert([{
-    conversation_id: conversationId,
-    sender_id: senderId,
-    body: text,
-    sender_name: senderName
-  }]);
-  if (error) console.error(error);
-}
-
-async function loadMessages(conversationId) {
-  const { data, error } = await supabase
-    .from('messages')
-    .select('id, sender_id, sender_name, body, created_at')
-    .eq('conversation_id', conversationId)
-    .order('created_at', { ascending: true });
-  if (error) { console.error(error); return []; }
-  return data;
-}
-
-// LATEST CODE
-async function setLatestCode(code) {
-  // Get the currently logged-in user
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    console.error("Cannot set latest code: no active user.");
-    return;
-  }
-
-  // Update the 'latest_code' column in the 'profiles' table for that user
-  const { error } = await supabase
-    .from('profiles')
-    .update({ latest_code: code })
-    .eq('id', user.id); // Match the profile row to the user's ID
-
-  if (error) {
-    console.error("Error updating latest_code in profile:", error);
-  } else {
-    console.log(`Successfully updated latest_code for user ${user.id} to ${code}`);
-  }
-}
-async function getLatestCode() {
-  // Get the currently logged-in user
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    console.error("Cannot get latest code: no active user.");
-    return null;
-  }
-
-  // Select the 'latest_code' from the user's specific profile
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('latest_code')
-    .eq('id', user.id) // Match the profile row to the user's ID
-    .maybeSingle();
-
-  if (error) {
-    console.error("Error fetching latest_code from profile:", error);
-    return null;
-  }
-
-  return data?.latest_code;
-}
-
-// THANKS
-async function loadThanks() {
-  const { data, error } = await supabase.from('thanks').select('*');
-  if (error) { console.error(error); return {}; }
-  const map = {};
-  data.forEach(row => { map[row.code] = row; });
-  return map;
-}
-async function saveThanks(obj) {
-  const { error } = await supabase.from('thanks').upsert(obj);
-  if (error) console.error(error);
-}
+/* -------------------------
+   Router + event wiring
+   ------------------------- */
 
 // Router (pages are sections with IDs)
 const navlinks = document.querySelectorAll('.navlink');
@@ -328,9 +382,9 @@ const pages = {
   inbox: document.getElementById('page-inbox')
 };
 function routeTo(name){
-  Object.values(pages).forEach(p => p.classList.remove('active'));
+  Object.values(pages).forEach(p => p && p.classList.remove('active'));
   if (pages[name]) pages[name].classList.add('active');
-  navlinks.forEach(n=>{
+  navlinks.forEach(n=> {
     if (n.dataset.route === name) n.classList.add('bg-white/20','font-semibold');
     else n.classList.remove('bg-white/20','font-semibold');
   });
@@ -341,31 +395,35 @@ function routeTo(name){
 }
 navlinks.forEach(btn => btn.addEventListener('click', ()=> routeTo(btn.dataset.route)));
 
-
-
-// Logout
-document.getElementById('logoutBtn').addEventListener('click', ()=>{
+// Logout (anonymous => clear stored anon info)
+document.getElementById('logoutBtn')?.addEventListener('click', ()=> {
   try { localStorage.removeItem(LS_ROLE); localStorage.removeItem(LS_ACTIVE_USER); } catch(e){}
   window.location.href = 'index.html';
 });
 
-// Jar rendering
-// Updated renderJar() — adds slow, brighter hover glow via an animating SVG circle
+/* -------------------------
+   Jar rendering, modal, inbox etc.
+   (mostly copied from your original file,
+    slight fixes to use anon helper where needed)
+   ------------------------- */
+
+// (renderJar / svg placement code kept as-is)
 async function renderJar() {
   const ballsGroup = document.getElementById('ballsGroup');
+  if (!ballsGroup) return;
+
   const wishes = await loadWishes();
   const map = Object.fromEntries((wishes || []).map(w => [w.id, w]));
 
-  // Remove any leftover injected children except the base circle inside each wrapper
+  // cleanup old
   ballsGroup.querySelectorAll("g.ballWrap").forEach(wrap => {
     [...wrap.children].forEach(child => {
       if (child.tagName.toLowerCase() !== 'circle') child.remove();
     });
   });
-
   ballsGroup.querySelectorAll("g.ballWrap").forEach(wrap => wrap.remove());
 
-  // --- RANDOM POSITIONING ADDED ---
+  // placement logic (preserve original approach)
   const jarPath = document.querySelector("clipPath#jarClip path");
   const jarShape = new Path2D(jarPath.getAttribute("d"));
   const svg = document.querySelector("#jarButton svg");
@@ -374,115 +432,75 @@ async function renderJar() {
   ctx.canvas.width = vb.width;
   ctx.canvas.height = vb.height;
 
-  function isInsideJar(x, y) {
-    return ctx.isPointInPath(jarShape, x, y);
-  }
-
-function isCircleInsideJar(x, y, r) {
-  // Check multiple points around the circle’s edge
-  const steps = 12; // more steps = more accurate
-  for (let i = 0; i < steps; i++) {
-    const angle = (i / steps) * 2 * Math.PI;
-    const px = x + r * Math.cos(angle);
-    const py = y + r * Math.sin(angle);
-    if (!ctx.isPointInPath(jarShape, px, py)) {
-      return false;
+  function isCircleInsideJar(x, y, r) {
+    const steps = 12;
+    for (let i = 0; i < steps; i++) {
+      const angle = (i / steps) * 2 * Math.PI;
+      const px = x + r * Math.cos(angle);
+      const py = y + r * Math.sin(angle);
+      if (!ctx.isPointInPath(jarShape, px, py)) return false;
     }
+    return true;
   }
-  return true;
-}
 
-
-    const placed = [];
+  const placed = [];
   const radius = 26;
   const maxOrbs = 30;
   const numWishesToPlace = Math.min(maxOrbs, wishes.length);
   let totalAttempts = 0;
-  const maxTotalAttempts = 200000; // Safety break to prevent infinite loops
+  const maxTotalAttempts = 200000;
 
-  // Start from the bottom of the viewBox and move upwards in small layers
   for (let y = vb.height - radius; y > radius && placed.length < numWishesToPlace; y -= 4) {
     let attemptsInLayer = 0;
-    const maxAttemptsPerLayer = 300; // Tries to place an orb in the current horizontal slice
-
-    // Attempt to place several orbs in the current layer before moving up
+    const maxAttemptsPerLayer = 300;
     while (attemptsInLayer < maxAttemptsPerLayer && placed.length < numWishesToPlace) {
       totalAttempts++;
       attemptsInLayer++;
       if (totalAttempts > maxTotalAttempts) break;
-
-      // Pick a random horizontal position
       const cx = Math.random() * (vb.width - 2 * radius) + radius;
-      // Use the current 'y' level, but add a small vertical jitter for a less grid-like look
       const cy = y + (Math.random() - 0.5) * 4;
-
-      // Check 1: Is the proposed circle fully inside the jar's boundaries?
-      if (!isCircleInsideJar(cx, cy, radius)) {
-        continue;
-      }
-
-      // Check 2: Does it collide with any orb that has already been placed?
+      if (!isCircleInsideJar(cx, cy, radius)) continue;
       let isOverlapping = false;
       for (const orb of placed) {
         const dx = cx - orb.cx;
         const dy = cy - orb.cy;
-        // The minimum distance between centers must be twice the radius (plus a small gap)
-        if (Math.sqrt(dx * dx + dy * dy) < radius * 2 + 2) {
-          isOverlapping = true;
-          break;
-        }
+        if (Math.sqrt(dx * dx + dy * dy) < radius * 2 + 2) { isOverlapping = true; break; }
       }
-
-      if (isOverlapping) {
-        continue;
-      }
-
-      // If all checks pass, this is a valid position. Add the orb.
+      if (isOverlapping) continue;
       placed.push({ cx, cy });
     }
-    
-    if (totalAttempts > maxTotalAttempts) {
-        console.warn("Max placement attempts reached. Not all orbs may be placed.");
-        break;
-    }
+    if (totalAttempts > maxTotalAttempts) { console.warn("Max placement attempts reached."); break; }
   }
-  // --- END OF PLACEMENT LOGIC ---
 
- placed.forEach((pos, i) => {
-  const w = wishes[i];
-  if (!w) return;
-  const wrap = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  wrap.classList.add("ballWrap");
-  wrap.style.animation = "bob 3s ease-in-out infinite, sway 5s ease-in-out infinite";
+  placed.forEach((pos, i) => {
+    const w = wishes[i];
+    if (!w) return;
+    const wrap = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    wrap.classList.add("ballWrap");
+    wrap.style.animation = "bob 3s ease-in-out infinite, sway 5s ease-in-out infinite";
 
-  const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-  c.setAttribute("cx", pos.cx);
-  c.setAttribute("cy", pos.cy);
-  c.setAttribute("r", radius);
-  c.dataset.id = w.id; // crucial for the render pipeline
-  wrap.appendChild(c);
-  ballsGroup.appendChild(wrap);
- });
+    const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    c.setAttribute("cx", pos.cx);
+    c.setAttribute("cy", pos.cy);
+    c.setAttribute("r", radius);
+    c.dataset.id = w.id; // crucial for the render pipeline
+    wrap.appendChild(c);
+    ballsGroup.appendChild(wrap);
+  });
 
-  // Ensure defs exist for clipPaths and filters
+  // ensure defs exists
   let defs = ballsGroup.querySelector('defs');
   if (!defs) {
     defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
     ballsGroup.prepend(defs);
   }
 
-  // Inject small hover/glow CSS once (slow fade & subtle scale)
+  // inject hover style once
   if (!document.getElementById('dd-orb-hover-style')) {
     const style = document.createElement('style');
     style.id = 'dd-orb-hover-style';
     style.textContent = `
-      /* orb outline (stroke) is used for glow; animate opacity + transform */
-      .orb-outline {
-        transition: opacity 420ms cubic-bezier(.2,.9,.25,1), transform 420ms cubic-bezier(.2,.9,.25,1);
-        will-change: opacity, transform;
-        opacity: 0;
-        transform-origin: center center;
-      }
+      .orb-outline { transition: opacity 420ms cubic-bezier(.2,.9,.25,1), transform 420ms cubic-bezier(.2,.9,.25,1); will-change: opacity, transform; opacity: 0; transform-origin: center center; }
       g.ballWrap, circle { transform-box: fill-box; }
       g.ballWrap.is-hover .orb-outline { opacity: 0.95; transform: scale(1.08); }
       g.ballWrap.is-dragging.is-hover .orb-outline { opacity: 0.85; transform: scale(1.04); }
@@ -490,17 +508,8 @@ function isCircleInsideJar(x, y, r) {
     document.head.appendChild(style);
   }
 
-  // --- filters + helpers (enhanced) ---
-  if (!document.getElementById('dd-orb-filters')) {
-    const container = document.createElement('div');
-    container.id = 'dd-orb-filters';
-    container.style.display = 'none';
-    document.body.appendChild(container);
-  }
-
-  // Base and hover filters (kept)
+  // Basic filters + hover filters (ensure exist) - simplified & safe
   if (!document.getElementById('insideOutGlow')) {
-    // 1) base glow (soft)
     const filter = document.createElementNS("http://www.w3.org/2000/svg", "filter");
     filter.setAttribute("id", "insideOutGlow");
     filter.setAttribute("x", "-50%");
@@ -521,164 +530,47 @@ function isCircleInsideJar(x, y, r) {
     merge.appendChild(mergeNode2);
     filter.appendChild(merge);
     defs.appendChild(filter);
-
-    // 2) stronger hover glow (generic white-ish) - kept for added halo if needed
-    const filterHover = document.createElementNS("http://www.w3.org/2000/svg", "filter");
-    filterHover.setAttribute("id", "insideOutGlowHover");
-    filterHover.setAttribute("x", "-80%");
-    filterHover.setAttribute("y", "-80%");
-    filterHover.setAttribute("width", "260%");
-    filterHover.setAttribute("height", "260%");
-    const blurHover = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
-    blurHover.setAttribute("in", "SourceGraphic");
-    blurHover.setAttribute("stdDeviation", "8");
-    blurHover.setAttribute("result", "blurHover");
-    filterHover.appendChild(blurHover);
-    const mergeHover = document.createElementNS("http://www.w3.org/2000/svg", "feMerge");
-    const mHn1 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
-    mHn1.setAttribute("in", "blurHover");
-    const mHn2 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
-    mHn2.setAttribute("in", "SourceGraphic");
-    mergeHover.appendChild(mHn1);
-    mergeHover.appendChild(mHn2);
-    filterHover.appendChild(mergeHover);
-    defs.appendChild(filterHover);
-
-    // 3) colored hover factory (keeps ability to colorize)
-    window.__ensureEmotionHoverFilters = function (emotionColorMap = {}) {
-      Object.entries(emotionColorMap).forEach(([emotion, color]) => {
-        const id = `hoverGlow-${emotion}`;
-        if (document.getElementById(id)) return;
-        const f = document.createElementNS("http://www.w3.org/2000/svg", "filter");
-        f.setAttribute("id", id);
-        f.setAttribute("x", "-80%");
-        f.setAttribute("y", "-80%");
-        f.setAttribute("width", "260%");
-        f.setAttribute("height", "260%");
-        const ga = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
-        ga.setAttribute("in", "SourceAlpha");
-        ga.setAttribute("stdDeviation", "8");
-        ga.setAttribute("result", "alphaBlur");
-        f.appendChild(ga);
-        const flood = document.createElementNS("http://www.w3.org/2000/svg", "feFlood");
-        flood.setAttribute("flood-color", color);
-        flood.setAttribute("flood-opacity", "0.85");
-        flood.setAttribute("result", "floodColor");
-        f.appendChild(flood);
-        const comp = document.createElementNS("http://www.w3.org/2000/svg", "feComposite");
-        comp.setAttribute("in", "floodColor");
-        comp.setAttribute("in2", "alphaBlur");
-        comp.setAttribute("operator", "in");
-        comp.setAttribute("result", "coloredHalo");
-        f.appendChild(comp);
-        const mergeF = document.createElementNS("http://www.w3.org/2000/svg", "feMerge");
-        const mn1 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
-        mn1.setAttribute("in", "coloredHalo");
-        const mn2 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
-        mn2.setAttribute("in", "SourceGraphic");
-        mergeF.appendChild(mn1);
-        mergeF.appendChild(mn2);
-        f.appendChild(mergeF);
-        defs.appendChild(f);
-      });
-    };
-    if (window.EMOTION_COLORS) {
-      try { window.__ensureEmotionHoverFilters(window.EMOTION_COLORS); } catch (e) { /* ignore */ }
-    }
   }
 
-  // add a small outline-blur filter used for the stroke halo (not a filled disc)
-  if (!document.getElementById('orbOutlineBlur')) {
-    const ob = document.createElementNS("http://www.w3.org/2000/svg", "filter");
-    ob.setAttribute("id", "orbOutlineBlur");
-    ob.setAttribute("x", "-80%");
-    ob.setAttribute("y", "-80%");
-    ob.setAttribute("width", "260%");
-    ob.setAttribute("height", "260%");
-    const gblur = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
-    gblur.setAttribute("in", "SourceGraphic");
-    gblur.setAttribute("stdDeviation", "6"); // blur radius for outline
-    gblur.setAttribute("result", "outlineBlur");
-    ob.appendChild(gblur);
-    // optionally merge (keeps some crispness if desired)
-    const mergeOb = document.createElementNS("http://www.w3.org/2000/svg", "feMerge");
-    const m1 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
-    m1.setAttribute("in", "outlineBlur");
-    const m2 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
-    m2.setAttribute("in", "SourceGraphic");
-    mergeOb.appendChild(m1);
-    mergeOb.appendChild(m2);
-    ob.appendChild(mergeOb);
-    defs.appendChild(ob);
-  }
-
-  // Add blur filter for orb images (soft memory effect)
-  if (!document.getElementById('orbImageBlur')) {
-    const filter = document.createElementNS("http://www.w3.org/2000/svg", "filter");
-    filter.setAttribute("id", "orbImageBlur");
-    const blur = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
-    blur.setAttribute("stdDeviation", "0.2"); // tweak for more/less blur
-    filter.appendChild(blur);
-    defs.appendChild(filter);
-  }
-
-  // For each base circle
+  // Populate each circle wrapper (images, texts, hit target)
   ballsGroup.querySelectorAll("g.ballWrap > circle[data-id]").forEach(baseCircle => {
     const id = baseCircle.dataset.id;
     const w = map[id];
-
-    if (!w) {
-      baseCircle.style.display = 'none';
-      return;
-    }
+    if (!w) { baseCircle.style.display = 'none'; return; }
     baseCircle.style.display = 'block';
 
     const cx = +baseCircle.getAttribute('cx');
     const cy = +baseCircle.getAttribute('cy');
     const r  = +baseCircle.getAttribute('r');
-
     const wrap = baseCircle.parentNode;
-
     baseCircle.style.pointerEvents = 'none';
-    baseCircle.style.filter = w.granted
-      ? "drop-shadow(0 0 12px rgba(255,255,255,0.95))"
-      : "none";
+    baseCircle.style.filter = w.granted ? "drop-shadow(0 0 12px rgba(255,255,255,0.95))" : "none";
     baseCircle.style.stroke = w.granted ? "rgba(255,255,255,0.95)" : "none";
     baseCircle.style.strokeWidth = w.granted ? "3" : "0";
 
-    const cAnim = baseCircle.style.animation || baseCircle.getAttribute('style')?.match(/animation:[^;]+/)?.[0] || '';
-    if (cAnim && !wrap.style.animation) wrap.style.animation = baseCircle.style.animation;
-
     [...wrap.querySelectorAll('image, text, .ball-hit')].forEach(el => el.remove());
 
-    // create a stroke-outline (not a filled disc) and place it under the circle
+    // glow outline
     const glowId = `glow-${id}`;
     let glow = wrap.querySelector(`circle#${glowId}`);
     if (!glow) {
       glow = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       glow.setAttribute('id', glowId);
       glow.classList.add('orb-outline');
-      // no fill — outline only
       glow.setAttribute('fill', 'none');
-      // stroke is white
       glow.setAttribute('stroke', '#ffffff');
       glow.setAttribute('stroke-opacity', '0.95');
-      // stroke width relative to orb radius
       const strokeW = Math.max(2, Math.round(r * 0.2));
       glow.setAttribute('stroke-width', strokeW);
-      // position
       glow.setAttribute('cx', cx);
       glow.setAttribute('cy', cy);
-      glow.setAttribute('r', r + strokeW * 0.5); // slightly larger so stroke sits outside edge
-      // apply outline blur so it's a halo rather than a crisp ring
-      glow.setAttribute('filter', 'url(#orbOutlineBlur)');
-      // initial visual state
+      glow.setAttribute('r', r + strokeW * 0.5);
+      glow.setAttribute('filter', 'url(#insideOutGlow)');
       glow.style.opacity = '0';
       glow.style.transformOrigin = `${cx}px ${cy}px`;
       glow.style.transformBox = 'fill-box';
       wrap.insertBefore(glow, baseCircle);
     } else {
-      // update if it already exists
       const strokeW = Math.max(2, Math.round(r * 0.2));
       glow.setAttribute('stroke-width', strokeW);
       glow.setAttribute('cx', cx);
@@ -687,25 +579,21 @@ function isCircleInsideJar(x, y, r) {
       glow.style.opacity = '0';
     }
 
+    // gradient or image handling
     if (w.situation_image_url) {
-      // --- IMAGE ORB ---
       const clipId = `clip-${id}`;
       let clip = document.getElementById(clipId);
       if (!clip) {
         clip = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
         clip.setAttribute("id", clipId);
         const cc = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        cc.setAttribute("cx", cx);
-        cc.setAttribute("cy", cy);
-        cc.setAttribute("r", r);
+        cc.setAttribute("cx", cx); cc.setAttribute("cy", cy); cc.setAttribute("r", r);
         clip.appendChild(cc);
         defs.appendChild(clip);
       } else {
-        const cc = clip.querySelector('circle');
-        if (cc) { cc.setAttribute('cx', cx); cc.setAttribute('cy', cy); cc.setAttribute('r', r); }
+        const cc = clip.querySelector('circle'); if (cc) { cc.setAttribute('cx', cx); cc.setAttribute('cy', cy); cc.setAttribute('r', r); }
       }
 
-      // Place blurred image first
       const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
       img.setAttribute("href", w.situation_image_url);
       img.setAttribute("x", cx - r + 1);
@@ -714,75 +602,38 @@ function isCircleInsideJar(x, y, r) {
       img.setAttribute("height", r * 2 - 2);
       img.setAttribute("preserveAspectRatio", "xMidYMid slice");
       img.setAttribute("clip-path", `url(#${clipId})`);
-      img.setAttribute("filter", "url(#orbImageBlur)");
-
-      const gradId = `grad-${id}`;
-      let grad = document.getElementById(gradId);
-      if (!grad) {
-        grad = document.createElementNS("http://www.w3.org/2000/svg", "radialGradient");
-        grad.setAttribute("id", gradId);
-        grad.setAttribute("cx", "50%");
-        grad.setAttribute("cy", "50%");
-        grad.setAttribute("r", "50%");
-        grad.setAttribute("fx", "50%");
-        grad.setAttribute("fy", "50%");
-
-        const stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-        stop1.setAttribute("offset", "0%");
-        stop1.setAttribute("stop-color", "#fff");
-        stop1.setAttribute("stop-opacity", "0.2");
-
-        const stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-        stop2.setAttribute("offset", "100%");
-        stop2.setAttribute("stop-color", EMOTION_COLORS[w.emotion] || "#FDE047");
-        stop2.setAttribute("stop-opacity", "0.95");
-
-        grad.appendChild(stop1);
-        grad.appendChild(stop2);
-        defs.appendChild(grad);
-      }
-
-      baseCircle.setAttribute("fill", `url(#${gradId})`);
-      baseCircle.style.mixBlendMode = "normal";
-      baseCircle.style.opacity = w.granted ? "1" : "0.85";
-      wrap.appendChild(baseCircle);
-
+      img.setAttribute("filter", "url(#insideOutGlow)");
       wrap.appendChild(img);
 
-    } else {
-      // --- NO IMAGE → gradient orb ---
       const gradId = `grad-${id}`;
       let grad = document.getElementById(gradId);
       if (!grad) {
         grad = document.createElementNS("http://www.w3.org/2000/svg", "radialGradient");
         grad.setAttribute("id", gradId);
-        grad.setAttribute("cx", "50%");
-        grad.setAttribute("cy", "50%");
-        grad.setAttribute("r", "50%");
-        grad.setAttribute("fx", "50%");
-        grad.setAttribute("fy", "50%");
-
         const stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-        stop1.setAttribute("offset", "0%");
-        stop1.setAttribute("stop-color", "#fff");
-        stop1.setAttribute("stop-opacity", "0.2");
-
+        stop1.setAttribute("offset", "0%"); stop1.setAttribute("stop-color", "#fff"); stop1.setAttribute("stop-opacity", "0.2");
         const stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-        stop2.setAttribute("offset", "100%");
-        stop2.setAttribute("stop-color", EMOTION_COLORS[w.emotion] || "#FDE047");
-        stop2.setAttribute("stop-opacity", "0.95");
-
-        grad.appendChild(stop1);
-        grad.appendChild(stop2);
-        defs.appendChild(grad);
+        stop2.setAttribute("offset", "100%"); stop2.setAttribute("stop-color", EMOTION_COLORS[w.emotion] || "#FDE047"); stop2.setAttribute("stop-opacity", "0.95");
+        grad.appendChild(stop1); grad.appendChild(stop2); defs.appendChild(grad);
       }
-
       baseCircle.setAttribute("fill", `url(#${gradId})`);
-      baseCircle.style.mixBlendMode = "normal";
       baseCircle.style.opacity = w.granted ? "1" : "0.85";
       wrap.appendChild(baseCircle);
+    } else {
+      const gradId = `grad-${id}`;
+      let grad = document.getElementById(gradId);
+      if (!grad) {
+        grad = document.createElementNS("http://www.w3.org/2000/svg", "radialGradient");
+        grad.setAttribute("id", gradId);
+        const stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+        stop1.setAttribute("offset", "0%"); stop1.setAttribute("stop-color", "#fff"); stop1.setAttribute("stop-opacity", "0.2");
+        const stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+        stop2.setAttribute("offset", "100%"); stop2.setAttribute("stop-color", EMOTION_COLORS[w.emotion] || "#FDE047"); stop2.setAttribute("stop-opacity", "0.95");
+        grad.appendChild(stop1); grad.appendChild(stop2); defs.appendChild(grad);
+      }
+      baseCircle.setAttribute("fill", `url(#${gradId})`);
+      baseCircle.style.opacity = w.granted ? "1" : "0.85";
 
-      // Emoji fallback on top
       const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
       txt.setAttribute("x", cx);
       txt.setAttribute("y", cy);
@@ -793,12 +644,11 @@ function isCircleInsideJar(x, y, r) {
       txt.setAttribute("font-size", Math.max(10, Math.floor(r * 0.6)));
       txt.textContent = CATEGORY_ICON[w.category] || "🎒";
       wrap.appendChild(txt);
+      wrap.appendChild(baseCircle);
     }
 
-    // Always apply base glow filter initially
     baseCircle.setAttribute("filter", "url(#insideOutGlow)");
 
-    // Click hit target
     const hit = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     hit.classList.add('ball-hit');
     hit.setAttribute('cx', cx);
@@ -808,27 +658,16 @@ function isCircleInsideJar(x, y, r) {
     hit.style.cursor = 'pointer';
     hit.style.pointerEvents = 'all';
 
-    // hover handlers: animate outline & swap stronger filter (white outline + filter)
     const onEnter = (ev) => {
       if (wrap.classList.contains('is-dragging')) return;
-      // stronger filter on main circle (prefer colored emotion filter if present)
-      const colorFilterId = `hoverGlow-${w.emotion}`;
-      if (document.getElementById(colorFilterId)) {
-        baseCircle.setAttribute('filter', `url(#${colorFilterId})`);
-      } else {
-        baseCircle.setAttribute('filter', 'url(#insideOutGlowHover)');
-      }
-      // animate outline stroke (no filled disc)
+      baseCircle.setAttribute('filter', 'url(#insideOutGlow)');
       glow.style.opacity = '1';
       glow.style.transform = 'scale(1)';
-      // make stroke a bit thicker/bright
       glow.setAttribute('stroke-opacity', '0.98');
-      // brighten base stroke too
       baseCircle.style.stroke = 'rgba(255,255,255,0.98)';
       baseCircle.style.strokeWidth = '1';
       wrap.classList.add('is-hover');
     };
-
     const onLeave = (ev) => {
       glow.style.opacity = '0';
       glow.style.transform = 'scale(1)';
@@ -838,24 +677,15 @@ function isCircleInsideJar(x, y, r) {
       wrap.classList.remove('is-hover');
     };
 
-    // restore click to open modal (user requested)
     hit.addEventListener('click', (ev) => {
       ev.stopPropagation();
       try { openModal(id); } catch (e) { console.log('openModal missing', e); }
     });
 
-    // pointer events (enter/leave + touch-friendly)
     hit.addEventListener('pointerenter', onEnter);
     hit.addEventListener('pointerleave', onLeave);
-    hit.addEventListener('pointerdown', () => {
-      // touch feedback: briefly show glow; keep until pointerup
-      onEnter();
-    });
-    hit.addEventListener('pointerup', () => {
-      if (!wrap.classList.contains('is-dragging')) {
-        setTimeout(onLeave, 150);
-      }
-    });
+    hit.addEventListener('pointerdown', () => { onEnter(); });
+    hit.addEventListener('pointerup', () => { if (!wrap.classList.contains('is-dragging')) setTimeout(onLeave, 150); });
 
     wrap.appendChild(hit);
   });
@@ -863,8 +693,9 @@ function isCircleInsideJar(x, y, r) {
   await refreshBallHighlights();
 }
 
-
-// Modal open/close
+/* -------------------------
+   Modal handling
+   ------------------------- */
 const modal = document.getElementById('wishModal');
 const modalBackdrop = document.getElementById('modalBackdrop');
 const closeModalBtn = document.getElementById('closeModal');
@@ -880,14 +711,12 @@ async function openModal(wishId) {
   const wishes = await loadWishes();
   const w = wishes.find(x => x.id === wishId);
   if (!w) return;
-
   currentWishId = wishId;
   wishNickname.textContent = w.nickname || 'Student';
   wishEmotion.textContent = w.emotion ? (w.emotion[0].toUpperCase() + w.emotion.slice(1)) : '-';
   wishSituation.textContent = w.situation || '';
   wishText.textContent = w.wish || '';
 
-  // ✅ Student image vs placeholder
   const imgEl = document.getElementById('wishStudentImage');
   const placeholder = document.getElementById('wishStudentPlaceholder');
 
@@ -895,12 +724,7 @@ async function openModal(wishId) {
     imgEl.src = w.student_image_url;
     imgEl.classList.remove('hidden');
     placeholder.classList.add('hidden');
-
-    // if the image fails to load → revert to placeholder
-    imgEl.onerror = () => {
-      imgEl.classList.add('hidden');
-      placeholder.classList.remove('hidden');
-    };
+    imgEl.onerror = () => { imgEl.classList.add('hidden'); placeholder.classList.remove('hidden'); };
   } else {
     imgEl.src = "";
     imgEl.classList.add('hidden');
@@ -913,107 +737,76 @@ async function openModal(wishId) {
   modalBackdrop.classList.add('opacity-100');
 }
 
-
-
 function closeModal(){
   modal.classList.remove('modal-visible'); modal.classList.add('modal-hidden');
   modalBackdrop.classList.add('opacity-0','pointer-events-none'); modalBackdrop.classList.remove('opacity-100');
 }
-closeModalBtn.addEventListener('click', closeModal);
-closeModalTop.addEventListener('click', closeModal);
-modalBackdrop.addEventListener('click', closeModal);
+closeModalBtn?.addEventListener('click', closeModal);
+closeModalTop?.addEventListener('click', closeModal);
+modalBackdrop?.addEventListener('click', closeModal);
 document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') closeModal(); });
 
-// Click on jar circle
-ballsGroup.addEventListener('click', (e)=>{
-  const t = e.target;
-  if (t && t.tagName === 'circle' && t.dataset.id) 
-    console.log(t.dataset.id);
-    openModal(t.dataset.id);
-});
-
-// Grant -> go to pledge form
 const donateWishBadge = document.getElementById('donateWishBadge');
-grantBtn.addEventListener('click',async ()=>{
+grantBtn?.addEventListener('click',async ()=> {
   if (!currentWishId) return;
-  const wishes = await loadWishes(); // Await the result of the async function
+  const wishes = await loadWishes();
   const donations = await loadDonations();
   const prof = await getActiveProfile();
 
-  // check if wish is already taken
   const isAlreadyPledged = donations.some(d => d.wish_id === currentWishId);
+  if (isAlreadyPledged) { alert('Sorry, this wish has already been reserved by another donor.'); return; }
 
-  if (isAlreadyPledged) {
-    alert('Sorry, this wish has already been reserved by another donor. Please select a different one.');
-    return; // Stop the function from continuing
-  }
-
-  // check if user has ongoing pledge
   const usersLatestPledge = prof?.latestCode;
   const latestDonation = donations.find(d => d.code === usersLatestPledge);
-
-  //const hasPledgeOngoing = latestDonation && latestDonation.granted_at == null;
 
   if (latestDonation && latestDonation.granted_at == null) {
     alert('You already have an active pledge! Please finish it first.');
     return;
-  } else if (latestDonation && latestDonation.granted_at !== null){
+  } else if (latestDonation && latestDonation.granted_at !== null) {
     alert("Thank you, but you've already granted a wish for this month. Please grant another in a few weeks!");
     return;
-  } 
+  }
 
-  const w = wishes.find(x=>x.id===currentWishId);   
+  const w = wishes.find(x=>x.id===currentWishId);
   donateWishBadge.textContent = `Granting: ${w.nickname}`;
   closeModal();
   routeTo('donate');
 });
 
-// Pledge form submission
+/* -------------------------
+   Pledge form (anonymous)
+   ------------------------- */
 const donorForm = document.getElementById('donorForm');
-donorForm.addEventListener('submit', async (e) =>{
+donorForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const fd = new FormData(donorForm);
   const fullName = (fd.get('name')||'').trim();
   const nick = (fd.get('nickname')||'').trim();
   if (!fullName && !nick) { alert('Please enter either your Full Name or a Nickname.'); return; }
-  
-  // --- START MODIFICATION ---
 
-  // 1. First, get all current wishes and donations
   const wishes = await loadWishes();
   const donations = await loadDonations();
 
   const user = await getActiveUser();
-  if (!user) {
-    alert("Not logged in.");
-    return;
-  }
-  let code;
-  let isUnique = false;
+  if (!user) { alert("Cannot identify user."); return; }
+
+  let code; let isUnique = false;
   while (!isUnique) {
-    // 1. Generate a potential code
     const potentialCode = 'WISH-' + Math.floor(1000 + Math.random() * 9000);
-    
-    // 2. Check if this code already exists in the donations list
     const codeExists = donations.some(d => d.code === potentialCode);
-    
-    // 3. If it does not exist, we've found our unique code.
-    if (!codeExists) {
-      code = potentialCode;
-      isUnique = true;
-    }
-    // If it *does* exist, the loop will simply run again to generate a new number.
+    if (!codeExists) { code = potentialCode; isUnique = true; }
   }
+
   const now = new Date().toISOString();
   const target = wishes.find(w => w.id === currentWishId);
-  console.log(currentWishId);
+  if (!target) { alert('Selected wish not found.'); return; }
 
   const donation = {
     code,
-    wish_id: target.id, // This now correctly uses the selected wish
+    wish_id: target.id,
     wish_nickname: target.nickname,
     timestamp: now,
-    donor_id: user.id, 
+    donor_id: user.id,
     donor: {
       displayName: fullName || nick || user.username,
       fullName,
@@ -1030,66 +823,52 @@ donorForm.addEventListener('submit', async (e) =>{
     received_at: null,
     granted_at: null
   };
-  
-  // ... the rest of the function continues as before
 
   await saveDonation(donation);
   await setLatestCode(code);
 
   const { error: wishUpdateError } = await supabase
-  .from("wishes")
-  .update({ donationcode: code })   // 👈 set donationcode
-  .eq("id", target.id);             // 👈 match the selected wish
+    .from("wishes")
+    .update({ donationcode: code })
+    .eq("id", target.id);
 
-if (wishUpdateError) {
-  console.error("Error updating wish with donation code:", wishUpdateError);
-}
-
-  // ✅ Create conversation
-  // After pledge is submitted
+  if (wishUpdateError) console.error("Error updating wish with donation code:", wishUpdateError);
 
   const { data: convo, error: convoError } = await supabase
-  .from("conversations")
-  .insert([{
-    donor_id: user.id,        // ✅ link conversation to donor
-    donation_code: code, 
-    title: `Pledge for ${target.nickname} (${code})`,
-    created_at: now
-  }])
-  .select()
-  .single();
+    .from("conversations")
+    .insert([{
+      donor_id: user.id,
+      donation_code: code,
+      title: `Pledge for ${target.nickname} (${code})`,
+      created_at: now
+    }])
+    .select()
+    .single();
 
-if (convoError) {
-  console.error("Error creating conversation:", convoError);
-} else {
-  // Insert first system message
-  await supabase.from("messages").insert([{
-    conversation_id: convo.id,
-    sender_id: null,  // system message
-    body: `Thank you for your pledge. We will update you on its status.`
-  }]);
-}
-
+  if (convoError) {
+    console.error("Error creating conversation:", convoError);
+  } else {
+    await supabase.from("messages").insert([{
+      conversation_id: convo.id,
+      sender_id: null,
+      body: `Thank you for your pledge. We will update you on its status.`
+    }]);
+  }
 
   donorForm.reset();
   alert('Pledge submitted! You can chat in Inbox.');
   routeTo('inbox');
-  openThread(convo.id, convo.title);
+  if (convo && convo.id) openThread(convo.id, convo.title);
   showPaymentPrompt(code);
 });
 
-// Cancel donate
-document.getElementById('cancelDonate').addEventListener('click', ()=> routeTo('home'));
-
-// Status lookup
-document.getElementById('lookupBtn').addEventListener('click', async ()=>{
+/* -------------------------
+   Lookup btn
+   ------------------------- */
+document.getElementById('lookupBtn')?.addEventListener('click', async ()=> {
   const code = (document.getElementById('lookupCode').value || '').trim();
-
-  const donations = await loadDonations();  // ⬅️ wait for the array
+  const donations = await loadDonations();
   const d = donations.find(x => (x.code || '').trim().toUpperCase() === code.toUpperCase());
-  console.log("Looking for code:", code);
-console.log("All donation codes:", donations.map(d => d.code));
-
   const statusResult = document.getElementById('statusResult');
   statusResult.classList.remove('hidden');
 
@@ -1098,9 +877,8 @@ console.log("All donation codes:", donations.map(d => d.code));
     return;
   }
 
-  const wishes = await loadWishes();  // ⬅️ also async
+  const wishes = await loadWishes();
   const w = wishes.find(x => x.id === d.wish_id);
-  console.log(d.code);
   const phase = d.status_phase ?? 0;
   const steps = [
     { label: 'Pledge given', date: d.pledged_at, done: phase >= 0, icon: '📝' },
@@ -1157,9 +935,9 @@ console.log("All donation codes:", donations.map(d => d.code));
   refreshBallHighlights();
 });
 
-
-
-// Inbox rendering + thread open
+/* -------------------------
+   Inbox & threads (anonymous)
+   ------------------------- */
 async function renderInbox() {
   const user = await getActiveUser();
   if (!user) return;
@@ -1167,7 +945,7 @@ async function renderInbox() {
   const { data: convos, error } = await supabase
     .from('conversations')
     .select('*')
-    .eq('donor_id', user.id)   // 👈 only their conversations
+    .eq('donor_id', user.id)
     .order('created_at', { ascending: false });
 
   if (error) { console.error(error); return; }
@@ -1175,7 +953,7 @@ async function renderInbox() {
   const list = document.getElementById('threadList');
   list.innerHTML = convos.length ? '' : `<div class="p-4 text-white/80">No conversations yet.</div>`;
 
-  convos.forEach(c => {
+  (convos || []).forEach(c => {
     const el = document.createElement('div');
     el.className = 'px-4 py-3 hover:bg-white/5 cursor-pointer';
     el.innerHTML = `
@@ -1187,40 +965,29 @@ async function renderInbox() {
 }
 
 async function openThread(conversationId, title) {
-  console.log(conversationId);
-  console.log(title);
+  console.log('openThread', conversationId, title);
   document.getElementById('chatHeader').querySelector('.font-semibold').textContent = title;
 
   const messagesEl = document.getElementById('chatMessages');
   messagesEl.innerHTML = '';
 
-  const user = await getActiveUser(); // Current logged-in donor
+  const user = await getActiveUser();
 
-  // --- Fetch donorDisplayName from the donations table's jsonb column ---
+  // donorDisplayName: fetch one donation by this anon donor (latest)
   let donorDisplayName = 'Anonymous';
-  const { data: convo, error: convoError } = await supabase
-    .from('conversations')
-    .select('donor_id')
-    .eq('id', conversationId)
-    .single();
-
-  if (!convoError && convo) {
-    // We are selecting the donor JSONB column and then filtering by donor_id
+  try {
     const { data: donations, error: donationError } = await supabase
       .from('donations')
-      .select('donor') // Select the entire jsonb column
+      .select('donor')
       .eq('donor_id', user.id)
-      .limit(1); //   Pick the latest if multiple donations exist
+      .order('timestamp', { ascending: false })
+      .limit(1);
 
-    if (!donationError && donations.length) {
-      // Access the displayName key from the JSONB object
-      donorDisplayName = donations[0].donor?.displayName || 'Anonymous';
-    }
-  }
+    if (!donationError && donations && donations.length) donorDisplayName = donations[0].donor?.displayName || donorDisplayName;
+  } catch (e) { /* ignore */ }
 
   const msgs = await loadMessages(conversationId);
-
-  msgs.forEach(m => {
+  (msgs || []).forEach(m => {
     const isMine = m.sender_id === user?.id;
     const from = m.sender_name || (isMine ? donorDisplayName || 'You' : m.sender_id ? 'Staff' : 'System');
 
@@ -1234,17 +1001,12 @@ async function openThread(conversationId, title) {
   });
 
   subscribeToMessages(conversationId, user?.id, donorDisplayName);
-
-  // Scroll to bottom
   messagesEl.scrollTop = messagesEl.scrollHeight;
 
-  // Sending new message
   document.getElementById('chatForm').onsubmit = async (e) => {
     e.preventDefault();
     const txt = (document.getElementById('chatInput').value || '').trim();
-    console.log(txt);
     if (!txt) return;
-
     const senderId = user?.id || null;
     const senderName = donorDisplayName || user?.username || 'Anonymous';
     await saveMessage(conversationId, senderId, txt, senderName);
@@ -1252,26 +1014,21 @@ async function openThread(conversationId, title) {
   };
 }
 
-
-
-
-// Achievements (simple)
-
+/* -------------------------
+   Achievements + refresh highlights
+   ------------------------- */
 async function renderAchievements() {
   const topPledges = document.getElementById('topPledges');
   const topValue = document.getElementById('topValue');
   if (!topPledges || !topValue) return;
-
   topPledges.innerHTML = '';
   topValue.innerHTML = '';
 
-  const ds = await loadDonations();   // ✅ wait for data
+  const ds = await loadDonations();
   const byPerson = {};
-
-  ds.forEach(d => {
+  (ds || []).forEach(d => {
     const name = d.donor?.displayName || 'Anonymous';
     const value = parseFloat((d.donor?.amount || d.amount || '').toString().replace(/[^0-9.]/g,'')) || 0;
-
     if (!byPerson[name]) byPerson[name] = { name, count: 0, value: 0 };
     byPerson[name].count += 1;
     byPerson[name].value += value;
@@ -1296,29 +1053,25 @@ async function renderAchievements() {
   });
 }
 
-
-// Misc
 async function refreshBallHighlights(){
-  // highlight balls which have open pledges
-  const latest = getLatestCode();
-  const donations = await loadDonations();   // ✅ wait for array
-  const donatedWishIds = donations.map(d => d.wishId);
+  const latest = await getLatestCode();
+  const donations = await loadDonations();
+  const donatedWishIds = (donations || []).map(d => d.wish_id);
 
   document.querySelectorAll('#ballsGroup circle[data-id]').forEach(c => {
     const id = c.dataset.id;
     if (donatedWishIds.includes(id)) {
-      c.style.filter = 'drop-shadow(0 0 12px rgba(255,255,255,0.15))'; // ✅ SVG-friendly glow
+      c.style.filter = 'drop-shadow(0 0 12px rgba(255,255,255,0.15))';
     } else {
       c.style.filter = '';
     }
   });
 }
 
-
-// Profile modal
-
-
-document.getElementById('profileBtn').addEventListener('click', async ()=>{
+/* -------------------------
+   Profile modal wiring
+   ------------------------- */
+document.getElementById('profileBtn')?.addEventListener('click', async ()=> {
   const user = await getActiveProfile();
   document.getElementById('profileModal').classList.remove('hidden');
   document.getElementById('profUsername').textContent = user?.username;
@@ -1328,11 +1081,27 @@ document.getElementById('profileBtn').addEventListener('click', async ()=>{
   document.getElementById('profGranted').textContent = user?.wishesGranted || '-';
   document.getElementById('profRecent').textContent = user?.latestCode || '-';
 });
-document.getElementById('closeProfile').addEventListener('click', ()=> document.getElementById('profileModal').classList.add('hidden'));
+document.getElementById('closeProfile')?.addEventListener('click', ()=> document.getElementById('profileModal').classList.add('hidden'));
 
-// Admin guard note: prevent admin.html access from donor (admin.html itself handles guard). This file just ensures donor pages behave.
+/* -------------------------
+   Misc wiring
+   ------------------------- */
+document.getElementById('cancelDonate')?.addEventListener('click', ()=> routeTo('home'));
 
-// Initial render
-renderJar();
-renderInbox();
-renderAchievements();
+// Click on jar circle: open modal
+document.getElementById('ballsGroup')?.addEventListener('click', (e)=> {
+  const t = e.target;
+  if (t && t.tagName === 'circle' && t.dataset.id) {
+    openModal(t.dataset.id);
+  }
+});
+
+/* -------------------------
+   Init
+   ------------------------- */
+(async function initAnonymousApp(){
+  ensureLocalAnonUser(); // ensure anon id exists
+  renderJar();
+  renderInbox();
+  renderAchievements();
+})();
