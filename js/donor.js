@@ -33,26 +33,16 @@ let activeChannel = null;
 
 // Simple UUID v4 generator (compact)
 function uuidv4() {
-  // from https://stackoverflow.com/a/2117523/119527
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
     const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
 }
-
-function makeAnonName() {
-  // e.g. Anon-7421
-  return `Anon-${Math.floor(1000 + Math.random() * 9000)}`;
-}
-
-// Returns a local anon user object (and ensures persisted in localStorage)
+function makeAnonName() { return `Anon-${Math.floor(1000 + Math.random() * 9000)}`; }
 function ensureLocalAnonUser() {
   let raw = localStorage.getItem(LS_ACTIVE_USER);
   if (raw) {
-    try {
-      const parsed = JSON.parse(raw);
-      if (parsed && parsed.id) return parsed;
-    } catch (e) { /* fallthrough to recreate */ }
+    try { const parsed = JSON.parse(raw); if (parsed && parsed.id) return parsed; } catch (e) {}
   }
   const id = uuidv4();
   const username = makeAnonName();
@@ -61,40 +51,78 @@ function ensureLocalAnonUser() {
   return userObj;
 }
 
-// Public: returns {id, username}
+// *** getActiveUser: Try real auth first, fall back to anon ***
 async function getActiveUser() {
-  return ensureLocalAnonUser();
-}
-
-// Allow UI or dev to set anon username (also upserts profile)
-async function setAnonUsername(name) {
-  const user = ensureLocalAnonUser();
-  user.username = name || user.username;
-  localStorage.setItem(LS_ACTIVE_USER, JSON.stringify(user));
-  // upsert into profiles table so the profile shows the new name
   try {
-    await supabase.from('profiles').upsert({ id: user.id, username: user.username }, { onConflict: 'id' });
-  } catch (e) { console.error('setAnonUsername upsert error', e); }
+    const { data } = await supabase.auth.getUser();
+    if (data?.user) {
+      return {
+        id: data.user.id,
+        username: data.user.user_metadata?.username || data.user.email || 'User',
+        email: data.user.email || null,
+        isAuth: true
+      };
+    }
+  } catch (e) { /* ignore unless needed */ }
+  const anon = ensureLocalAnonUser();
+  return { id: anon.id, username: anon.username, email: null, isAuth: false };
 }
 
-/* -------------------------
-   Profiles helper (uses anon id)
-   ------------------------- */
+// *** getActiveProfile: for auth users fetch profile, otherwise use/create anon profile row ***
 async function getActiveProfile() {
-  const u = ensureLocalAnonUser();
+  // Attempt to detect real logged-in user
   try {
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('username, full_name, hide_full_name, phone, affiliation, total_pledges, wishes_granted, total_donated, latest_code')
-      .eq('id', u.id)
-      .maybeSingle();
+    const { data } = await supabase.auth.getUser();
+    if (data?.user) {
+      const u = data.user;
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('username, full_name, hide_full_name, phone, affiliation, total_pledges, wishes_granted, total_donated, latest_code')
+        .eq('id', u.id)
+        .maybeSingle();
 
-    if (error) {
-      console.error('Error fetching profile:', error);
-      // return fallback object
+      if (error) {
+        console.error("Error fetching profile for auth user:", error);
+        return {
+          id: u.id,
+          username: u.user_metadata?.username || u.email || 'User',
+          fullName: null,
+          hideFullName: false,
+          phone: null,
+          affiliation: null,
+          totalPledges: 0,
+          wishesGranted: 0,
+          totalDonated: 0,
+          latestCode: null
+        };
+      }
+
+      if (profile) {
+        return {
+          id: u.id,
+          username: profile.username || u.email || 'User',
+          fullName: profile.full_name,
+          hideFullName: profile.hide_full_name,
+          phone: profile.phone,
+          affiliation: profile.affiliation,
+          totalPledges: profile.total_pledges,
+          wishesGranted: profile.wishes_granted,
+          totalDonated: profile.total_donated,
+          latestCode: profile.latest_code
+        };
+      }
+
+      // If missing, create minimal profile for auth user
+      const up = {
+        id: u.id,
+        username: u.user_metadata?.username || u.email || `User-${u.id.slice(0,6)}`,
+        created_at: new Date().toISOString()
+      };
+      const { error: upErr } = await supabase.from('profiles').insert([up]);
+      if (upErr) console.error('Error creating profile for auth user:', upErr);
       return {
         id: u.id,
-        username: u.username,
+        username: up.username,
         fullName: null,
         hideFullName: false,
         phone: null,
@@ -105,11 +133,29 @@ async function getActiveProfile() {
         latestCode: null
       };
     }
+  } catch (e) { console.warn("auth.getUser() failed in getActiveProfile", e); }
+
+  // fallback: anonymous profile using local anon ID
+  const anon = ensureLocalAnonUser();
+  try {
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('username, full_name, hide_full_name, phone, affiliation, total_pledges, wishes_granted, total_donated, latest_code')
+      .eq('id', anon.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error loading anon profile:", error);
+      return {
+        id: anon.id, username: anon.username, fullName: null, hideFullName: false,
+        phone: null, affiliation: null, totalPledges: 0, wishesGranted: 0, totalDonated: 0, latestCode: null
+      };
+    }
 
     if (profile) {
       return {
-        id: u.id,
-        username: profile.username || u.username,
+        id: anon.id,
+        username: profile.username || anon.username,
         fullName: profile.full_name,
         hideFullName: profile.hide_full_name,
         phone: profile.phone,
@@ -121,25 +167,21 @@ async function getActiveProfile() {
       };
     }
 
-    // No profile row yet — create a minimal one (so `latest_code` etc work)
+    // create minimal anon profile record
     const up = {
-      id: u.id,
-      username: u.username,
-      full_name: null,
-      hide_full_name: false,
-      phone: null,
-      affiliation: null,
+      id: anon.id,
+      username: anon.username,
+      created_at: new Date().toISOString(),
       total_pledges: 0,
       wishes_granted: 0,
-      total_donated: 0,
-      latest_code: null,
-      created_at: new Date().toISOString()
+      total_donated: 0
     };
     const { error: upErr } = await supabase.from('profiles').insert([up]);
     if (upErr) console.error('Error creating anon profile:', upErr);
+
     return {
-      id: u.id,
-      username: u.username,
+      id: anon.id,
+      username: anon.username,
       fullName: null,
       hideFullName: false,
       phone: null,
@@ -150,193 +192,183 @@ async function getActiveProfile() {
       latestCode: null
     };
   } catch (e) {
-    console.error('Unexpected error in getActiveProfile', e);
+    console.error('Unexpected error in getActiveProfile:', e);
     return {
-      id: u.id,
-      username: u.username,
-      fullName: null,
-      hideFullName: false,
-      phone: null,
-      affiliation: null,
-      totalPledges: 0,
-      wishesGranted: 0,
-      totalDonated: 0,
-      latestCode: null
+      id: anon.id, username: anon.username, fullName: null, hideFullName: false,
+      phone: null, affiliation: null, totalPledges: 0, wishesGranted: 0, totalDonated: 0, latestCode: null
     };
   }
 }
 
-/* -------------------------
-   Latest code helpers
-   ------------------------- */
+// setLatestCode (works for both auth & anon)
 async function setLatestCode(code) {
-  const u = ensureLocalAnonUser();
+  // try auth user first
   try {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ latest_code: code })
-      .eq('id', u.id);
-
-    if (error) {
-      // If update fails because row missing, try upsert
-      console.error("Error updating latest_code in profile:", error);
-      await supabase.from('profiles').upsert({ id: u.id, username: u.username, latest_code: code });
-    } else {
-      console.log(`Updated latest_code for anon user ${u.id}`);
+    const { data } = await supabase.auth.getUser();
+    if (data?.user) {
+      const id = data.user.id;
+      const { error } = await supabase.from('profiles').update({ latest_code: code }).eq('id', id);
+      if (error) {
+        console.error('Error updating latest code for auth user, attempting upsert:', error);
+        await supabase.from('profiles').upsert({ id, latest_code: code });
+      }
+      return;
     }
-  } catch (e) {
-    console.error("Exception setting latest code:", e);
+  } catch (e) { /* continue to anon path */ }
+
+  // anon path
+  const anon = ensureLocalAnonUser();
+  const { error } = await supabase.from('profiles').update({ latest_code: code }).eq('id', anon.id);
+  if (error) {
+    console.error('Error updating latest_code in anon profile, trying upsert:', error);
+    await supabase.from('profiles').upsert({ id: anon.id, username: anon.username, latest_code: code });
   }
 }
 
 async function getLatestCode() {
-  const u = ensureLocalAnonUser();
   try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('latest_code')
-      .eq('id', u.id)
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error fetching latest_code:', error);
-      return null;
+    const { data } = await supabase.auth.getUser();
+    if (data?.user) {
+      const id = data.user.id;
+      const { data: profile, error } = await supabase.from('profiles').select('latest_code').eq('id', id).maybeSingle();
+      if (error) { console.error('Error fetching latest_code for auth user:', error); return null; }
+      return profile?.latest_code ?? null;
     }
-    return data?.latest_code ?? null;
-  } catch (e) {
-    console.error('Exception in getLatestCode', e);
-    return null;
-  }
+  } catch (e) { /* ignore */ }
+
+  const anon = ensureLocalAnonUser();
+  const { data, error } = await supabase.from('profiles').select('latest_code').eq('id', anon.id).maybeSingle();
+  if (error) { console.error('Error fetching latest_code anon:', error); return null; }
+  return data?.latest_code ?? null;
 }
 
 /* -------------------------
-   Core DB helpers (unchanged semantics)
+   Profiles helper (uses anon id)
    ------------------------- */
-async function loadWishes() {
-  let { data, error } = await supabase
-    .from('wishes')
-    .select('*')
-    .order('created_at', { ascending: false });
+async function initDonateForm() {
+  // Get current target wish id (helpful if the UI sets donateWishId hidden field)
+  const donateWishIdEl = document.getElementById('donateWishId');
+  const wishId = (donateWishIdEl && donateWishIdEl.value) || currentWishId || null;
 
-  if (error) {
-    console.error("Error loading wishes:", error);
-    return [];
+  // populate wish details if available
+  if (wishId) {
+    const wishes = await loadWishes();
+    const w = wishes.find(x => x.id === wishId) || {};
+    document.getElementById('wishNickname').textContent = w.nickname || '-';
+    document.getElementById('wishItem').textContent = w.wish || '-';
+    document.getElementById('wishSituation').textContent = w.situation || '-';
+    document.getElementById('donateWishBadge').textContent = w.nickname ? `Granting: ${w.nickname}` : '';
+  } else {
+    // clear
+    document.getElementById('wishNickname').textContent = '-';
+    document.getElementById('wishItem').textContent = '-';
+    document.getElementById('wishSituation').textContent = '-';
+    document.getElementById('donateWishBadge').textContent = '';
   }
+
+  // determine if logged-in
+  let realUser = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    if (data?.user) realUser = data.user;
+  } catch(e) { /* ignore */ }
+
+  if (realUser) {
+    // logged-in: hide anon fields; prefill email/phone
+    document.getElementById('anonymousFields').classList.add('hidden');
+
+    // fill email
+    const emailInput = document.getElementById('donorEmail');
+    if (emailInput && realUser.email) emailInput.value = realUser.email;
+
+    // try to fetch profile phone
+    try {
+      const { data: profile, error } = await supabase.from('profiles').select('phone').eq('id', realUser.id).maybeSingle();
+      if (!error && profile) {
+        const phoneInput = document.getElementById('donorPhone');
+        if (phoneInput && profile.phone) phoneInput.value = profile.phone;
+      }
+    } catch(e){ /* ignore */ }
+  } else {
+    // anonymous user: show name/nick inputs
+    document.getElementById('anonymousFields').classList.remove('hidden');
+
+    // Prefill from local anon profile if available
+    const anonProfile = await getActiveProfile();
+    if (anonProfile) {
+      const nickEl = document.getElementById('donorNick');
+      if (nickEl) nickEl.value = anonProfile.username || '';
+    }
+  }
+}
+
+async function loadWishes() {
+  const { data, error } = await supabase.from('wishes').select('*').order('created_at', { ascending: false });
+  if (error) { console.error('Error loading wishes:', error); return []; }
   return data || [];
 }
-
-async function saveWishes(wishes) {
-  for (const w of wishes) {
-    await supabase.from('wishes').upsert(w);
-  }
-}
+async function saveWishes(wishes) { for (const w of wishes) await supabase.from('wishes').upsert(w); }
 
 async function loadDonations() {
   const { data, error } = await supabase.from('donations').select('*');
   if (error) { console.error(error); return []; }
   return data || [];
 }
-
 async function saveDonation(donation) {
   const { error } = await supabase.from('donations').insert([donation]);
-  if (error) console.error(error);
-}
-
-async function saveMessage(conversationId, senderId, text, senderName) {
-  const { error } = await supabase.from('messages').insert([{
-    conversation_id: conversationId,
-    sender_id: senderId,
-    body: text,
-    sender_name: senderName
-  }]);
-  if (error) console.error(error);
+  if (error) console.error('saveDonation error', error);
 }
 
 async function loadMessages(conversationId) {
-  const { data, error } = await supabase
-    .from('messages')
-    .select('id, sender_id, sender_name, body, created_at')
-    .eq('conversation_id', conversationId)
-    .order('created_at', { ascending: true });
+  const { data, error } = await supabase.from('messages').select('id, sender_id, sender_name, body, created_at').eq('conversation_id', conversationId).order('created_at', { ascending: true });
   if (error) { console.error(error); return []; }
   return data || [];
+}
+async function saveMessage(conversationId, senderId, text, senderName) {
+  const { error } = await supabase.from('messages').insert([{ conversation_id: conversationId, sender_id: senderId, body: text, sender_name: senderName }]);
+  if (error) console.error('saveMessage error', error);
 }
 
 async function loadThanks() {
   const { data, error } = await supabase.from('thanks').select('*');
   if (error) { console.error(error); return {}; }
-  const map = {};
-  (data || []).forEach(row => { map[row.code] = row; });
+  const map = {}; (data || []).forEach(r => map[r.code] = r);
   return map;
 }
-
-async function saveThanks(obj) {
-  const { error } = await supabase.from('thanks').upsert(obj);
-  if (error) console.error(error);
-}
+async function saveThanks(obj) { const { error } = await supabase.from('thanks').upsert(obj); if (error) console.error(error); }
 
 /* -------------------------
-   Realtime subscription (keeps your original behavior)
+   Realtime subscription
    ------------------------- */
 function subscribeToMessages(conversationId, userId, donorDisplayName) {
   if (activeChannel) {
-    try { supabase.removeChannel(activeChannel); } catch (e) { /* ignore */ }
+    try { supabase.removeChannel(activeChannel); } catch (e) {}
     activeChannel = null;
   }
-
   activeChannel = supabase
     .channel(`messages-${conversationId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages',
-        filter: `conversation_id=eq.${conversationId}`
-      },
-      (payload) => {
-        const m = payload.new;
-        const isMine = m.sender_id === userId;
-        const from = m.sender_name || (isMine ? donorDisplayName || 'You' : m.sender_id ? 'Staff' : 'System');
-
-        const messagesEl = document.getElementById('chatMessages');
-        if (!messagesEl) return;
-        const item = document.createElement('div');
-        item.className = `p-3 rounded-xl my-1 max-w-[70%] ${
-          isMine
-            ? 'bg-blue-500/80 text-white text-right ml-auto'
-            : 'bg-white/10 text-white/90 mr-auto'
-        }`;
-        item.innerHTML = `
-          <div class="text-xs opacity-80 ${isMine ? 'text-right' : ''}">
-            ${from} • ${new Date(m.created_at).toLocaleString()}
-          </div>
-          <div class="mt-1">${m.body}</div>
-        `;
-        messagesEl.appendChild(item);
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-      }
-    )
-    .subscribe((status) => {
-      console.log("Realtime channel status:", status);
-    });
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, (payload) => {
+      const m = payload.new;
+      const isMine = m.sender_id === userId;
+      const from = m.sender_name || (isMine ? donorDisplayName || 'You' : m.sender_id ? 'Staff' : 'System');
+      const messagesEl = document.getElementById('chatMessages');
+      if (!messagesEl) return;
+      const item = document.createElement('div');
+      item.className = `p-3 rounded-xl my-1 max-w-[70%] ${ isMine ? 'bg-blue-500/80 text-white text-right ml-auto' : 'bg-white/10 text-white/90 mr-auto' }`;
+      item.innerHTML = `<div class="text-xs opacity-80 ${isMine ? 'text-right' : ''}">${from} • ${new Date(m.created_at).toLocaleString()}</div><div class="mt-1">${m.body}</div>`;
+      messagesEl.appendChild(item);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    })
+    .subscribe((status) => { console.log("Realtime channel status:", status); });
 }
 
 /* -------------------------
-   UI helpers (payment prompt etc)
+   UI helpers (payment prompt)
    ------------------------- */
-function startPaymentFlow(donationCode) {
-  console.log("Starting payment flow for", donationCode);
-  alert('Payment flow placeholder for donation ' + donationCode);
-}
-
+function startPaymentFlow(donationCode) { console.log("Starting payment flow for", donationCode); alert('Payment flow placeholder for donation ' + donationCode); }
 function showPaymentPrompt(donationCode) {
   if (document.getElementById('paymentPrompt')) return;
-
-  const container = document.createElement('div');
-  container.id = 'paymentPrompt';
-  container.className = 'fixed bottom-6 right-6 z-[9999]';
-  container.style.width = '320px';
+  const container = document.createElement('div'); container.id = 'paymentPrompt'; container.className = 'fixed bottom-6 right-6 z-[9999]'; container.style.width = '320px';
   container.style.transition = 'transform .5s ease, opacity .5s ease';
   container.innerHTML = `
     <div class="rounded-2xl bg-white/10 border border-white/10 p-4 shadow-xl backdrop-blur">
@@ -348,30 +380,16 @@ function showPaymentPrompt(donationCode) {
       </div>
     </div>
   `;
-
   document.body.appendChild(container);
-
-  requestAnimationFrame(() => {
-    container.style.transform = 'translateY(0)';
-    container.style.opacity = '1';
-  });
-
-  document.getElementById('payNowBtn').addEventListener('click', () => {
-    container.remove();
-    startPaymentFlow(donationCode);
-  });
-  document.getElementById('payLaterBtn').addEventListener('click', () => {
-    container.remove();
-  });
-
-  setTimeout(() => { container.remove(); }, 25000);
+  requestAnimationFrame(()=>{ container.style.transform = 'translateY(0)'; container.style.opacity = '1'; });
+  document.getElementById('payNowBtn').addEventListener('click', ()=>{ container.remove(); startPaymentFlow(donationCode); });
+  document.getElementById('payLaterBtn').addEventListener('click', ()=> container.remove());
+  setTimeout(()=>{ try{ container.remove(); } catch(e){} }, 25000);
 }
 
 /* -------------------------
-   Router + event wiring
+   Router + wiring
    ------------------------- */
-
-// Router (pages are sections with IDs)
 const navlinks = document.querySelectorAll('.navlink');
 const pages = {
   home: document.getElementById('page-home'),
@@ -381,6 +399,7 @@ const pages = {
   donate: document.getElementById('page-donate'),
   inbox: document.getElementById('page-inbox')
 };
+
 function routeTo(name){
   Object.values(pages).forEach(p => p && p.classList.remove('active'));
   if (pages[name]) pages[name].classList.add('active');
@@ -391,15 +410,16 @@ function routeTo(name){
   if (name === 'home') renderJar();
   if (name === 'inbox') renderInbox();
   if (name === 'achievements') renderAchievements();
+  if (name === 'donate') initDonateForm();   // <<-- call form init when showing donate
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 navlinks.forEach(btn => btn.addEventListener('click', ()=> routeTo(btn.dataset.route)));
 
-// Logout (anonymous => clear stored anon info)
 document.getElementById('logoutBtn')?.addEventListener('click', ()=> {
   try { localStorage.removeItem(LS_ROLE); localStorage.removeItem(LS_ACTIVE_USER); } catch(e){}
   window.location.href = 'index.html';
 });
+
 
 /* -------------------------
    Jar rendering, modal, inbox etc.
@@ -780,16 +800,33 @@ const donorForm = document.getElementById('donorForm');
 donorForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const fd = new FormData(donorForm);
-  const fullName = (fd.get('name')||'').trim();
-  const nick = (fd.get('nickname')||'').trim();
-  if (!fullName && !nick) { alert('Please enter either your Full Name or a Nickname.'); return; }
 
-  const wishes = await loadWishes();
-  const donations = await loadDonations();
-
+  // First find user & profile
   const user = await getActiveUser();
-  if (!user) { alert("Cannot identify user."); return; }
+  const profile = await getActiveProfile();
 
+  // If logged-in, prefer profile info
+  let donorDisplayName;
+  if (user.isAuth) {
+    // prefer fullName from profile, else username, else email
+    donorDisplayName = (profile && profile.fullName) ? profile.fullName : (profile?.username || user.email || user.username);
+  } else {
+    // anonymous: take from form inputs
+    const fullName = (fd.get('name') || '').trim();
+    const nick = (fd.get('nickname') || '').trim();
+    donorDisplayName = fullName || nick || user.username || 'Anonymous';
+  }
+
+  // basic validation
+  if (!user) { alert('Cannot identify user.'); return; }
+  // get selected wish
+  const targetWishId = fd.get('wish_id') || currentWishId;
+  const wishes = await loadWishes();
+  const target = wishes.find(w => w.id === targetWishId);
+  if (!target) { alert('Selected wish not found.'); return; }
+
+  // Generate unique code
+  const donations = await loadDonations();
   let code; let isUnique = false;
   while (!isUnique) {
     const potentialCode = 'WISH-' + Math.floor(1000 + Math.random() * 9000);
@@ -798,62 +835,55 @@ donorForm?.addEventListener('submit', async (e) => {
   }
 
   const now = new Date().toISOString();
-  const target = wishes.find(w => w.id === currentWishId);
-  if (!target) { alert('Selected wish not found.'); return; }
 
-const donation = {
-  // keep your human-readable code for legacy / UI
-  code,
-  // optional: a top-level field the JS will carry — won't fail the insert,
-  // but if your DB has no donation_uuid column it will be ignored by Postgres insert
-  wish_id: target.id,
-  wish_nickname: target.nickname,
-  timestamp: now,
-  donor_id: user.id,
-  donor: {
-    // embed the uuid inside the donor jsonb so it's stored safely without changing schema
-    displayName: fullName || nick || user.username,
-    fullName,
-    nickname: nick,
-    email: fd.get('email'),
-    phone: fd.get('phone') || '',
-    type: fd.get('type'),
-    amount: fd.get('amount') || '',
-    timeline: fd.get('timeline') || '',
-    message: fd.get('message') || ''
-  },
-  status_phase: 0,
-  pledged_at: now,
-  received_at: null,
-  granted_at: null
-};
+  const donationUuid = uuidv4(); // special uuid for donation (embedded and optionally top-level)
 
-await saveDonation(donation); // your saveDonation inserts the object
-await setLatestCode(code);
+  const donation = {
+    // optional new column 'donation_uuid' if you add it server-side; harmless if not present
+    donation_uuid: donationUuid,
+    code,
+    wish_id: target.id,
+    wish_nickname: target.nickname,
+    timestamp: now,
+    donor_id: user.id,
+    donor: {
+      donation_uuid: donationUuid,
+      displayName: donorDisplayName,
+      // include form values so anonymous donor info is visible if provided
+      fullName: fd.get('name') || null,
+      nickname: fd.get('nickname') || null,
+      email: fd.get('email') || null,
+      phone: fd.get('phone') || null,
+      type: null,
+      amount: null,
+      timeline: null,
+      message: fd.get('message') || null
+    },
+    status_phase: 0,
+    pledged_at: now,
+    received_at: null,
+    granted_at: null
+  };
 
+  await saveDonation(donation);
+  await setLatestCode(code);
 
-  const { error: wishUpdateError } = await supabase
-    .from("wishes")
-    .update({ donationcode: code })
-    .eq("id", target.id);
-
+  // set wish.donationcode
+  const { error: wishUpdateError } = await supabase.from('wishes').update({ donationcode: code }).eq('id', target.id);
   if (wishUpdateError) console.error("Error updating wish with donation code:", wishUpdateError);
 
-  const { data: convo, error: convoError } = await supabase
-    .from("conversations")
-    .insert([{
-      donor_id: user.id,
-      donation_code: code,
-      title: `Pledge for ${target.nickname} (${code})`,
-      created_at: now
-    }])
-    .select()
-    .single();
+  // create conversation
+  const { data: convo, error: convoError } = await supabase.from('conversations').insert([{
+    donor_id: user.id,
+    donation_code: code,
+    title: `Pledge for ${target.nickname} (${code})`,
+    created_at: now
+  }]).select().single();
 
   if (convoError) {
     console.error("Error creating conversation:", convoError);
   } else {
-    await supabase.from("messages").insert([{
+    await supabase.from('messages').insert([{
       conversation_id: convo.id,
       sender_id: null,
       body: `Thank you for your pledge. We will update you on its status.`
@@ -1014,6 +1044,8 @@ async function openThread(conversationId, title) {
     if (!txt) return;
     const senderId = user?.id || null;
     const senderName = donorDisplayName || user?.username || 'Anonymous';
+    console.log(conversationId);
+    console.log(senderId);
     await saveMessage(conversationId, senderId, txt, senderName);
     document.getElementById('chatInput').value = '';
   };
