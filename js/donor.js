@@ -1184,6 +1184,8 @@ async function renderInbox() {
 }
 
 async function openThread(conversationId, title) {
+  console.log(conservationId);
+  console.log(title);
   document.getElementById('chatHeader').querySelector('.font-semibold').textContent = title;
 
   const messagesEl = document.getElementById('chatMessages');
@@ -1237,6 +1239,7 @@ async function openThread(conversationId, title) {
   document.getElementById('chatForm').onsubmit = async (e) => {
     e.preventDefault();
     const txt = (document.getElementById('chatInput').value || '').trim();
+    console.log(txt);
     if (!txt) return;
 
     const senderId = user?.id || null;
@@ -1247,17 +1250,6 @@ async function openThread(conversationId, title) {
 }
 
 
-
-  document.getElementById('chatForm').onsubmit = async (e)=>{
-    e.preventDefault();
-    const txt = (document.getElementById('chatInput').value||'').trim();
-    if (!txt) return;
-    const { data: { user } } = await supabase.auth.getUser();
-    const senderId = user.id || null;
-    const senderName = donorDisplayName || user?.email || 'Anonymous';
-    await saveMessage(conversationId, senderId, txt, senderName);
-    document.getElementById('chatInput').value = '';
-  };
 
 
 // Achievements (simple)
