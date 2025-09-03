@@ -957,7 +957,7 @@ grantBtn.addEventListener('click',async ()=>{
   if (latestDonation && latestDonation.granted_at == null) {
     alert('You already have an active pledge! Please finish it first.');
     return;
-  elseif (latestDonation && latestDonation.granted_at !== null)
+  } else if (latestDonation && latestDonation.granted_at !== null){
     alert("Thank you, but you've already granted a wish for this month. Please grant another in a few weeks!");
     return;
   } 
