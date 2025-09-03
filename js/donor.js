@@ -394,7 +394,7 @@ function isCircleInsideJar(x, y, r) {
 
 
     const placed = [];
-  const radius = 24;
+  const radius = 28;
   const maxOrbs = 30;
   const numWishesToPlace = Math.min(maxOrbs, wishes.length);
   let totalAttempts = 0;
