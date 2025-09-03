@@ -1145,7 +1145,7 @@ console.log("All donation codes:", donations.map(d => d.code));
       ${tyBlock}
       <div class="rounded-xl bg-white/10 border border-white/10 p-5">
         <div class="text-sm opacity-80 mb-1">Student</div>
-        <div class="font-semibold">${d.wishNickname}</div>
+        <div class="font-semibold">${d.wish_nickname}</div>
         <div class="text-sm opacity-80 mt-3">Wish</div>
         <div>${w?.wish || '-'}</div>
       </div>
