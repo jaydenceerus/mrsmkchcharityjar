@@ -448,10 +448,18 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
 
   <!-- SKP Hexagon Grid Section -->
   <section id="skp-banners" class="relative min-h-screen bg-black text-white overflow-hidden">
+<div class="absolute inset-0">
+    <img src="assets/skp-bg.jpg" 
+         alt="Background" 
+         class="w-full h-full object-cover" />
+    <!-- Blur overlay -->
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+  </div>
+
   <div class="relative z-10 max-w-6xl mx-auto px-6 py-16 text-center">
-    <h2 class="text-4xl md:text-5xl font-bold mb-6">Meet the SKP</h2>
+    <h2 class="text-4xl md:text-5xl font-bold mb-6">Meet the Emotions</h2>
     <p class="text-lg opacity-80 max-w-2xl mx-auto mb-12">
-      The student body leaders represented through unique emotions.
+      The unique characters that build the foundation of the Dream Jar
     </p>
 
     <!-- Vertical Banner Buttons -->
