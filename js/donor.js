@@ -394,7 +394,7 @@ function isCircleInsideJar(x, y, r) {
 
 
     const placed = [];
-  const radius = 28;
+  const radius = 26;
   const maxOrbs = 30;
   const numWishesToPlace = Math.min(maxOrbs, wishes.length);
   let totalAttempts = 0;
@@ -1071,7 +1071,6 @@ if (convoError) {
   donorForm.reset();
   alert('Pledge submitted! You can chat in Inbox.');
   routeTo('inbox');
-  renderInbox();
   openThread(convo.id, convo.title);
   showPaymentPrompt(code);
 });
