@@ -642,15 +642,11 @@ document.querySelectorAll('[data-slider]').forEach(slider => {
   slider.addEventListener('input', async () => {
     const donationCode = slider.getAttribute('data-slider');
     const newPhase = parseInt(slider.value, 10);
-    const updateData = { status_phase: newPhase };
+    const updateData = { };
 
     console.log("changing", donationCode, newPhase);
 
     // update donation status_phase
-    const { error: updateErr } = await supabase
-      .from('donations')
-      .update({ status_phase: newPhase })
-      .eq('code', donationCode);
 
     // UI: update the status badge immediately
     const badge = slider.closest('.rounded-2xl')
