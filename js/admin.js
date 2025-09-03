@@ -642,6 +642,7 @@ document.querySelectorAll('[data-slider]').forEach(slider => {
   slider.addEventListener('input', async () => {
     const donationCode = slider.getAttribute('data-slider');
     const newPhase = parseInt(slider.value, 10);
+    const updateData = { status_phase: newPhase };
 
     console.log("changing", donationCode, newPhase);
 
@@ -671,7 +672,13 @@ document.querySelectorAll('[data-slider]').forEach(slider => {
           'bg-yellow-300 text-yellow-900'
         }`;
     }
-
+     if (newPhase === 1) {
+      // Mark as received
+      updateData.received_at = new Date().toISOString();
+    } else if (newPhase === 2) {
+      // Mark as granted
+      updateData.granted_at = new Date().toISOString();
+    }
     // If the donation was moved to "Granted", update wish + profile totals
     if (newPhase === 2) {
       try {
