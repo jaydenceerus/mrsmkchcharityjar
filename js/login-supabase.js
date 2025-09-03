@@ -209,13 +209,14 @@ const isAdmin = await isUserAdmin(user.id);
 if (isAdmin) {
   // Instead of logging them straight in,
   // we send a magic link and stop here.
-  const { error } = await supabase.auth.signInWithOtp({
+  /*const { error } = await supabase.auth.signInWithOtp({
     email: email,
     options: {
       shouldCreateUser: false, // don't create new users here
       emailRedirectTo: window.location.origin + "/admin.html" // redirect target
     }
-  });
+  });*/
+  window.location.href = 'admin.html';
 
   if (error) {
     console.error("Error sending magic link:", error);
