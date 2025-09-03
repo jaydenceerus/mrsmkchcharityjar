@@ -642,7 +642,7 @@ document.querySelectorAll('[data-slider]').forEach(slider => {
   slider.addEventListener('input', async () => {
     const donationCode = slider.getAttribute('data-slider');
     const newPhase = parseInt(slider.value, 10);
-    const updateData = { };
+    const updateData = { status_phase: newPhase };
 
     console.log("changing", donationCode, newPhase);
 
@@ -665,9 +665,20 @@ document.querySelectorAll('[data-slider]').forEach(slider => {
      if (newPhase === 1) {
       // Mark as received
       updateData.received_at = new Date().toISOString();
+      const { error: wishErr } = await supabase
+              .from('wishes')
+              .update({ granted: false })
+              .eq('id', wishId);
+            if (wishErr) console.error("Failed to update wish.granted:", wishErr);
     } else if (newPhase === 2) {
       // Mark as granted
       updateData.granted_at = new Date().toISOString();
+    } else if (newPhase === 0) {
+      const { error: wishErr } = await supabase
+              .from('wishes')
+              .update({ granted: false })
+              .eq('id', wishId);
+            if (wishErr) console.error("Failed to update wish.granted:", wishErr);
     }
     const { error: updateErr } = await supabase
       .from('donations')
