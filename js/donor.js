@@ -1050,11 +1050,9 @@ donorForm?.addEventListener('submit', async (e) => {
 
   const now = new Date().toISOString();
 
-  const donationUuid = uuidv4(); // special uuid for donation (embedded and optionally top-level)
 
   const donation = {
     // optional new column 'donation_uuid' if you add it server-side; harmless if not present
-    donation_uuid: donationUuid,
     code,
     wish_id: target.id,
     wish_nickname: target.nickname,
