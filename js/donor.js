@@ -452,6 +452,7 @@ function showPaymentPrompt(donationCode) {
   container.innerHTML = `
     <div class="rounded-2xl bg-white/10 border border-white/10 p-4 shadow-xl backdrop-blur">
       <div class="font-semibold mb-1">Thanks — your pledge is recorded</div>
+      <div class="text-xs opacity-70 mb-2">Donation Code: <span class="font-mono">${donationCode}</span></div>
       <div class="text-sm opacity-85 mb-3">Would you like to pay for your donation now?</div>
       <div class="flex gap-2">
         <button id="payNowBtn" class="flex-1 px-3 py-2 rounded-xl bg-indigo-600 text-white font-semibold">Pay</button>
