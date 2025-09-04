@@ -254,7 +254,7 @@ async function initDonateForm() {
   if (wishId) {
     const wishes = await loadWishes();
     const w = wishes.find(x => x.id === wishId) || {};
-    document.getElementById('wishNickname').textContent = w.nickname || '-';
+    document.getElementById('wishNickname').textContent = w.nickname || 'None';
     document.getElementById('wishItem').textContent = w.wish || '-';
     document.getElementById('wishSituation').textContent = w.situation || '-';
     document.getElementById('donateWishBadge').textContent = w.nickname ? `Granting: ${w.nickname}` : '';
