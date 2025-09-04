@@ -1048,31 +1048,53 @@ async function openModal(wishId) {
   }
 
   // 🎨 Apply emotion color theme
-  const modalContent = modal.querySelector('.modal-content');
-  if (modalContent) {
-    modalContent.style.backgroundColor = '';
-    modalContent.style.border = '';
-    modalContent.style.boxShadow = '';
+  // Theming
+const modalContent = modal.querySelector(".modal-content");
+const modalHeader = document.getElementById("wishModalHeader");
+const grantBtn = document.getElementById("grantBtn");
+const avatar = document.getElementById("wishStudentImageContainer");
 
-    const emotion = (w.emotion || '').toLowerCase();
-    const color = EMOTION_COLORS[emotion];
+const emotion = (w.emotion || "").toLowerCase();
+const color = EMOTION_COLORS[emotion] || "#6B7280";
 
-    if (color) {
-      modalContent.style.backgroundColor = `${color}20`; // semi-transparent background
-      modalContent.style.border = `2px solid ${color}`;
-      modalContent.style.boxShadow = `0 0 18px ${color}AA`; // soft glow
-    } else {
-      // fallback neutral
-      modalContent.style.backgroundColor = '#111827';
-      modalContent.style.border = '2px solid #6b7280';
-      modalContent.style.boxShadow = '0 0 12px rgba(107,114,128,0.4)';
-    }
+// 1. Modal background: solid emotion tint (not transparent)
+if (modalContent) {
+  modalContent.style.backgroundColor = color; // solid fill
+  modalContent.style.color = "white";
+  modalContent.style.border = `2px solid ${shadeColor(color, -20)}`;
+  modalContent.style.boxShadow = `0 0 30px ${shadeColor(color, -30)}`;
+}
+
+// 2. Header: image if available, else gradient fallback
+if (modalHeader) {
+  if (w.situation_image_url && w.situation_image_url.trim() !== "") {
+    modalHeader.style.background = `url(${w.situation_image_url}) center/cover no-repeat`;
+  } else {
+    modalHeader.style.background = `linear-gradient(135deg, ${color}, ${shadeColor(
+      color,
+      -25
+    )})`;
   }
+  modalHeader.style.color = "white";
+}
 
-  modal.classList.remove('modal-hidden');
-  modal.classList.add('modal-visible');
-  modalBackdrop.classList.remove('opacity-0', 'pointer-events-none');
-  modalBackdrop.classList.add('opacity-100');
+// 3. Avatar glow
+if (avatar) {
+  avatar.style.boxShadow = `0 0 12px ${shadeColor(color, -10)}`;
+}
+
+// 4. Grant button: different shade for contrast
+if (grantBtn) {
+  const base = shadeColor(color, -15); // slightly darker than bg
+  const hover = shadeColor(color, -30); // darker hover
+  grantBtn.style.backgroundColor = base;
+  grantBtn.style.color = "white";
+  grantBtn.onmouseover = () => {
+    grantBtn.style.backgroundColor = hover;
+  };
+  grantBtn.onmouseout = () => {
+    grantBtn.style.backgroundColor = base;
+  };
 }
 
 function closeModal(){

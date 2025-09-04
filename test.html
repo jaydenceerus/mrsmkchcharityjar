@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emotion-Themed Wish Modal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .modal-hidden {
+            transform: scale(0.95);
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .modal-content {
+            transform: translateY(0);
+            transition: all 0.3s ease;
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .floating-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .glow-effect {
+            transition: box-shadow 0.3s ease;
+        }
+        
+        .emotion-bounce {
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 53%, 80%, 100% { transform: translateY(0); }
+            40%, 43% { transform: translateY(-15px); }
+            70% { transform: translateY(-8px); }
+            90% { transform: translateY(-3px); }
+        }
+
+        .character-graphic {
+            clip-path: polygon(0 40%, 100% 40%, 100% 100%, 0% 100%);
+            transition: all 0.5s ease;
+        }
+
+        .character-head {
+            z-index: 10;
+            position: relative;
+        }
+
+        /* Emotion Theme Classes */
+        .theme-sad { background: linear-gradient(135deg, #4c566a 0%, #2e3440 100%); }
+        .theme-angry { background: linear-gradient(135deg, #bf616a 0%, #8b4a5c 100%); }
+        .theme-anxious { background: linear-gradient(135deg, #d08770 0%, #a0674a 100%); }
+        .theme-lonely { background: linear-gradient(135deg, #5e81ac 0%, #4c6b8a 100%); }
+        .theme-frustrated { background: linear-gradient(135deg, #ebcb8b 0%, #b8986b 100%); }
+        
+        .theme-happy { background: linear-gradient(135deg, #a3be8c 0%, #7a9b6a 100%); }
+        .theme-excited { background: linear-gradient(135deg, #88c0d0 0%, #6ba3b8 100%); }
+        .theme-peaceful { background: linear-gradient(135deg, #b48ead 0%, #8b6a8b 100%); }
+        .theme-loved { background: linear-gradient(135deg, #d08770 0%, #ff9a8b 100%); }
+        .theme-confident { background: linear-gradient(135deg, #ebcb8b 0%, #ffd89b 100%); }
+
+        .glow-sad { box-shadow: 0 0 30px rgba(76, 86, 106, 0.4); }
+        .glow-angry { box-shadow: 0 0 30px rgba(191, 97, 106, 0.4); }
+        .glow-anxious { box-shadow: 0 0 30px rgba(208, 135, 112, 0.4); }
+        .glow-lonely { box-shadow: 0 0 30px rgba(94, 129, 172, 0.4); }
+        .glow-frustrated { box-shadow: 0 0 30px rgba(235, 203, 139, 0.4); }
+        
+        .glow-happy { box-shadow: 0 0 30px rgba(163, 190, 140, 0.4); }
+        .glow-excited { box-shadow: 0 0 30px rgba(136, 192, 208, 0.4); }
+        .glow-peaceful { box-shadow: 0 0 30px rgba(180, 142, 173, 0.4); }
+        .glow-loved { box-shadow: 0 0 30px rgba(255, 154, 139, 0.4); }
+        .glow-confident { box-shadow: 0 0 30px rgba(255, 216, 155, 0.4); }
+    </style>
+</head>
+<body class="bg-gray-900 min-h-screen flex items-center justify-center p-4">
+    
+    <!-- Control Panel -->
+    <div class="fixed top-4 left-4 z-30 space-y-2">
+        <button id="openModal" class="block px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 glow-effect">
+            View Wish Details
+        </button>
+        <div class="bg-black/50 backdrop-blur-sm rounded-xl p-4 text-white">
+            <div class="text-sm mb-2">Test Emotions:</div>
+            <select id="emotionSelector" class="bg-gray-800 text-white rounded px-2 py-1 text-sm mb-2 w-full">
+                <option value="sad">Sad (Negative)</option>
+                <option value="angry">Angry (Negative)</option>
+                <option value="anxious">Anxious (Negative)</option>
+                <option value="lonely">Lonely (Negative)</option>
+                <option value="frustrated">Frustrated (Negative)</option>
+            </select>
+            <button id="toggleGranted" class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm transition">
+                Grant Wish
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal Backdrop -->
+    <div id="modalBackdrop" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300"></div>
+    
+    <!-- Emotion-Themed Wish Modal -->
+    <div id="wishModal" class="fixed z-50 inset-0 flex items-center justify-center p-6 modal-hidden transition-all duration-300">
+        <div id="modalContent" class="modal-content w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden relative theme-sad glow-sad">
+            
+            <!-- Decorative Elements -->
+            <div class="absolute top-4 left-4 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
+            <div class="absolute bottom-4 right-4 w-20 h-20 bg-white/5 rounded-full blur-2xl"></div>
+            
+            <!-- Header with Close Button -->
+            <div class="relative h-32 flex items-start justify-between p-6 text-white">
+                <div class="flex items-center gap-3">
+                    <div class="w-3 h-3 bg-red-400 rounded-full"></div>
+                    <div class="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                    <div class="w-3 h-3 bg-green-400 rounded-full"></div>
+                </div>
+                <button id="closeModalTop" aria-label="Close"
+                        class="rounded-full glass-effect hover:bg-white/20 p-3 transition-all duration-300 hover:scale-110">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M6 6l12 12M18 6L6 18" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Profile Section -->
+            <div class="relative px-8 -mt-8">
+                <div class="flex items-end gap-6">
+                    <!-- User Profile Picture -->
+                    <div class="relative">
+                        <div class="h-24 w-24 rounded-full ring-4 ring-white/30 overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center shadow-xl">
+                            <img id="userProfileImage" src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face" 
+                                 alt="User Profile" class="h-24 w-24 object-cover rounded-full" />
+                        </div>
+                        <div id="statusIndicator" class="absolute -bottom-2 -right-2 w-8 h-8 bg-red-400 rounded-full border-3 border-white flex items-center justify-center transition-colors duration-500">
+                            <div class="w-3 h-3 bg-white rounded-full"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Wish Status -->
+                    <div class="flex-1">
+                        <div id="wishStatus" class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-effect text-white text-sm font-semibold">
+                            <div class="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
+                            Needs Support
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Section with Character -->
+            <div class="px-8 pt-8 pb-8 relative">
+                <!-- Wish Name -->
+                <div class="mb-6">
+                    <h1 id="wishName" class="text-3xl font-bold text-white mb-2">Help Me Feel Better</h1>
+                    <div class="flex items-center gap-2 text-white/80">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                            <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <span class="text-sm">Posted 2 hours ago</span>
+                    </div>
+                </div>
+
+                <!-- Character Graphic positioned behind boxes -->
+                <div class="absolute right-8 top-16 z-0">
+                    <!-- Character Head (visible above boxes) -->
+                    <div class="character-head mb-2">
+                        <div id="characterHead" class="w-24 h-24 rounded-full bg-gradient-to-br from-white/20 to-white/10 border-4 border-white/30 flex items-center justify-center text-4xl shadow-2xl emotion-bounce">
+                            😢
+                        </div>
+                    </div>
+                    
+                    <!-- Character Body (clipped behind boxes) -->
+                    <div class="character-graphic">
+                        <div id="characterBody" class="w-20 h-32 bg-gradient-to-b from-white/15 to-white/5 rounded-2xl border-2 border-white/20 mx-2 flex flex-col items-center justify-center">
+                            <div class="w-3 h-3 bg-white/30 rounded-full mb-2"></div>
+                            <div class="w-3 h-3 bg-white/30 rounded-full mb-2"></div>
+                            <div class="w-3 h-3 bg-white/30 rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Details Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 relative z-10">
+                    <!-- Emotion -->
+                    <div class="glass-effect rounded-2xl p-5">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                    <circle cx="12" cy="12" r="10" stroke="white" stroke-width="2"/>
+                                    <path d="M8 14s1.5 2 4 2 4-2 4-2" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                                    <path d="M9 9h.01M15 9h.01" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-white font-semibold">Current Emotion</h3>
+                        </div>
+                        <p id="wishEmotion" class="text-white/90 leading-relaxed">Feeling overwhelmed and sad about my current situation</p>
+                    </div>
+
+                    <!-- Situation -->
+                    <div class="glass-effect rounded-2xl p-5">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="white" stroke-width="2"/>
+                                    <circle cx="12" cy="10" r="3" stroke="white" stroke-width="2"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-white font-semibold">Current Situation</h3>
+                        </div>
+                        <p id="wishSituation" class="text-white/90 leading-relaxed">Going through a difficult time and struggling to find support and understanding</p>
+                    </div>
+                </div>
+
+                <!-- Wish Details -->
+                <div class="glass-effect rounded-2xl p-6 mb-8 relative z-10">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-white/30 to-white/10 rounded-xl flex items-center justify-center floating-animation">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
+                                      fill="white" stroke="white" stroke-width="1"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-white">My Wish</h3>
+                    </div>
+                    <p id="wishDetails" class="text-white/95 text-lg leading-relaxed">
+                        I wish for someone to listen and understand what I'm going through. Sometimes just knowing that someone cares can make all the difference in turning a difficult day around.
+                    </p>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-4 relative z-10">
+                    <button id="grantBtn" class="flex-1 inline-flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-2xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
+                                  fill="white"/>
+                        </svg>
+                        Grant This Wish
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M13 5l7 7-7 7M5 12h14" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <button id="shareBtn" class="px-6 py-4 glass-effect text-white font-semibold rounded-2xl hover:bg-white/20 transition-all duration-300 flex items-center justify-center gap-2">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Share
+                    </button>
+                    <button id="closeModal" class="px-6 py-4 bg-black/30 text-white font-semibold rounded-2xl hover:bg-black/40 transition-all duration-300">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const openModalBtn = document.getElementById('openModal');
+        const closeModalBtns = [document.getElementById('closeModal'), document.getElementById('closeModalTop')];
+        const modal = document.getElementById('wishModal');
+        const backdrop = document.getElementById('modalBackdrop');
+        const grantBtn = document.getElementById('grantBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        const modalContent = document.getElementById('modalContent');
+        const emotionSelector = document.getElementById('emotionSelector');
+        const toggleGrantedBtn = document.getElementById('toggleGranted');
+        const characterHead = document.getElementById('characterHead');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const wishStatus = document.getElementById('wishStatus');
+
+        let isGranted = false;
+        let currentEmotion = 'sad';
+
+        // Emotion configurations
+        const emotions = {
+            // Negative emotions
+            sad: {
+                negative: { 
+                    emoji: '😢', 
+                    theme: 'theme-sad', 
+                    glow: 'glow-sad',
+                    emotion: 'Feeling overwhelmed and sad about my current situation',
+                    situation: 'Going through a difficult time and struggling to find support and understanding',
+                    wish: 'I wish for someone to listen and understand what I\'m going through. Sometimes just knowing that someone cares can make all the difference in turning a difficult day around.',
+                    name: 'Help Me Feel Better'
+                },
+                positive: { 
+                    emoji: '😊', 
+                    theme: 'theme-happy', 
+                    glow: 'glow-happy',
+                    emotion: 'Feeling hopeful and grateful for the support I\'ve received',
+                    situation: 'Connected with caring people who understand and support me',
+                    wish: 'My wish has been granted! I now have the emotional support I needed and feel much more positive about facing challenges.',
+                    name: 'Feeling Supported and Happy'
+                }
+            },
+            angry: {
+                negative: { 
+                    emoji: '😠', 
+                    theme: 'theme-angry', 
+                    glow: 'glow-angry',
+                    emotion: 'Feeling frustrated and angry about unfair treatment',
+                    situation: 'Dealing with injustice and feeling powerless to change things',
+                    wish: 'I wish for justice and fairness in my situation. I want to channel this anger into positive change.',
+                    name: 'Seeking Justice and Fairness'
+                },
+                positive: { 
+                    emoji: '🤩', 
+                    theme: 'theme-excited', 
+                    glow: 'glow-excited',
+                    emotion: 'Feeling empowered and excited about making positive changes',
+                    situation: 'Taking action to create positive change and seeing results',
+                    wish: 'My wish has been granted! I\'ve found constructive ways to address injustice and am making a real difference.',
+                    name: 'Empowered to Create Change'
+                }
+            },
+            anxious: {
+                negative: { 
+                    emoji: '😰', 
+                    theme: 'theme-anxious', 
+                    glow: 'glow-anxious',
+                    emotion: 'Feeling anxious and worried about the future',
+                    situation: 'Facing uncertainty and struggling with overwhelming thoughts',
+                    wish: 'I wish for peace of mind and tools to manage my anxiety. I want to feel calm and confident again.',
+                    name: 'Finding Peace from Anxiety'
+                },
+                positive: { 
+                    emoji: '😌', 
+                    theme: 'theme-peaceful', 
+                    glow: 'glow-peaceful',
+                    emotion: 'Feeling calm and at peace with myself',
+                    situation: 'Learning healthy coping strategies and finding inner balance',
+                    wish: 'My wish has been granted! I\'ve developed tools to manage anxiety and feel much more at peace.',
+                    name: 'Living with Inner Peace'
+                }
+            },
+            lonely: {
+                negative: { 
+                    emoji: '😔', 
+                    theme: 'theme-lonely', 
+                    glow: 'glow-lonely',
+                    emotion: 'Feeling isolated and disconnected from others',
+                    situation: 'Struggling with loneliness and lack of meaningful connections',
+                    wish: 'I wish to find genuine friendships and feel like I belong somewhere. Connection is what I need most.',
+                    name: 'Seeking Connection and Belonging'
+                },
+                positive: { 
+                    emoji: '🥰', 
+                    theme: 'theme-loved', 
+                    glow: 'glow-loved',
+                    emotion: 'Feeling loved and connected to wonderful people',
+                    situation: 'Surrounded by caring friends and meaningful relationships',
+                    wish: 'My wish has been granted! I\'ve found my tribe and feel deeply connected and loved.',
+                    name: 'Surrounded by Love'
+                }
+            },
+            frustrated: {
+                negative: { 
+                    emoji: '😤', 
+                    theme: 'theme-frustrated', 
+                    glow: 'glow-frustrated',
+                    emotion: 'Feeling stuck and frustrated with my progress',
+                    situation: 'Hitting roadblocks and feeling like I\'m not moving forward',
+                    wish: 'I wish for breakthrough moments and the confidence to overcome obstacles in my path.',
+                    name: 'Breaking Through Barriers'
+                },
+                positive: { 
+                    emoji: '💪', 
+                    theme: 'theme-confident', 
+                    glow: 'glow-confident',
+                    emotion: 'Feeling confident and accomplished',
+                    situation: 'Overcoming challenges and achieving my goals',
+                    wish: 'My wish has been granted! I\'ve broken through barriers and feel incredibly confident in my abilities.',
+                    name: 'Confident and Accomplished'
+                }
+            }
+        };
+
+        function updateModalTheme() {
+            const emotionData = emotions[currentEmotion];
+            const state = isGranted ? emotionData.positive : emotionData.negative;
+            
+            // Remove all theme classes
+            modalContent.className = modalContent.className.replace(/theme-\w+/g, '').replace(/glow-\w+/g, '');
+            
+            // Add new theme
+            modalContent.classList.add(state.theme, state.glow);
+            
+            // Update content
+            characterHead.textContent = state.emoji;
+            document.getElementById('wishEmotion').textContent = state.emotion;
+            document.getElementById('wishSituation').textContent = state.situation;
+            document.getElementById('wishDetails').textContent = state.wish;
+            document.getElementById('wishName').textContent = state.name;
+            
+            // Update status indicator
+            if (isGranted) {
+                statusIndicator.classList.remove('bg-red-400');
+                statusIndicator.classList.add('bg-green-400');
+                wishStatus.innerHTML = `
+                    <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+                    Wish Granted!
+                `;
+                toggleGrantedBtn.textContent = 'Reset Wish';
+                toggleGrantedBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                toggleGrantedBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+            } else {
+                statusIndicator.classList.remove('bg-green-400');
+                statusIndicator.classList.add('bg-red-400');
+                wishStatus.innerHTML = `
+                    <div class="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
+                    Needs Support
+                `;
+                toggleGrantedBtn.textContent = 'Grant Wish';
+                toggleGrantedBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
+                toggleGrantedBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+            }
+        }
+
+        function openModal() {
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+            backdrop.classList.add('opacity-100');
+            modal.classList.remove('modal-hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            backdrop.classList.add('opacity-0', 'pointer-events-none');
+            backdrop.classList.remove('opacity-100');
+            modal.classList.add('modal-hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Event listeners
+        openModalBtn.addEventListener('click', openModal);
+        closeModalBtns.forEach(btn => btn.addEventListener('click', closeModal));
+        backdrop.addEventListener('click', closeModal);
+
+        emotionSelector.addEventListener('change', (e) => {
+            currentEmotion = e.target.value;
+            updateModalTheme();
+        });
+
+        toggleGrantedBtn.addEventListener('click', () => {
+            isGranted = !isGranted;
+            updateModalTheme();
+        });
+
+        // Grant wish functionality
+        grantBtn.addEventListener('click', () => {
+            if (!isGranted) {
+                grantBtn.innerHTML = `
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="animate-spin">
+                        <circle cx="12" cy="12" r="10" stroke="white" stroke-width="4" stroke-opacity="0.3"/>
+                        <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" fill="white"/>
+                    </svg>
+                    Processing...
+                `;
+                
+                setTimeout(() => {
+                    isGranted = true;
+                    updateModalTheme();
+                    grantBtn.innerHTML = `
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M20 6L9 17l-5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Wish Granted!
+                    `;
+                }, 2000);
+            }
+        });
+
+        // Share functionality
+        shareBtn.addEventListener('click', () => {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Amazing Wish to Support',
+                    text: 'Check out this inspiring wish that needs our support!',
+                    url: window.location.href
+                });
+            } else {
+                navigator.clipboard.writeText(window.location.href);
+                shareBtn.innerHTML = `
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 6L9 17l-5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Copied!
+                `;
+                setTimeout(() => {
+                    shareBtn.innerHTML = `
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Share
+                    `;
+                }, 2000);
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Initialize
+        updateModalTheme();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'979d03d7548c71e8',t:'MTc1Njk4Mzk2MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
