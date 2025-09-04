@@ -250,20 +250,91 @@ async function initDonateForm() {
   const donateWishIdEl = document.getElementById('donateWishId');
   const wishId = (donateWishIdEl && donateWishIdEl.value) || currentWishId || null;
 
+
+  const emotionMap = {
+    chirpy: 'assets/chirpy.png',
+    serenity: 'assets/serenity.png',
+    envy: 'assets/envy.png',
+    gratitude: 'assets/gratitude.png',
+    shy: 'assets/shy.png',
+    worry: 'assets/worry.png'
+  };
+
+  function getEmotionAsset(emotion) {
+    if (!emotion) return defaultEmotionAsset;
+    const key = String(emotion).trim().toLowerCase();
+    return emotionMap[key] || defaultEmotionAsset;
+  }
+
   // populate wish details if available
   if (wishId) {
     const wishes = await loadWishes();
     const w = wishes.find(x => x.id === wishId) || {};
-    document.getElementById('wishNickname').textContent = w.nickname || 'None';
+    document.getElementById('specficWishNickname').textContent = w.nickname || 'None';
     document.getElementById('wishItem').textContent = w.wish || '-';
-    document.getElementById('wishSituation').textContent = w.situation || '-';
+    document.getElementById('specficWishSituation').textContent = w.situation || '-';
     document.getElementById('donateWishBadge').textContent = w.nickname ? `Granting: ${w.nickname}` : '';
   } else {
     // clear
-    document.getElementById('wishNickname').textContent = '-';
+    document.getElementById('specficWishNickname').textContent = '-';
     document.getElementById('wishItem').textContent = '-';
-    document.getElementById('wishSituation').textContent = '-';
+    document.getElementById('specficWishSituation').textContent = '-';
     document.getElementById('donateWishBadge').textContent = '';
+  }
+  try {
+    const studentImgEl = document.getElementById('donateStudentImage');
+    const emotionImgEl = document.getElementById('donateEmotionCharacter');
+
+    // attempt to find a student image property in common keys
+    const studentImageUrl = w.studentImageUrl || w.student_image || w.image || w.photo || w.avatar || null;
+
+    if (studentImgEl) {
+      if (studentImageUrl) {
+        studentImgEl.src = studentImageUrl;
+        studentImgEl.alt = w.nickname ? `${w.nickname}'s image` : 'Student image';
+      } else {
+        studentImgEl.src = placeholderStudent;
+        studentImgEl.alt = 'Student image placeholder';
+      }
+    }
+
+    if (emotionImgEl) {
+      const emoSrc = getEmotionAsset(w.emotion);
+      emotionImgEl.src = emoSrc;
+      emotionImgEl.alt = w.emotion ? `${w.emotion} character` : 'Emotion character';
+      // make sure it's visible
+      emotionImgEl.classList.remove('hidden');
+      emotionImgEl.style.display = ''; // in case it was hidden via style
+      // Optional small pose tweaks (sits more/less) — tweak per emotion
+      switch ((w.emotion || '').toLowerCase()) {
+        case 'serenity':
+          emotionImgEl.style.top = '-6px';
+          emotionImgEl.style.right = '12px';
+          emotionImgEl.style.width = '84px';
+          emotionImgEl.style.height = '84px';
+          break;
+        case 'chirpy':
+          emotionImgEl.style.top = '-10px';
+          emotionImgEl.style.right = '8px';
+          emotionImgEl.style.width = '72px';
+          emotionImgEl.style.height = '72px';
+          break;
+        case 'worry':
+          emotionImgEl.style.top = '-4px';
+          emotionImgEl.style.right = '6px';
+          emotionImgEl.style.width = '88px';
+          emotionImgEl.style.height = '88px';
+          break;
+        default:
+          // default sitting pose
+          emotionImgEl.style.top = '-6px';
+          emotionImgEl.style.right = '8px';
+          emotionImgEl.style.width = '80px';
+          emotionImgEl.style.height = '80px';
+      }
+    }
+  } catch (err) {
+    console.warn('initDonateForm: could not set images', err);
   }
 
   // determine if logged-in

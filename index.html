@@ -306,15 +306,41 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
         <h2 class="text-3xl font-bold">Pledge Support</h2>
         <span id="donateWishBadge" class="text-xs bg-white/20 px-3 py-1 rounded-full"></span>
       </div>
-      <p class="mt-2 text-white/90">This pledge form is a sample and saves safely in your browser.</p>
+      <p class="mt-2 text-white/90">Want to contribute to this student? Fill in this pledge form & complete payment to promise you won't let them down!</p>
 
       <!-- Wish details -->
       <div id="donateWishDetails" class="mt-6 rounded-xl bg-white/5 border border-white/10 p-4 text-left">
-        <h3 class="text-xl font-semibold mb-2">Wish Details</h3>
-        <p><span class="font-bold">Nickname:</span> <span id="wishNickname">—</span></p>
-        <p><span class="font-bold">Wish Item:</span> <span id="wishItem">—</span></p>
-        <p><span class="font-bold">Situation:</span> <span id="wishSituation">—</span></p>
+  <h3 class="text-xl font-semibold mb-2">Wish Details</h3>
+
+  <div class="mt-4 flex flex-col md:flex-row items-start md:items-center gap-4">
+    <!-- Left: text details -->
+    <div class="flex-1 min-w-0">
+      <p class="truncate"><span class="font-bold">Nickname:</span> <span id="specficWishNickname">—</span></p>
+      <p class="mt-2"><span class="font-bold">Wish Item:</span> <span id="wishItem">—</span></p>
+      <p class="mt-2"><span class="font-bold">Situation:</span> <span id="specficWishSituation">—</span></p>
+    </div>
+
+    <!-- Right: student image with emotion character sitting on top -->
+    <div class="relative w-40 md:w-48 flex-shrink-0">
+      <!-- wrapper gives ring / shadow -->
+      <div id="studentImageWrapper" class="relative rounded-xl overflow-hidden bg-white/5 ring-4 ring-white/8 shadow-lg">
+        <!-- Student image (populated by JS) -->
+        <img id="donateStudentImage"
+             src="assets/avatar-placeholder.png"
+             alt="Student image"
+             class="w-full h-40 md:h-48 object-cover" />
+
+        <!-- Emotion character sits on top (absolute). Uses your .char-img float animation -->
+        <img id="donateEmotionCharacter"
+             src="assets/chirpy.png"
+             alt="Emotion character"
+             class="absolute -top-6 right-2 w-20 h-20 object-contain drop-shadow-xl char-img"
+             style="z-index:20; pointer-events:none;" />
       </div>
+    </div>
+  </div>
+</div>
+
 
       <form id="donorForm" class="mt-6 space-y-5">
         <input type="hidden" name="wish_id" id="donateWishId">
