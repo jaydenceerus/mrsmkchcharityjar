@@ -284,7 +284,7 @@ async function initDonateForm() {
   try {
     const studentImgEl = document.getElementById('donateStudentImage');
     const emotionImgEl = document.getElementById('donateEmotionCharacter');
-
+    const wishes = await loadWishes();
     const w = wishes.find(x => x.id === wishId) || {};
     const studentImageUrl = w.student_image_url || 'assets/studentpreview.jpeg' || w.image || w.photo || w.avatar || null;
 
