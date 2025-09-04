@@ -31,8 +31,6 @@ const show = (id, text) => { const e = $(id); if(!e) return; e.classList.remove(
 const hide = id => { const e = $(id); if(!e) return; e.classList.add('hidden'); };
 const setLS = (k,v) => { try { localStorage.setItem(k, v); } catch(e){} };
 
-window.location.href = 'donor.html';
-
 async function isUserAdmin(userId) {
   if (!userId) return false;
   const { data, error, count } = await supabase

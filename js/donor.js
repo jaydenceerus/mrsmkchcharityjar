@@ -417,7 +417,7 @@ navlinks.forEach(btn => btn.addEventListener('click', ()=> routeTo(btn.dataset.r
 
 document.getElementById('logoutBtn')?.addEventListener('click', ()=> {
   try { localStorage.removeItem(LS_ROLE); localStorage.removeItem(LS_ACTIVE_USER); } catch(e){}
-  window.location.href = 'index.html';
+  window.location.href = 'login.html';
 });
 
 async function updateAuthUI() {
