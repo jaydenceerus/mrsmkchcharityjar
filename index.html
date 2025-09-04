@@ -241,63 +241,59 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
     <!-- WISH MODAL -->
     <div id="modalBackdrop" class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity"></div>
     <div id="wishModal" class="fixed z-50 inset-0 flex items-center justify-center p-6 modal-hidden">
-      <div class="w-full max-w-lg bg-white text-slate-800 rounded-2xl shadow-2xl overflow-hidden modal-content">
-
-        <div class="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 h-28">
-          <button id="closeModalTop" aria-label="Close" class="absolute top-3 right-3 rounded-full bg-white/20 hover:bg-white/30 text-white p-2 transition">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M6 6l12 12M18 6L6 18" stroke="white" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </button>
-<div id="wishStudentImageContainer"
-     class="absolute -bottom-10 left-1/2 -translate-x-1/2 h-20 w-20 rounded-full ring-4 ring-white overflow-hidden bg-white flex items-center justify-center">
-  
-  <!-- Actual student image (hidden by default) -->
-  <img id="wishStudentImage"
-       src=""
-       alt="Student Image"
-       class="h-20 w-20 object-cover rounded-full hidden" />
-
-  <!-- Default placeholder avatar -->
-  <svg id="wishStudentPlaceholder" viewBox="0 0 64 64" class="h-16 w-16">
-    <circle cx="32" cy="32" r="30" fill="#EEF2FF"/>
-    <circle cx="32" cy="26" r="10" fill="#A78BFA"/>
-    <path d="M16 50c4-8 12-12 16-12s12 4 16 12" fill="#C4B5FD"/>
-  </svg>
-</div>
-
-        </div>
-        <div class="px-6 pt-12 pb-6">
-          <div class="text-center">
-            <h2 id="wishNickname" class="text-2xl font-bold text-slate-900">Student</h2>
-            <p class="text-slate-600 mt-1">Anonymous profile</p>
-          </div>
-          <div class="mt-5 space-y-3">
-            <div>
-              <div class="text-slate-500 text-sm">Emotion</div>
-              <p id="wishEmotion" class="text-slate-800"></p>
-            </div>
-            <div>
-              <div class="text-slate-500 text-sm">Situation</div>
-              <p id="wishSituation" class="text-slate-800"></p>
-            </div>
-            <div>
-              <div class="text-slate-500 text-sm">Wish</div>
-              <p id="wishText" class="text-slate-800"></p>
-            </div>
-          </div>
-          <div class="mt-6 flex flex-col sm:flex-row gap-3">
-            <button id="grantBtn" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-500 transition">
-              Grant this wish
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M13 5l7 7-7 7M5 12h14" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </button>
-            <button id="closeModal" class="px-4 py-3 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition w-full sm:w-auto">Close</button>
-          </div>
-        </div>
+  <div class="modal-content w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
+    <div id="wishModalHeader" class="relative h-28 flex items-start justify-end p-3 text-white">
+      <button id="closeModalTop" aria-label="Close"
+              class="rounded-full bg-white/20 hover:bg-white/30 p-2 transition">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M6 6l12 12M18 6L6 18" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <!-- Avatar -->
+      <div id="wishStudentImageContainer"
+           class="absolute -bottom-10 left-1/2 -translate-x-1/2 h-20 w-20 rounded-full ring-4 ring-white overflow-hidden bg-white flex items-center justify-center">
+        <img id="wishStudentImage" src="" alt="Student Image"
+             class="h-20 w-20 object-cover rounded-full hidden" />
+        <svg id="wishStudentPlaceholder" viewBox="0 0 64 64" class="h-16 w-16">
+          <circle cx="32" cy="32" r="30" fill="#EEF2FF"/>
+          <circle cx="32" cy="26" r="10" fill="#A78BFA"/>
+          <path d="M16 50c4-8 12-12 16-12s12 4 16 12" fill="#C4B5FD"/>
+        </svg>
       </div>
     </div>
+
+    <div class="px-6 pt-12 pb-6">
+      <div class="text-center">
+        <h2 id="wishNickname" class="text-2xl font-bold">Student</h2>
+        <p class="mt-1 opacity-80">Anonymous profile</p>
+      </div>
+      <div class="mt-5 space-y-3">
+        <div>
+          <div class="text-sm opacity-80">Emotion</div>
+          <p id="wishEmotion" class="font-semibold"></p>
+        </div>
+        <div>
+          <div class="text-sm opacity-80">Situation</div>
+          <p id="wishSituation"></p>
+        </div>
+        <div>
+          <div class="text-sm opacity-80">Wish</div>
+          <p id="wishText"></p>
+        </div>
+      </div>
+      <div class="mt-6 flex flex-col sm:flex-row gap-3">
+        <button id="grantBtn" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold transition">
+          Grant this wish
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M13 5l7 7-7 7M5 12h14" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button id="closeModal" class="px-4 py-3 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition w-full sm:w-auto">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
     <!-- DONATE / PLEDGE FORM -->
 <section id="page-donate" class="page">
