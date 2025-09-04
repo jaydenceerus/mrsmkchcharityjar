@@ -1046,41 +1046,75 @@ async function openModal(wishId) {
     placeholder.classList.remove('hidden');
   }
 
-   const modalContent = modal.querySelector('.modal-content');
-  const modalHeader = document.getElementById('wishModalHeader');
-  const avatar = document.getElementById('wishStudentImageContainer');
+  const modalContent = modal.querySelector('.modal-content');
+const modalHeader = document.getElementById('wishModalHeader');
+const grantBtn = document.getElementById('grantBtn');
+const avatar = document.getElementById('wishStudentImageContainer');
 
-  const emotion = (w.emotion || '').toLowerCase();
-  const color = EMOTION_COLORS[emotion] || '#6B7280'; // gray fallback
+const emotion = (w.emotion || '').toLowerCase();
+const color = EMOTION_COLORS[emotion] || '#6B7280';
 
-  // Card styling
-  if (modalContent) {
-    modalContent.style.backgroundColor = '#1f2937'; // slate-800 background
-    modalContent.style.color = 'white';
-    modalContent.style.border = `2px solid ${color}`;
-    modalContent.style.boxShadow = `0 0 20px ${color}AA`;
+// Modal background: semi-transparent tint of the emotion color
+if (modalContent) {
+  modalContent.style.backgroundColor = hexToRgba(color, 0.25); // 25% tint
+  modalContent.style.color = 'white';
+  modalContent.style.border = `2px solid ${hexToRgba(color, 0.7)}`;
+  modalContent.style.boxShadow = `0 0 30px ${hexToRgba(color, 0.6)}`;
+}
+
+// Header: image fallback to gradient
+if (modalHeader) {
+  if (w.situation_image_url && w.situation_image_url.trim() !== '') {
+    modalHeader.style.background = `url(${w.situation_image_url}) center/cover no-repeat`;
+  } else {
+    modalHeader.style.background = `linear-gradient(135deg, ${color}, ${shadeColor(color, -25)})`;
   }
+  modalHeader.style.color = 'white';
+}
 
-  // Header styling (image > gradient > fallback)
-  if (modalHeader) {
-    if (w.situation_image_url && w.situation_image_url.trim() !== '') {
-      modalHeader.style.background = `url(${w.situation_image_url}) center/cover no-repeat`;
-    } else {
-      modalHeader.style.background = `linear-gradient(135deg, ${color}, ${color}AA)`;
-    }
-    modalHeader.style.color = 'white';
+// Avatar glow
+if (avatar) {
+  avatar.style.boxShadow = `0 0 12px ${hexToRgba(color, 0.8)}`;
+}
+
+// Grant button: emotion color but darker shade for contrast
+if (grantBtn) {
+  const base = shadeColor(color, -10);
+  const hover = shadeColor(color, -25);
+  grantBtn.style.backgroundColor = base;
+  grantBtn.style.color = 'white';
+  grantBtn.onmouseover = () => { grantBtn.style.backgroundColor = hover; };
+  grantBtn.onmouseout = () => { grantBtn.style.backgroundColor = base; };
+}
+
+// Utility: HEX -> RGBA
+function hexToRgba(hex, alpha) {
+  let r = 0, g = 0, b = 0;
+  if (hex.length == 4) {
+    r = "0x" + hex[1] + hex[1];
+    g = "0x" + hex[2] + hex[2];
+    b = "0x" + hex[3] + hex[3];
+  } else if (hex.length == 7) {
+    r = "0x" + hex[1] + hex[2];
+    g = "0x" + hex[3] + hex[4];
+    b = "0x" + hex[5] + hex[6];
   }
+  return `rgba(${+r},${+g},${+b},${alpha})`;
+}
 
-  // Avatar glow
-  if (avatar) {
-    avatar.style.boxShadow = `0 0 12px ${color}AA`;
-    avatar.style.borderColor = color;
-  }
-
-  modal.classList.remove('modal-hidden');
-  modal.classList.add('modal-visible');
-  modalBackdrop.classList.remove('opacity-0', 'pointer-events-none');
-  modalBackdrop.classList.add('opacity-100');
+// Utility: lighten/darken HEX
+function shadeColor(hex, percent) {
+  let num = parseInt(hex.replace('#',''),16),
+      amt = Math.round(2.55 * percent),
+      R = (num >> 16) + amt,
+      G = (num >> 8 & 0x00FF) + amt,
+      B = (num & 0x0000FF) + amt;
+  return "#" + (
+    0x1000000 +
+    (R<255?R<1?0:R:255)*0x10000 +
+    (G<255?G<1?0:G:255)*0x100 +
+    (B<255?B<1?0:B:255)
+  ).toString(16).slice(1).toUpperCase();
 }
 
 function closeModal(){
