@@ -1021,6 +1021,15 @@ const wishSituation = document.getElementById('wishSituation');
 const wishText = document.getElementById('wishText');
 
 let currentWishId = null;
+const EMOTION_COLORS = { 
+  envy: '#2E8B57', 
+  shy: '#FF6EC7', 
+  worry: '#6A5ACD', 
+  serenity: '#FEFEFA', 
+  chirpy: '#FFFF00', 
+  gratitude: '#FFAD00' 
+};
+
 async function openModal(wishId) {
   const wishes = await loadWishes();
   const w = wishes.find(x => x.id === wishId);
@@ -1046,75 +1055,32 @@ async function openModal(wishId) {
     placeholder.classList.remove('hidden');
   }
 
+  // 🎨 Apply emotion color theme
   const modalContent = modal.querySelector('.modal-content');
-const modalHeader = document.getElementById('wishModalHeader');
-const grantBtn = document.getElementById('grantBtn');
-const avatar = document.getElementById('wishStudentImageContainer');
+  if (modalContent) {
+    modalContent.style.backgroundColor = '';
+    modalContent.style.border = '';
+    modalContent.style.boxShadow = '';
 
-const emotion = (w.emotion || '').toLowerCase();
-const color = EMOTION_COLORS[emotion] || '#6B7280';
+    const emotion = (w.emotion || '').toLowerCase();
+    const color = EMOTION_COLORS[emotion];
 
-// Modal background: semi-transparent tint of the emotion color
-if (modalContent) {
-  modalContent.style.backgroundColor = hexToRgba(color, 0.25); // 25% tint
-  modalContent.style.color = 'white';
-  modalContent.style.border = `2px solid ${hexToRgba(color, 0.7)}`;
-  modalContent.style.boxShadow = `0 0 30px ${hexToRgba(color, 0.6)}`;
-}
-
-// Header: image fallback to gradient
-if (modalHeader) {
-  if (w.situation_image_url && w.situation_image_url.trim() !== '') {
-    modalHeader.style.background = `url(${w.situation_image_url}) center/cover no-repeat`;
-  } else {
-    modalHeader.style.background = `linear-gradient(135deg, ${color}, ${shadeColor(color, -25)})`;
+    if (color) {
+      modalContent.style.backgroundColor = `${color}20`; // semi-transparent background
+      modalContent.style.border = `2px solid ${color}`;
+      modalContent.style.boxShadow = `0 0 18px ${color}AA`; // soft glow
+    } else {
+      // fallback neutral
+      modalContent.style.backgroundColor = '#111827';
+      modalContent.style.border = '2px solid #6b7280';
+      modalContent.style.boxShadow = '0 0 12px rgba(107,114,128,0.4)';
+    }
   }
-  modalHeader.style.color = 'white';
-}
 
-// Avatar glow
-if (avatar) {
-  avatar.style.boxShadow = `0 0 12px ${hexToRgba(color, 0.8)}`;
-}
-
-// Grant button: emotion color but darker shade for contrast
-if (grantBtn) {
-  const base = shadeColor(color, -10);
-  const hover = shadeColor(color, -25);
-  grantBtn.style.backgroundColor = base;
-  grantBtn.style.color = 'white';
-  grantBtn.onmouseover = () => { grantBtn.style.backgroundColor = hover; };
-  grantBtn.onmouseout = () => { grantBtn.style.backgroundColor = base; };
-}
-
-// Utility: HEX -> RGBA
-function hexToRgba(hex, alpha) {
-  let r = 0, g = 0, b = 0;
-  if (hex.length == 4) {
-    r = "0x" + hex[1] + hex[1];
-    g = "0x" + hex[2] + hex[2];
-    b = "0x" + hex[3] + hex[3];
-  } else if (hex.length == 7) {
-    r = "0x" + hex[1] + hex[2];
-    g = "0x" + hex[3] + hex[4];
-    b = "0x" + hex[5] + hex[6];
-  }
-  return `rgba(${+r},${+g},${+b},${alpha})`;
-}
-
-// Utility: lighten/darken HEX
-function shadeColor(hex, percent) {
-  let num = parseInt(hex.replace('#',''),16),
-      amt = Math.round(2.55 * percent),
-      R = (num >> 16) + amt,
-      G = (num >> 8 & 0x00FF) + amt,
-      B = (num & 0x0000FF) + amt;
-  return "#" + (
-    0x1000000 +
-    (R<255?R<1?0:R:255)*0x10000 +
-    (G<255?G<1?0:G:255)*0x100 +
-    (B<255?B<1?0:B:255)
-  ).toString(16).slice(1).toUpperCase();
+  modal.classList.remove('modal-hidden');
+  modal.classList.add('modal-visible');
+  modalBackdrop.classList.remove('opacity-0', 'pointer-events-none');
+  modalBackdrop.classList.add('opacity-100');
 }
 
 function closeModal(){
