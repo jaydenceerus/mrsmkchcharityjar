@@ -582,6 +582,7 @@ async function updateAuthUI() {
   const user = await getActiveUser(); // uses existing helper
   const profileBtn = document.getElementById('profileBtn');
   const logoutBtn = document.getElementById('logoutBtn');
+  const inboxBtn = document.querySelector('button[data-route="inbox"]'); // NEW: selects Inbox nav button
 
   let loginBtn = document.getElementById('loginBtn');
 
@@ -590,10 +591,12 @@ async function updateAuthUI() {
     if (loginBtn) loginBtn.remove();
     if (profileBtn) profileBtn.style.display = '';
     if (logoutBtn) logoutBtn.style.display = '';
+    if (inboxBtn) inboxBtn.style.display = '';
   } else {
     // Anonymous: hide profile/logout, show login
     if (profileBtn) profileBtn.style.display = 'none';
     if (logoutBtn) logoutBtn.style.display = 'none';
+    if (inboxBtn) inboxBtn.style.display = 'none';
 
     if (!loginBtn) {
       // create login button and insert before the profile/logout area (so placement matches UI)
