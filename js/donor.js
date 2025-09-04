@@ -1021,14 +1021,6 @@ const wishSituation = document.getElementById('wishSituation');
 const wishText = document.getElementById('wishText');
 
 let currentWishId = null;
-const EMOTION_COLORS = { 
-  envy: '#2E8B57', 
-  shy: '#FF6EC7', 
-  worry: '#6A5ACD', 
-  serenity: '#FEFEFA', 
-  chirpy: '#FFFF00', 
-  gratitude: '#FFAD00' 
-};
 
 async function openModal(wishId) {
   const wishes = await loadWishes();
