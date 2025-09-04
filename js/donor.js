@@ -1173,7 +1173,6 @@ donorForm?.addEventListener('submit', async (e) => {
   }
 
   donorForm.reset();
-  const user = await getActiveUser();
 
 if (user.isAuth) {
   alert('Pledge submitted! You can chat in Inbox.');
