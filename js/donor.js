@@ -252,12 +252,12 @@ async function initDonateForm() {
 
 
   const emotionMap = {
-    chirpy: 'assets/chirpy.png',
+    chirpy: 'assets/chirpypensive.png',
     serenity: 'assets/serenity.png',
-    envy: 'assets/envy.png',
+    envy: 'assets/chirpypensive.png',
     gratitude: 'assets/gratitude.png',
-    shy: 'assets/shy.png',
-    worry: 'assets/worry.png'
+    shy: 'assets/chirpypensive.png',
+    worry: 'assets/chirpypensive.png'
   };
 
   function getEmotionAsset(emotion) {
