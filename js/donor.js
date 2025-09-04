@@ -1025,6 +1025,7 @@ async function openModal(wishId) {
   const wishes = await loadWishes();
   const w = wishes.find(x => x.id === wishId);
   if (!w) return;
+
   currentWishId = wishId;
   wishNickname.textContent = w.nickname || 'Student';
   wishEmotion.textContent = w.emotion ? (w.emotion[0].toUpperCase() + w.emotion.slice(1)) : '-';
@@ -1043,6 +1044,28 @@ async function openModal(wishId) {
     imgEl.src = "";
     imgEl.classList.add('hidden');
     placeholder.classList.remove('hidden');
+  }
+
+  // 🎨 Apply emotion color theme
+  const modalContent = modal.querySelector('.modal-content');
+  if (modalContent) {
+    modalContent.style.backgroundColor = '';
+    modalContent.style.border = '';
+    modalContent.style.boxShadow = '';
+
+    const emotion = (w.emotion || '').toLowerCase();
+    const color = EMOTION_COLORS[emotion];
+
+    if (color) {
+      modalContent.style.backgroundColor = `${color}20`; // semi-transparent background
+      modalContent.style.border = `2px solid ${color}`;
+      modalContent.style.boxShadow = `0 0 18px ${color}AA`; // soft glow
+    } else {
+      // fallback neutral
+      modalContent.style.backgroundColor = '#111827';
+      modalContent.style.border = '2px solid #6b7280';
+      modalContent.style.boxShadow = '0 0 12px rgba(107,114,128,0.4)';
+    }
   }
 
   modal.classList.remove('modal-hidden');
