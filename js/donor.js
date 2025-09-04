@@ -1048,23 +1048,30 @@ async function openModal(wishId) {
 
   // 🎨 Apply emotion color theme
   const modalContent = modal.querySelector('.modal-content');
+  const avatar = document.getElementById('wishStudentImageContainer');
+  const emotion = (w.emotion || '').toLowerCase();
+  const color = EMOTION_COLORS[emotion];
+
   if (modalContent) {
-    modalContent.style.backgroundColor = '';
-    modalContent.style.border = '';
-    modalContent.style.boxShadow = '';
-
-    const emotion = (w.emotion || '').toLowerCase();
-    const color = EMOTION_COLORS[emotion];
-
     if (color) {
-      modalContent.style.backgroundColor = `${color}20`; // semi-transparent background
+      modalContent.style.backgroundColor = `${color}20`; // tinted background
       modalContent.style.border = `2px solid ${color}`;
-      modalContent.style.boxShadow = `0 0 18px ${color}AA`; // soft glow
+      modalContent.style.boxShadow = `0 0 20px ${color}AA`;
     } else {
-      // fallback neutral
-      modalContent.style.backgroundColor = '#111827';
-      modalContent.style.border = '2px solid #6b7280';
+      // neutral fallback
+      modalContent.style.backgroundColor = '#fff';
+      modalContent.style.border = '2px solid #e5e7eb';
       modalContent.style.boxShadow = '0 0 12px rgba(107,114,128,0.4)';
+    }
+  }
+
+  if (avatar) {
+    if (color) {
+      avatar.style.boxShadow = `0 0 12px ${color}AA`;
+      avatar.style.borderColor = color;
+    } else {
+      avatar.style.boxShadow = '';
+      avatar.style.borderColor = '';
     }
   }
 
