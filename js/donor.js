@@ -286,7 +286,7 @@ async function initDonateForm() {
     const emotionImgEl = document.getElementById('donateEmotionCharacter');
 
     // attempt to find a student image property in common keys
-    const studentImageUrl = w.studentImageUrl || w.student_image || w.image || w.photo || w.avatar || null;
+    const studentImageUrl = w.student_image_url || 'assets/studentpreview.jpeg' || w.image || w.photo || w.avatar || null;
 
     if (studentImgEl) {
       if (studentImageUrl) {
@@ -1130,7 +1130,6 @@ donorForm?.addEventListener('submit', async (e) => {
     timestamp: now,
     donor_id: user.id,
     donor: {
-      donation_uuid: donationUuid,
       displayName: donorDisplayName,
       // include form values so anonymous donor info is visible if provided
       fullName: fd.get('name') || null,
@@ -1174,9 +1173,15 @@ donorForm?.addEventListener('submit', async (e) => {
   }
 
   donorForm.reset();
+  const user = await getActiveUser();
+
+if (user.isAuth) {
   alert('Pledge submitted! You can chat in Inbox.');
   routeTo('inbox');
   if (convo && convo.id) openThread(convo.id, convo.title);
+} else {
+  alert('Pledge submitted! Please submit payment as soon as possible.');
+}
   showPaymentPrompt(code);
 });
 
