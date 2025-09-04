@@ -1046,33 +1046,35 @@ async function openModal(wishId) {
     placeholder.classList.remove('hidden');
   }
 
-  // 🎨 Apply emotion color theme
-  const modalContent = modal.querySelector('.modal-content');
+   const modalContent = modal.querySelector('.modal-content');
+  const modalHeader = document.getElementById('wishModalHeader');
   const avatar = document.getElementById('wishStudentImageContainer');
-  const emotion = (w.emotion || '').toLowerCase();
-  const color = EMOTION_COLORS[emotion];
 
+  const emotion = (w.emotion || '').toLowerCase();
+  const color = EMOTION_COLORS[emotion] || '#6B7280'; // gray fallback
+
+  // Card styling
   if (modalContent) {
-    if (color) {
-      modalContent.style.backgroundColor = `${color}20`; // tinted background
-      modalContent.style.border = `2px solid ${color}`;
-      modalContent.style.boxShadow = `0 0 20px ${color}AA`;
-    } else {
-      // neutral fallback
-      modalContent.style.backgroundColor = '#fff';
-      modalContent.style.border = '2px solid #e5e7eb';
-      modalContent.style.boxShadow = '0 0 12px rgba(107,114,128,0.4)';
-    }
+    modalContent.style.backgroundColor = '#1f2937'; // slate-800 background
+    modalContent.style.color = 'white';
+    modalContent.style.border = `2px solid ${color}`;
+    modalContent.style.boxShadow = `0 0 20px ${color}AA`;
   }
 
-  if (avatar) {
-    if (color) {
-      avatar.style.boxShadow = `0 0 12px ${color}AA`;
-      avatar.style.borderColor = color;
+  // Header styling (image > gradient > fallback)
+  if (modalHeader) {
+    if (w.situation_image_url && w.situation_image_url.trim() !== '') {
+      modalHeader.style.background = `url(${w.situation_image_url}) center/cover no-repeat`;
     } else {
-      avatar.style.boxShadow = '';
-      avatar.style.borderColor = '';
+      modalHeader.style.background = `linear-gradient(135deg, ${color}, ${color}AA)`;
     }
+    modalHeader.style.color = 'white';
+  }
+
+  // Avatar glow
+  if (avatar) {
+    avatar.style.boxShadow = `0 0 12px ${color}AA`;
+    avatar.style.borderColor = color;
   }
 
   modal.classList.remove('modal-hidden');
