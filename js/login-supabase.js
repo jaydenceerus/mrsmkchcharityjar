@@ -31,6 +31,74 @@ const show = (id, text) => { const e = $(id); if(!e) return; e.classList.remove(
 const hide = id => { const e = $(id); if(!e) return; e.classList.add('hidden'); };
 const setLS = (k,v) => { try { localStorage.setItem(k, v); } catch(e){} };
 
+async function persistActiveUserFromSupabase() {
+  try {
+    // get user from supabase client
+    const { data: getUserData, error: getUserErr } = await supabase.auth.getUser();
+    if (getUserErr) throw getUserErr;
+
+    const user = getUserData?.user ?? null;
+    if (!user) {
+      // no user => clear local copy
+      localStorage.removeItem('LS_ACTIVE_USER');
+      window.dispatchEvent(new CustomEvent('auth:changed', { detail: null }));
+      return null;
+    }
+
+    // try to fetch profile row from "profiles" table (optional, adjust table/fields to match your DB)
+    let profile = null;
+    try {
+      const { data: p, error: pErr } = await supabase
+        .from('profiles')
+        .select('id, full_name, nickname, avatar_url, role, pledges_count, granted_count, donated_total')
+        .eq('id', user.id)
+        .single();
+      if (!pErr) profile = p;
+    } catch (err) {
+      // ignore — profile may not exist, we'll still create a local minimal object
+      console.warn('profile fetch error', err);
+    }
+
+    const active = {
+      isAuth: true,
+      id: user.id,
+      email: user.email,
+      full_name: profile?.full_name ?? user.user_metadata?.full_name ?? null,
+      nickname: profile?.nickname ?? user.user_metadata?.nickname ?? null,
+      avatar_url: profile?.avatar_url ?? user.user_metadata?.avatar_url ?? null,
+      role: profile?.role ?? 'donor',
+      pledges_count: profile?.pledges_count ?? 0,
+      granted_count: profile?.granted_count ?? 0,
+      donated_total: profile?.donated_total ?? 0
+    };
+
+    // persist for donor.js to read
+    localStorage.setItem('LS_ACTIVE_USER', JSON.stringify(active));
+
+    // notify other scripts/pages
+    window.dispatchEvent(new CustomEvent('auth:changed', { detail: active }));
+
+    return active;
+  } catch (err) {
+    console.error('persistActiveUserFromSupabase error', err);
+    return null;
+  }
+}
+
+// Call this after a successful sign in (example with email+password)
+async function signInWithEmail(email, password) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    // show error to user
+    console.error('Sign in error', error);
+    throw error;
+  }
+  // wait for session/user to be available then persist
+  await persistActiveUserFromSupabase();
+  // optionally redirect back to donor page or update UI in place
+  // window.location.href = '/donor.html';
+}
+
 async function isUserAdmin(userId) {
   if (!userId) return false;
   const { data, error, count } = await supabase
@@ -231,7 +299,7 @@ if (isAdmin) {
   btn.textContent = orig;
   return;
       } else {
-        window.location.href = 'donor.html';
+        window.location.href = 'index.html';
       }
 
     } catch (err) {

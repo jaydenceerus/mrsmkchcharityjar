@@ -387,6 +387,164 @@ function showPaymentPrompt(donationCode) {
   setTimeout(()=>{ try{ container.remove(); } catch(e){} }, 25000);
 }
 
+// donor.js (add near your existing UI init code)
+
+// utility to read active user from localStorage (created by login-supabase.js)
+function getActiveUserLocal() {
+  try {
+    const raw = localStorage.getItem('LS_ACTIVE_USER');
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    console.warn('Invalid LS_ACTIVE_USER', e);
+    return null;
+  }
+}
+
+// update login/profile/logout UI and populate profile data
+function updateAuthUIFromLocal() {
+  const user = getActiveUserLocal();
+  const profileBtn = document.getElementById('profileBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const profileModal = document.getElementById('profileModal');
+
+  // login button management (create if anonymous)
+  let loginBtn = document.getElementById('loginBtn');
+
+  if (user && user.isAuth) {
+    // authenticated
+    if (loginBtn) loginBtn.remove();
+    if (profileBtn) profileBtn.style.display = '';
+    if (logoutBtn) logoutBtn.style.display = '';
+
+    // populate profile UI
+    populateProfileUI(user);
+  } else {
+    // anonymous: hide profile/logout, show login
+    if (profileBtn) profileBtn.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+
+    if (!loginBtn) {
+      const nav = document.querySelector('header nav');
+      if (nav) {
+        loginBtn = document.createElement('button');
+        loginBtn.id = 'loginBtn';
+        loginBtn.className = 'px-3 py-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20';
+        loginBtn.textContent = 'Login';
+        loginBtn.addEventListener('click', () => {
+          // route to your login page or open a modal
+          window.location.href = 'login.html';
+        });
+        const ref = nav.querySelector('.inline-block') || nav.querySelector('#profileBtn') || nav.querySelector('#logoutBtn');
+        if (ref) nav.insertBefore(loginBtn, ref);
+        else nav.appendChild(loginBtn);
+      }
+    } else {
+      loginBtn.style.display = '';
+    }
+
+    // also clear profile modal content (optional)
+    clearProfileUI();
+  }
+}
+
+// populate the profile modal / badges with a user object
+function populateProfileUI(user) {
+  if (!user) return;
+
+  // elements used on donor.html
+  const profAvatar = document.getElementById('profAvatar');
+  const profUsername = document.getElementById('profUsername');
+  const profRole = document.getElementById('profRole');
+  const profPledges = document.getElementById('profPledges');
+  const profGranted = document.getElementById('profGranted');
+  const profDonated = document.getElementById('profDonated');
+  const profRecent = document.getElementById('profRecent');
+  const inboxBadge = document.getElementById('inboxUserBadge');
+  const donateWishBadge = document.getElementById('donateWishBadge');
+
+  // preferred display name
+  const displayName = user.nickname || user.full_name || (user.email ? user.email.split('@')[0] : 'Donor');
+
+  if (profAvatar) {
+    const initial = (displayName && displayName[0]) ? displayName[0].toUpperCase() : 'U';
+    profAvatar.textContent = ''; // clear
+    if (user.avatar_url) {
+      // if you prefer an <img>, replace the avatar element with img or set background
+      profAvatar.style.backgroundImage = `url(${user.avatar_url})`;
+      profAvatar.textContent = '';
+    } else {
+      // fallback to initial
+      profAvatar.style.backgroundImage = '';
+      profAvatar.textContent = initial;
+    }
+  }
+
+  if (profUsername) profUsername.textContent = displayName;
+  if (profRole) profRole.textContent = (user.role || 'Donor');
+  if (profPledges) profPledges.textContent = (user.pledges_count ?? 0);
+  if (profGranted) profGranted.textContent = (user.granted_count ?? 0);
+  if (profDonated) profDonated.textContent = `RM${(user.donated_total ?? 0).toFixed(2)}`;
+  if (profRecent) profRecent.textContent = (user.recent_pledge ?? '-') ;
+  if (inboxBadge) inboxBadge.textContent = displayName;
+  if (donateWishBadge) donateWishBadge.textContent = `Pledging as: ${displayName}`;
+}
+
+// optionally clear profile UI on logout
+function clearProfileUI() {
+  const profAvatar = document.getElementById('profAvatar');
+  const profUsername = document.getElementById('profUsername');
+  const profRole = document.getElementById('profRole');
+  const profPledges = document.getElementById('profPledges');
+  const profGranted = document.getElementById('profGranted');
+  const profDonated = document.getElementById('profDonated');
+  const profRecent = document.getElementById('profRecent');
+  const inboxBadge = document.getElementById('inboxUserBadge');
+  const donateWishBadge = document.getElementById('donateWishBadge');
+
+  if (profAvatar) { profAvatar.style.backgroundImage = ''; profAvatar.textContent = 'U'; }
+  if (profUsername) profUsername.textContent = '-';
+  if (profRole) profRole.textContent = '-';
+  if (profPledges) profPledges.textContent = '0';
+  if (profGranted) profGranted.textContent = '0';
+  if (profDonated) profDonated.textContent = 'RM0.00';
+  if (profRecent) profRecent.textContent = '-';
+  if (inboxBadge) inboxBadge.textContent = '-';
+  if (donateWishBadge) donateWishBadge.textContent = '';
+}
+
+// listen to the custom auth event fired by login-supabase.js
+window.addEventListener('auth:changed', (ev) => {
+  // ev.detail is the active user object or null
+  updateAuthUIFromLocal();
+});
+
+// initial check on page load
+document.addEventListener('DOMContentLoaded', () => {
+  updateAuthUIFromLocal();
+
+  // also make sure your logout button clears localStorage and signs out supabase
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        // sign out Supabase session
+        if (supabase && supabase.auth && typeof supabase.auth.signOut === 'function') {
+          await supabase.auth.signOut();
+        }
+      } catch (err) {
+        console.warn('supabase signOut error:', err);
+      }
+      // clear local state and notify
+      localStorage.removeItem('LS_ACTIVE_USER');
+      window.dispatchEvent(new CustomEvent('auth:changed', { detail: null }));
+      // redirect or update UI
+      // window.location.href = 'index.html';
+    });
+  }
+});
+
+
 /* -------------------------
    Router + wiring
    ------------------------- */
