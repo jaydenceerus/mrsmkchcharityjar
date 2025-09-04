@@ -1096,6 +1096,7 @@ if (grantBtn) {
     grantBtn.style.backgroundColor = base;
   };
 }
+}
 
 function closeModal(){
   modal.classList.remove('modal-visible'); modal.classList.add('modal-hidden');
