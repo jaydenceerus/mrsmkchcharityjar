@@ -1154,7 +1154,7 @@ donorForm?.addEventListener('submit', async (e) => {
   const { error: wishUpdateError } = await supabase.from('wishes').update({ donationcode: code }).eq('id', target.id);
   if (wishUpdateError) console.error("Error updating wish with donation code:", wishUpdateError);
 
-  // create conversation
+  if (user.isAuth) {
   const { data: convo, error: convoError } = await supabase.from('conversations').insert([{
     donor_id: user.id,
     donation_code: code,
@@ -1170,7 +1170,9 @@ donorForm?.addEventListener('submit', async (e) => {
       sender_id: null,
       body: `Thank you for your pledge. We will update you on its status.`
     }]);
-  }
+  }  
+}
+  // create conversation
 
   donorForm.reset();
 
@@ -1180,7 +1182,7 @@ if (user.isAuth) {
   if (convo && convo.id) openThread(convo.id, convo.title);
 } else {
   alert('Pledge submitted! Please submit payment as soon as possible.');
-  routeTo('inbox');
+  routeTo('home');
 }
   showPaymentPrompt(code);
 });
