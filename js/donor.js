@@ -285,7 +285,7 @@ async function initDonateForm() {
     const studentImgEl = document.getElementById('donateStudentImage');
     const emotionImgEl = document.getElementById('donateEmotionCharacter');
 
-    // attempt to find a student image property in common keys
+    const w = wishes.find(x => x.id === wishId) || {};
     const studentImageUrl = w.student_image_url || 'assets/studentpreview.jpeg' || w.image || w.photo || w.avatar || null;
 
     if (studentImgEl) {
@@ -1180,6 +1180,7 @@ if (user.isAuth) {
   if (convo && convo.id) openThread(convo.id, convo.title);
 } else {
   alert('Pledge submitted! Please submit payment as soon as possible.');
+  routeTo('inbox');
 }
   showPaymentPrompt(code);
 });
