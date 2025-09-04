@@ -436,7 +436,15 @@ function subscribeToMessages(conversationId, userId, donorDisplayName) {
 /* -------------------------
    UI helpers (payment prompt)
    ------------------------- */
-function startPaymentFlow(donationCode) { console.log("Starting payment flow for", donationCode); alert('Payment flow placeholder for donation ' + donationCode); }
+function startPaymentFlow(donationCode) {
+  const url = "https://koperasimrsmkuchingberhad.onpay.my/order/form/6";
+
+  // Open in a popup (better UX) — could also use window.location.href = url
+  window.open(url, "OnPayWindow", "width=600,height=800");
+
+  console.log("Starting payment flow for", donationCode);
+}
+
 function showPaymentPrompt(donationCode) {
   if (document.getElementById('paymentPrompt')) return;
   const container = document.createElement('div'); container.id = 'paymentPrompt'; container.className = 'fixed bottom-6 right-6 z-[9999]'; container.style.width = '320px';
