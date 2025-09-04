@@ -420,6 +420,59 @@ document.getElementById('logoutBtn')?.addEventListener('click', ()=> {
   window.location.href = 'index.html';
 });
 
+async function updateAuthUI() {
+  const user = await getActiveUser(); // uses existing helper
+  const profileBtn = document.getElementById('profileBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+
+  let loginBtn = document.getElementById('loginBtn');
+
+  if (user && user.isAuth) {
+    // Authenticated: remove/create cleanup for login button; show profile + logout
+    if (loginBtn) loginBtn.remove();
+    if (profileBtn) profileBtn.style.display = '';
+    if (logoutBtn) logoutBtn.style.display = '';
+  } else {
+    // Anonymous: hide profile/logout, show login
+    if (profileBtn) profileBtn.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+
+    if (!loginBtn) {
+      // create login button and insert before the profile/logout area (so placement matches UI)
+      const nav = document.querySelector('header nav');
+      if (nav) {
+        loginBtn = document.createElement('button');
+        loginBtn.id = 'loginBtn';
+        loginBtn.className = 'px-3 py-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20';
+        loginBtn.textContent = 'Login';
+        // Change this to your real login route (e.g., 'login.html' or a Supabase auth flow)
+        loginBtn.addEventListener('click', () => {
+          // If you have a dedicated login page:
+          window.location.href = 'login.html';
+          // Or to use a Supabase redirect-based flow, replace above with code to open your auth flow.
+        });
+
+        // Prefer inserting next to the spot where profile/logout usually are
+        const ref = nav.querySelector('#profileBtn') || nav.querySelector('#logoutBtn') || nav.querySelector('.inline-block');
+        if (ref) nav.insertBefore(loginBtn, ref);
+        else nav.appendChild(loginBtn);
+      }
+    } else {
+      loginBtn.style.display = '';
+    }
+  }
+}
+
+// Listen for auth changes (updates UI when user logs in/out)
+if (supabase && supabase.auth && typeof supabase.auth.onAuthStateChange === 'function') {
+  supabase.auth.onAuthStateChange(() => {
+    // Keep UI synced
+    updateAuthUI().catch(e => console.warn('updateAuthUI error', e));
+  });
+}
+
+// Ensure initial state when app boots
+updateAuthUI().catch(e => console.warn('updateAuthUI initial error', e));
 
 /* -------------------------
    Jar rendering, modal, inbox etc.

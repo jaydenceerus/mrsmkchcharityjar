@@ -149,7 +149,7 @@ async function initializeAdminPage() {
 
     if (error || !user) {
         console.log("Auth Guard: No verified user session found. Redirecting.");
-        window.location.href = 'index.html';
+        window.location.href = 'login.html';
         return;
     }
 
@@ -160,7 +160,7 @@ async function initializeAdminPage() {
         console.log("Auth Guard: Access denied. User is not an admin.");
         alert('Admin access only. Redirecting to login.');
         await supabase.auth.signOut();
-        window.location.href = 'index.html';
+        window.location.href = 'login.html';
     } else {
         // 3. If they are an admin, store the user and set up the page.
         console.log("Auth Guard: Access granted for", user.email);

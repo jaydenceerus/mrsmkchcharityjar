@@ -1,0 +1,69 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Wish Jar — Sign in</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>body{font-family:'Poppins',system-ui,-apple-system,Segoe UI,Roboto,sans-serif}</style>
+</head>
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 text-white">
+
+  <div class="w-full max-w-md p-8 bg-white/10 border border-white/20 rounded-3xl backdrop-blur">
+    <div class="text-center mb-6">
+      <div class="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 text-3xl">🫙</div>
+      <h1 class="text-3xl font-extrabold mt-4">Wish Jar</h1>
+      <div class="text-sm opacity-90">Brighten a student’s day</div>
+    </div>
+
+    <!-- Pending-registration banner (will be shown by JS if there's a pending profile) -->
+    <div id="pendingBanner" class="hidden mb-4 rounded-xl bg-yellow-100/95 border border-yellow-400 text-yellow-900 text-sm p-3 flex items-center justify-between gap-3">
+      <div class="text-sm" id="pendingBannerText">
+        You have a pending registration. Please confirm your email and then sign in to finish creating your profile.
+      </div>
+      <div class="flex items-center gap-2">
+        <a id="pendingSignInLink" href="index.html" class="px-3 py-1 rounded bg-white text-indigo-700 font-semibold hover:opacity-90">Sign in</a>
+        <button id="clearPendingBtn" class="px-3 py-1 rounded bg-white/90 text-indigo-700 hover:opacity-90">Dismiss</button>
+      </div>
+    </div>
+
+    <!-- Login form -->
+    <form id="loginForm" class="space-y-4" novalidate>
+      <div>
+        <label for="email" class="block text-sm font-medium text-white/90">Email</label>
+        <input id="email" name="email" type="email" required
+               class="mt-1 block w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400"
+               placeholder="you@example.com" />
+        <p id="emailError" class="text-xs text-red-200 mt-1 hidden">Please enter a valid email.</p>
+      </div>
+
+      <div>
+        <label for="password" class="block text-sm font-medium text-white/90">Password</label>
+        <input id="password" name="password" type="password" required
+               class="mt-1 block w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400"
+               placeholder="Your password" />
+        <p id="passwordError" class="text-xs text-red-200 mt-1 hidden">Password is required.</p>
+      </div>
+
+      <div class="space-y-3">
+        <button id="signinBtn" type="submit"
+                class="w-full px-4 py-3 rounded-xl bg-white text-indigo-700 font-semibold hover:bg-white/90">
+          Sign in
+        </button>
+
+        <a id="registerBtn" href="register.html"
+           class="block text-center w-full px-4 py-3 rounded-xl border border-white text-white font-semibold bg-transparent hover:bg-white/10">
+          Register
+        </a>
+      </div>
+
+      <p id="loginApiError" class="text-xs text-red-200 mt-2 hidden"></p>
+    </form>
+  </div>
+
+  <!-- Login logic (module) -->
+  <script type="module" src="js/login-supabase.js"></script>
+</body>
+</html>
