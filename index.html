@@ -307,23 +307,17 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
     100% { transform: translateY(-50%) translateY(0) rotate(var(--tilt)); }
   }
 
-  @keyframes pulseGlow {
-    0%, 100% {
-      filter: drop-shadow(0 0 15px rgba(255,255,255,0.8))
-              drop-shadow(0 0 30px rgba(99,102,241,0.6));
-    }
-    50% {
-      filter: drop-shadow(0 0 25px rgba(255,255,255,1))
-              drop-shadow(0 0 45px rgba(99,102,241,0.9));
-    }
+   @keyframes pulseGlow {
+    0%, 100% { filter: var(--glowStart); }
+    50%      { filter: var(--glowMid); }
   }
 
   #modalEmotionWrapper {
-    --tilt: -3deg;
+    --tilt: -7deg;
     --dur: 6s;
     position: absolute;
-    top: 50%;
-    right: 50%;
+    top: 35%;
+    right: 6b5bff%;
     transform: translateY(-50%);
     animation: floaty var(--dur) ease-in-out infinite;
     z-index: 60; /* above modal card */
@@ -331,8 +325,8 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
   }
 
   #modalEmotionCharacter {
-    width: 220px;
-    height: 220px;
+    width: 110px;
+    height: 110px;
     object-fit: contain;
     animation: pulseGlow 2.5s ease-in-out infinite;
   }

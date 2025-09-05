@@ -1047,6 +1047,18 @@ if (modalChar) {
   modalChar.src = EMOTION_CHARACTERS[emotionKey] || "assets/chirpypensive.png";
 }
 
+  const glowColor = EMOTION_COLORS[emotionKey] || "#6366F1"; // fallback indigo
+
+    // Update CSS vars for pulse animation
+    modalChar.style.setProperty(
+      "--glowStart",
+      `drop-shadow(0 0 15px rgba(255,255,255,0.8)) drop-shadow(0 0 30px ${glowColor}99)`
+    );
+    modalChar.style.setProperty(
+      "--glowMid",
+      `drop-shadow(0 0 25px rgba(255,255,255,1)) drop-shadow(0 0 45px ${glowColor}E6)`
+    );
+
   const imgEl = document.getElementById('wishStudentImage');
   const placeholder = document.getElementById('wishStudentPlaceholder');
 
