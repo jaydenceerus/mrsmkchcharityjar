@@ -1086,30 +1086,34 @@ function updateSlider() {
         <div id="currentPledge" class="mt-8 rounded-2xl bg-white/10 border border-white/10 p-6">
           <h3 class="text-xl font-semibold mb-4 text-white">Your Current Pledge</h3>
           <div class="bg-white/5 rounded-xl p-4">
-            <div class="grid md:grid-cols-2 gap-4">
-              <div>
-                <span class="text-sm text-white/70">Wish Name:</span>
-                <p class="font-medium" id="currentWishName">-</p>
+            <div class="grid md:grid-cols-3 gap-6">
+              <!-- Left column - Details -->
+              <div class="md:col-span-2 space-y-4">
+                <div>
+                  <span class="text-sm text-white/70">Wish Name:</span>
+                  <p class="font-bold" id="currentWishName">-</p>
+                </div>
+                <div>
+                  <span class="text-sm text-white/70">Wish Situation:</span>
+                  <p class="font-bold" id="currentWishSituation">-</p>
+                </div>
+                <div>
+                  <span class="text-sm text-white/70">Wish Item:</span>
+                  <p class="font-bold" id="currentWishItem">-</p>
+                </div>
+                <div>
+                  <span class="text-sm text-white/70">Date Pledged:</span>
+                  <p class="font-bold" id="currentDatePledged">-</p>
+                </div>
+                <div>
+                  <span class="text-sm text-white/70">Payment Amount:</span>
+                  <p class="font-bold" id="currentPaymentAmount">-</p>
+                </div>
               </div>
-              <div>
-                <span class="text-sm text-white/70">Wish Situation:</span>
-                <p class="font-medium" id="currentWishSituation">-</p>
-              </div>
-              <div>
-                <span class="text-sm text-white/70">Wish Item:</span>
-                <p class="font-medium" id="currentWishItem">-</p>
-              </div>
-              <div>
-                <span class="text-sm text-white/70">Date Pledged:</span>
-                <p class="font-medium" id="currentDatePledged">-</p>
-              </div>
+              <!-- Right column - Status -->
               <div>
                 <span class="text-sm text-white/70">Pledge Status:</span>
-                <p class="font-medium" id="currentPledgeStatus">-</p>
-              </div>
-              <div>
-                <span class="text-sm text-white/70">Payment Amount:</span>
-                <p class="font-medium" id="currentPaymentAmount">-</p>
+                <div id="currentPledgeStatus">-</div>
               </div>
             </div>
           </div>
