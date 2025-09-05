@@ -1139,17 +1139,15 @@ async function openModal(wishId) {
       "from-indigo-600", "via-purple-600", "to-pink-600"
     );
     modalHeader.classList.add(
-      "bg-gradient-to-r", // make sure the gradient direction stays
-      "from-yellow-400", "via-yellow-500", "to-yellow-600"
+      "from-yellow-400", "via-yellow-500", "to-orange-600"
     );
   }
 } else {
   if (modalHeader) {
     modalHeader.classList.remove(
-      "from-yellow-400", "via-yellow-500", "to-yellow-600"
+      "from-yellow-400", "via-yellow-500", "to-orange-600"
     );
     modalHeader.classList.add(
-      "bg-gradient-to-r", // restore gradient direction
       "from-indigo-600", "via-purple-600", "to-pink-600"
     );
   }
