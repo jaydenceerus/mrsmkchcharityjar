@@ -1169,6 +1169,12 @@ grantBtn?.addEventListener('click',async ()=> {
   }
 
   const w = wishes.find(x=>x.id===currentWishId);
+
+  if (w.granted == true) {
+    alert('This wish has already been granted!');
+    return;
+  }
+
   donateWishBadge.textContent = `Granting: ${w.nickname}`;
   closeModal();
   routeTo('donate');
