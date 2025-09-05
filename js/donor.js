@@ -616,6 +616,9 @@ window.addEventListener('auth:changed', (ev) => {
 document.addEventListener('DOMContentLoaded', () => {
   updateAuthUIFromLocal();
 
+
+  await loadDefaultPledgeData();
+
   // also make sure your logout button clears localStorage and signs out supabase
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) {
@@ -1292,6 +1295,79 @@ if (user.isAuth) {
 /* -------------------------
    Lookup btn
    ------------------------- */
+async function loadDefaultPledgeData() {
+  const user = await getActiveUser();
+  if (!user.isAuth) {
+          document.getElementById('currentPledge').style.display = 'none';
+          document.getElementById('pastPledges').style.display = 'none';
+          return;
+        }
+        const donations = await loadDonations();
+        const wishes = await loadWishes();
+        
+        // Show current pledge (most recent active one)
+        const currentDonation = donations.find(d => d.donor_id === userId && d.status_phase < 2) || donations.find(d => d.donor_id === userId);
+        const currentWish = wishes.find(w => w.id === currentDonation.wish_id);
+        
+        if (currentDonation && currentWish) {
+          const statusText = currentDonation.status_phase === 2 ? 'Completed - Wish Granted' : 
+                           currentDonation.status_phase === 1 ? 'Active - Donation Received' : 
+                           'Active - Payment Pending';
+          const paymentText = currentDonation.status_phase >= 1 ? `$${currentDonation.amount} (Paid)` : 
+                             `Not yet paid ($${currentDonation.amount} pledged)`;
+
+          document.getElementById('currentWishName').textContent = `${currentDonation.wish_nickname}'s Wish`;
+          document.getElementById('currentWishSituation').textContent = 'Student in need of support';
+          document.getElementById('currentWishItem').textContent = currentWish.wish;
+          document.getElementById('currentDatePledged').textContent = new Date(currentDonation.pledged_at).toLocaleDateString();
+          document.getElementById('currentPledgeStatus').textContent = statusText;
+          document.getElementById('currentPaymentAmount').textContent = paymentText;
+        }
+
+        // Show past pledges (completed ones)
+        const pastDonations = donations.filter(d => d.donor_id === userId && d.status_phase === 2 && d.id !== currentDonation.id && d.granted_at !== null);
+        const pastPledgesList = document.getElementById('pastPledgesList');
+        
+        if (pastDonations.length > 0) {
+          pastPledgesList.innerHTML = pastDonations.map(donation => {
+            const wish = wishes.find(w => w.id === donation.wish_id);
+            return `
+              <div class="bg-white/5 rounded-xl p-4">
+                <div class="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <span class="text-sm text-white/70">Wish Name:</span>
+                    <p class="font-medium">${donation.wish_nickname}'s Wish</p>
+                  </div>
+                  <div>
+                    <span class="text-sm text-white/70">Wish Situation:</span>
+                    <p class="font-medium">Student in need of support</p>
+                  </div>
+                  <div>
+                    <span class="text-sm text-white/70">Wish Item:</span>
+                    <p class="font-medium">${wish ? wish.wish : 'Wish details'}</p>
+                  </div>
+                  <div>
+                    <span class="text-sm text-white/70">Date Pledged:</span>
+                    <p class="font-medium">${new Date(donation.pledged_at).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <span class="text-sm text-white/70">Pledge Status:</span>
+                    <p class="font-medium text-green-300">Completed</p>
+                  </div>
+                  <div>
+                    <span class="text-sm text-white/70">Payment Amount:</span>
+                    <p class="font-medium text-green-300">$${donation.amount} (Paid)</p>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        } else {
+          pastPledgesList.innerHTML = '<p class="text-white/70 text-center py-4">No past pledges yet.</p>';
+        }
+      }
+
+
 document.getElementById('lookupBtn')?.addEventListener('click', async ()=> {
   const code = (document.getElementById('lookupCode').value || '').trim();
   const donations = await loadDonations();

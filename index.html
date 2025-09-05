@@ -1081,8 +1081,50 @@ function updateSlider() {
           <button id="lookupBtn" class="px-4 py-3 rounded-xl bg-white text-indigo-700 font-semibold hover:bg-white/90">Check</button>
         </div>
         <div id="statusResult" class="mt-8 rounded-2xl bg-white/10 border border-white/10 p-6 hidden"></div>
+        
+        <!-- CURRENT PLEDGE -->
+        <div id="currentPledge" class="mt-8 rounded-2xl bg-white/10 border border-white/10 p-6">
+          <h3 class="text-xl font-semibold mb-4 text-white">Your Current Pledge</h3>
+          <div class="bg-white/5 rounded-xl p-4">
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <span class="text-sm text-white/70">Wish Name:</span>
+                <p class="font-medium" id="currentWishName">-</p>
+              </div>
+              <div>
+                <span class="text-sm text-white/70">Wish Situation:</span>
+                <p class="font-medium" id="currentWishSituation">-</p>
+              </div>
+              <div>
+                <span class="text-sm text-white/70">Wish Item:</span>
+                <p class="font-medium" id="currentWishItem">-</p>
+              </div>
+              <div>
+                <span class="text-sm text-white/70">Date Pledged:</span>
+                <p class="font-medium" id="currentDatePledged">-</p>
+              </div>
+              <div>
+                <span class="text-sm text-white/70">Pledge Status:</span>
+                <p class="font-medium" id="currentPledgeStatus">-</p>
+              </div>
+              <div>
+                <span class="text-sm text-white/70">Payment Amount:</span>
+                <p class="font-medium" id="currentPaymentAmount">-</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- PAST PLEDGES -->
+        <div id="pastPledges" class="mt-8 rounded-2xl bg-white/10 border border-white/10 p-6">
+          <h3 class="text-xl font-semibold mb-4 text-white">Your Past Pledges</h3>
+          <div class="space-y-4" id="pastPledgesList">
+            <!-- Past pledges will be populated here -->
+          </div>
+        </div>
       </div>
     </section>
+
 
     <!-- INBOX -->
 <section id="page-inbox" class="page">
