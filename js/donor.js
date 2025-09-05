@@ -1319,11 +1319,32 @@ async function loadDefaultPledgeData() {
           const paymentText = currentDonation.status_phase >= 1 ? `$${currentDonation.amount} (Paid)` : 
                              `Not yet paid ($${currentDonation.amount} pledged)`;
 
+          // Create delivery tracker for current pledge
+          const phase = currentDonation.status_phase ?? 0;
+          const steps = [
+            { label: 'Pledge given', date: currentDonation.pledged_at, done: phase >= 0, icon: '📝' },
+            { label: 'Donation received', date: currentDonation.received_at, done: phase >= 1, icon: '📦' },
+            { label: 'Wish granted', date: currentDonation.granted_at, done: phase >= 2, icon: '✨' },
+          ];
+          const stepItems = steps.map((s,i) => `
+            <div class="flex items-start gap-3">
+              <div class="h-8 w-8 rounded-full ${s.done ? 'bg-green-400 text-green-900' : 'bg-white/20 text-white'} flex items-center justify-center font-semibold text-sm">${s.icon}</div>
+              <div>
+                <div class="font-semibold ${s.done ? '' : 'opacity-80'}">${s.label}${s.done ? ' • Completed' : ''}</div>
+                <div class="text-xs opacity-80">${s.date ? new Date(s.date).toLocaleDateString() : (i===phase+1 ? 'In progress' : '')}</div>
+              </div>
+            </div>
+          `).join('<div class="ml-3 h-6 border-l border-white/20"></div>');
+
           document.getElementById('currentWishName').textContent = `${currentDonation.wish_nickname}'s Wish`;
           document.getElementById('currentWishSituation').textContent = 'Student in need of support';
           document.getElementById('currentWishItem').textContent = currentWish.wish;
           document.getElementById('currentDatePledged').textContent = new Date(currentDonation.pledged_at).toLocaleDateString();
-          document.getElementById('currentPledgeStatus').textContent = statusText;
+          document.getElementById('currentPledgeStatus').innerHTML = `
+            <div class="bg-white/5 rounded-xl p-4 mt-2">
+              <div class="grid gap-4">${stepItems}</div>
+            </div>
+          `;
           document.getElementById('currentPaymentAmount').textContent = paymentText;
         }
 
