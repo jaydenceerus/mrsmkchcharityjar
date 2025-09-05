@@ -864,7 +864,6 @@ async function renderJar() {
   }
 
   // Populate each circle wrapper (images, texts, hit target)
-  // --- render balls (no dragging) ---
   ballsGroup.querySelectorAll("g.ballWrap > circle[data-id]").forEach(baseCircle => {
     const id = baseCircle.dataset.id;
     const w = map[id];
@@ -1046,6 +1045,9 @@ async function renderJar() {
       try { openModal(id); } catch (e) { console.log('openModal missing', e); }
     });
   });
+
+// (refreshBallHighlights() likely called after this loop elsewhere in your code)
+
 
 // (refreshBallHighlights() likely called after this loop elsewhere in your code)
 
