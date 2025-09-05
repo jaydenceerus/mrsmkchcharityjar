@@ -863,6 +863,32 @@ async function renderJar() {
     defs.appendChild(filter);
   }
 
+  if (!document.getElementById('insideOutGlowStrong')) {
+  const filter = document.createElementNS("http://www.w3.org/2000/svg", "filter");
+  filter.setAttribute("id", "insideOutGlowStrong");
+  filter.setAttribute("x", "-70%");
+  filter.setAttribute("y", "-70%");
+  filter.setAttribute("width", "240%");
+  filter.setAttribute("height", "240%");
+
+  const blur = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
+  blur.setAttribute("in", "SourceGraphic");
+  blur.setAttribute("stdDeviation", "10"); // bigger blur for stronger glow
+  blur.setAttribute("result", "blur");
+  filter.appendChild(blur);
+
+  const merge = document.createElementNS("http://www.w3.org/2000/svg", "feMerge");
+  const mergeNode1 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
+  mergeNode1.setAttribute("in", "blur");
+  const mergeNode2 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
+  mergeNode2.setAttribute("in", "SourceGraphic");
+  merge.appendChild(mergeNode1);
+  merge.appendChild(mergeNode2);
+
+  filter.appendChild(merge);
+  defs.appendChild(filter);
+}
+
   // Populate each circle wrapper (images, texts, hit target)
 ballsGroup.querySelectorAll("g.ballWrap > circle[data-id]").forEach(baseCircle => {
   const id = baseCircle.dataset.id;
@@ -921,7 +947,7 @@ ballsGroup.querySelectorAll("g.ballWrap > circle[data-id]").forEach(baseCircle =
   }
   extraGlow.setAttribute('stroke', '#FACC15');  // bright yellow
   extraGlow.setAttribute('stroke-opacity', '0.9');
-  extraGlow.style.opacity = '0'; // hidden until hover
+  extraGlow.style.opacity = '1'; // always visible for granted
 }
 
   // --- gradient (yellow if granted, otherwise emotion color) ---
