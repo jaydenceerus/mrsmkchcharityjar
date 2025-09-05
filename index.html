@@ -329,12 +329,12 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
 }
 
 #modalEmotionWrapperRight {
-  right: 15%;
+  right: 13%;
   top: 45%;
 }
 
 #modalEmotionWrapperLeft {
-  left: 15%;
+  left: 13%;
   top: 55%;
 }
 
@@ -344,6 +344,8 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
   height: 240px;
   object-fit: contain;
   animation: pulseGlow 2.5s ease-in-out infinite;
+  --glowStart: drop-shadow(0 0 15px rgba(255,255,255,0.8)) drop-shadow(0 0 30px #6366F199);
+  --glowMid: drop-shadow(0 0 25px rgba(255,255,255,1)) drop-shadow(0 0 45px #6366F1E6);
 }
 
 </style>
