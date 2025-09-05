@@ -283,22 +283,6 @@ async function initDonateForm() {
   const donateWishIdEl = document.getElementById('donateWishId');
   const wishId = (donateWishIdEl && donateWishIdEl.value) || currentWishId || null;
 
-
-  const emotionMap = {
-    chirpy: 'assets/chirpypensive.png',
-    serenity: 'assets/serenity.png',
-    envy: 'assets/chirpypensive.png',
-    gratitude: 'assets/gratitude.png',
-    shy: 'assets/chirpypensive.png',
-    worry: 'assets/chirpypensive.png'
-  };
-
-  function getEmotionAsset(emotion) {
-    if (!emotion) return defaultEmotionAsset;
-    const key = String(emotion).trim().toLowerCase();
-    return emotionMap[key] || defaultEmotionAsset;
-  }
-
   // populate wish details if available
   if (wishId) {
     const wishes = await loadWishes();
@@ -326,6 +310,16 @@ async function initDonateForm() {
   const randomEmotion = emotionsToAlternate[Math.floor(Math.random() * emotionsToAlternate.length)];
   const glowColor = EMOTION_COLORS[randomEmotion] || "#6366F1";
 
+  let emoSrc = "";
+switch (randomEmotion) {
+  case 'serenity':
+    emoSrc = EMOTION_CHARACTERS.serenity.serenity_pray; // serenity_pray
+    break;
+  case 'gratitude':
+    emoSrc = EMOTION_CHARACTERS.gratitude.gratitude_handsclasped; // hands clasped
+    break;
+}
+
   if (studentImgEl) {
     if (studentImageUrl) {
       studentImgEl.src = studentImageUrl;
@@ -337,7 +331,6 @@ async function initDonateForm() {
   }
 
   if (emotionImgEl) {
-    const emoSrc = getEmotionAsset(randomEmotion); // use the random emotion
     emotionImgEl.src = emoSrc;
     emotionImgEl.alt = `${randomEmotion} character`;
     emotionImgEl.classList.remove('hidden');
@@ -346,11 +339,11 @@ async function initDonateForm() {
     // Apply glow
     emotionImgEl.style.setProperty(
       "--glowStart",
-      `drop-shadow(0 0 15px rgba(255,255,255,0.8)) drop-shadow(0 0 30px ${glowColor}99)`
+      `drop-shadow(0 0 15px rgba(255,255,255,0.4)) drop-shadow(0 0 30px ${glowColor}99)`
     );
     emotionImgEl.style.setProperty(
       "--glowMid",
-      `drop-shadow(0 0 25px rgba(255,255,255,1)) drop-shadow(0 0 45px ${glowColor}E6)`
+      `drop-shadow(0 0 25px rgba(255,255,255,0.7)) drop-shadow(0 0 45px ${glowColor}E6)`
     );
   }
 } catch (err) {
