@@ -965,7 +965,7 @@ ballsGroup.querySelectorAll("g.ballWrap > circle[data-id]").forEach(baseCircle =
   // baseCircle fill will be the gradient, but we will decide layering below
   baseCircle.setAttribute("fill", `url(#${gradId})`);
   // default opacity: granted fully opaque, non-granted slightly translucent (overlay intensity)
-  baseCircle.style.opacity = w.granted ? "0.8" : "0.6"; // lower alpha for overlay look when placed above image
+  baseCircle.style.opacity = w.granted ? "0.9" : "0.6"; // lower alpha for overlay look when placed above image
 
   // remove persistent stroke; hover will add it
   baseCircle.style.stroke = "none";
@@ -1103,85 +1103,127 @@ async function openModal(wishId) {
   if (!w) return;
 
   currentWishId = wishId;
+
+  // base fields
   wishNickname.textContent = w.nickname || 'Student';
-  wishEmotion.textContent = w.emotion ? (w.emotion[0].toUpperCase() + w.emotion.slice(1)) : '-';
   wishSituation.textContent = w.situation || '';
   wishText.textContent = w.wish || '';
-  const emotionKey = (w.emotion || "").toLowerCase();
-  const emoSet = EMOTION_CHARACTERS[emotionKey];
 
-  let chosenRight = "assets/chirpypensive.png"; // fallback
-  let chosenLeft = "assets/chirpypensive.png"; // fallback
-  const glowColor = EMOTION_COLORS[emotionKey] || "#6366F1";
-  console.log(glowColor);
+  // modal DOM refs
+  const modalContent = modal.querySelector('.modal-content');
+  const modalHeader = document.getElementById('wishModalHeader');
+  const avatar = document.getElementById('wishStudentImageContainer');
+  const imgEl = document.getElementById('wishStudentImage');
+  const placeholder = document.getElementById('wishStudentPlaceholder');
+  const grantBtn = document.getElementById('grantBtn');
+
+  // emotion handling
+  const emotionKey = (w.emotion || "").toLowerCase();
+
+  // mapping negative -> positive counterpart (worry -> serenity, envy -> gratitude, shy -> chirpy)
+  const POSITIVE_COUNTERPART = {
+    worry: 'serenity',
+    envy: 'gratitude',
+    shy: 'chirpy'
+  };
+
+  // default color (based on actual emotion)
+  const emotion = (w.emotion || '').toLowerCase();
+  let color = EMOTION_COLORS[emotion] || '#6B7280'; // fallback
+
+  // Choose which emotion to display (swap if granted)
+  let displayEmotionKey = emotionKey;
+  if (w.granted) {
+    displayEmotionKey = POSITIVE_COUNTERPART[emotionKey] || emotionKey;
+  }
+  // Update visible emotion text (capitalized)
+  wishEmotion.textContent = displayEmotionKey ? (displayEmotionKey[0].toUpperCase() + displayEmotionKey.slice(1)) : '-';
+
+  // Decide glow color used for character dropshadow/pulse
+  const grantedYellow = '#FACC15'; // brighter yellow for granted look
+  const glowColor = w.granted ? grantedYellow : (EMOTION_COLORS[displayEmotionKey] || '#6366F1');
+
+  // Set up emotion characters
+  const modalCharRight = document.getElementById("modalEmotionCharacterRight");
+  const modalCharLeft  = document.getElementById("modalEmotionCharacterLeft");
+
+  // Determine which emotion source to pick poses from:
+  // - If granted: always pick from chirpy poses
+  // - Otherwise: pick from the emotion's set
+  const pickFromKey = w.granted ? 'chirpy' : displayEmotionKey;
+  const emoSet = EMOTION_CHARACTERS[pickFromKey];
+
+  // Fallback defaults
+  let chosenRight = "assets/chirpypensive.png";
+  let chosenLeft  = "assets/chirpypensive.png";
 
   if (emoSet) {
     const poses = Object.values(emoSet);
-
-    // Pick random pose for right character
+    // pick right
     chosenRight = poses[Math.floor(Math.random() * poses.length)];
-
-    // Pick random pose for left character that is different from right
+    // pick left different from right when possible
     if (poses.length > 1) {
-      const remainingPoses = poses.filter(p => p !== chosenRight);
-      chosenLeft = remainingPoses[Math.floor(Math.random() * remainingPoses.length)];
+      const remaining = poses.filter(p => p !== chosenRight);
+      chosenLeft = remaining[Math.floor(Math.random() * remaining.length)];
     } else {
-      chosenLeft = chosenRight; // only one pose available
-    }
-
-    const charRight = document.getElementById("modalEmotionCharacterRight");
-    const charLeft = document.getElementById("modalEmotionCharacterLeft");
-
-    if (charRight) {
-      charRight.src = chosenRight;
-      // Randomly flip right character
-      charRight.style.transform = "scaleX(-1)";
-      charRight.style.setProperty("--glowStart", `drop-shadow(0 0 15px rgba(255,255,255,0.8)) drop-shadow(0 0 30px ${glowColor}99)`);
-      charRight.style.setProperty("--glowMid", `drop-shadow(0 0 25px rgba(255,255,255,1)) drop-shadow(0 0 45px ${glowColor}E6)`);
-    }
-
-    if (charLeft) {
-      charLeft.src = chosenLeft;
-      // Left character never flipped
-      charLeft.style.transform = "scaleX(1)";
-      charLeft.style.setProperty("--glowStart", `drop-shadow(0 0 15px rgba(255,255,255,0.8)) drop-shadow(0 0 30px ${glowColor}99)`);
-      charLeft.style.setProperty("--glowMid", `drop-shadow(0 0 25px rgba(255,255,255,1)) drop-shadow(0 0 45px ${glowColor}E6)`);
+      chosenLeft = chosenRight;
     }
   }
 
-  const imgEl = document.getElementById('wishStudentImage');
-  const placeholder = document.getElementById('wishStudentPlaceholder');
+  // apply right char
+  if (modalCharRight) {
+    modalCharRight.src = chosenRight;
+    // for the right char we want a subtle flip to face inward for symmetry - flip only when granted OR keep flipping as you had
+    modalCharRight.style.transform = "scaleX(-1) rotate(var(--tilt))";
+    modalCharRight.style.setProperty("--glowStart", `drop-shadow(0 0 15px rgba(255,255,255,0.8)) drop-shadow(0 0 30px ${glowColor}99)`);
+    modalCharRight.style.setProperty("--glowMid",   `drop-shadow(0 0 25px rgba(255,255,255,1)) drop-shadow(0 0 45px ${glowColor}E6)`);
+  }
+  // apply left char (never flipped)
+  if (modalCharLeft) {
+    modalCharLeft.src = chosenLeft;
+    modalCharLeft.style.transform = "scaleX(1) rotate(var(--tilt))";
+    modalCharLeft.style.setProperty("--glowStart", `drop-shadow(0 0 15px rgba(255,255,255,0.8)) drop-shadow(0 0 30px ${glowColor}99)`);
+    modalCharLeft.style.setProperty("--glowMid",   `drop-shadow(0 0 25px rgba(255,255,255,1)) drop-shadow(0 0 45px ${glowColor}E6)`);
+  }
 
-  if (w.student_image_url && w.student_image_url.trim() !== "") {
-    imgEl.src = w.student_image_url;
-    imgEl.classList.remove('hidden');
-    placeholder.classList.add('hidden');
-    imgEl.onerror = () => { imgEl.classList.add('hidden'); placeholder.classList.remove('hidden'); };
+  // student image
+  if (imgEl) {
+    if (w.student_image_url && w.student_image_url.trim() !== "") {
+      imgEl.src = w.student_image_url;
+      imgEl.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+      imgEl.onerror = () => { imgEl.classList.add('hidden'); placeholder.classList.remove('hidden'); };
+    } else {
+      imgEl.src = "";
+      imgEl.classList.add('hidden');
+      placeholder.classList.remove('hidden');
+    }
+  }
+
+  // Modal color styling: if granted, use yellow glow; otherwise use emotion color
+  if (w.granted) {
+    color = grantedYellow;
   } else {
-    imgEl.src = "";
-    imgEl.classList.add('hidden');
-    placeholder.classList.remove('hidden');
+    color = EMOTION_COLORS[displayEmotionKey] || color;
   }
 
-   const modalContent = modal.querySelector('.modal-content');
-  const modalHeader = document.getElementById('wishModalHeader');
-  const avatar = document.getElementById('wishStudentImageContainer');
-
-  const emotion = (w.emotion || '').toLowerCase();
-  const color = EMOTION_COLORS[emotion] || '#6B7280'; // gray fallback
-
-  // Card styling
+  // Card styling (modalContent)
   if (modalContent) {
     modalContent.style.backgroundColor = '#1f2937'; // slate-800 background
     modalContent.style.color = 'white';
     modalContent.style.border = `2px solid ${color}`;
-    modalContent.style.boxShadow = `0 0 20px ${color}AA`;
+    modalContent.style.boxShadow = `0 0 30px ${color}AA`;
   }
 
   // Header styling (image > gradient > fallback)
   if (modalHeader) {
     if (w.situation_image_url && w.situation_image_url.trim() !== '') {
-      modalHeader.style.background = `url(${w.situation_image_url}) center/cover no-repeat`;
+      // if granted, overlay a subtle yellow tint on the header image
+      if (w.granted) {
+        modalHeader.style.background = `linear-gradient(135deg, ${addedAlpha(grantedYellow,0.85)}, ${addedAlpha(grantedYellow,0.6)}), url(${w.situation_image_url}) center/cover no-repeat`;
+      } else {
+        modalHeader.style.background = `url(${w.situation_image_url}) center/cover no-repeat`;
+      }
     } else {
       modalHeader.style.background = `linear-gradient(135deg, ${color}, ${color}AA)`;
     }
@@ -1190,15 +1232,51 @@ async function openModal(wishId) {
 
   // Avatar glow
   if (avatar) {
-    avatar.style.boxShadow = `0 0 12px ${color}AA`;
+    avatar.style.boxShadow = `0 0 14px ${color}AA`;
     avatar.style.borderColor = color;
   }
 
+  // Grant button behaviour
+  if (grantBtn) {
+    if (w.granted) {
+      // change text + style to yellowed success state
+      grantBtn.textContent = "Dream has come true!";
+      grantBtn.disabled = true;
+      grantBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-500');
+      grantBtn.classList.add('bg-yellow-400');
+      grantBtn.style.cursor = 'default';
+    } else {
+      // revert to normal grant button
+      grantBtn.textContent = "Grant this wish";
+      grantBtn.disabled = false;
+      grantBtn.classList.remove('bg-yellow-400');
+      grantBtn.classList.add('bg-indigo-600');
+      grantBtn.style.cursor = '';
+    }
+  }
+
+  // show modal
   modal.classList.remove('modal-hidden');
   modal.classList.add('modal-visible');
   modalBackdrop.classList.remove('opacity-0', 'pointer-events-none');
   modalBackdrop.classList.add('opacity-100');
+
+  // helper: add alpha to hex color (simple)
+  function addedAlpha(hex, alpha) {
+    // hex like #RRGGBB
+    if (!hex || hex[0] !== '#' || (hex.length !== 7 && hex.length !== 4)) return hex;
+    // handle short #RGB
+    if (hex.length === 4) {
+      const r = hex[1], g = hex[2], b = hex[3];
+      hex = `#${r}${r}${g}${g}${b}${b}`;
+    }
+    const r = parseInt(hex.slice(1,3),16);
+    const g = parseInt(hex.slice(3,5),16);
+    const b = parseInt(hex.slice(5,7),16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
 }
+
 
 function closeModal(){
   modal.classList.remove('modal-visible'); modal.classList.add('modal-hidden');
