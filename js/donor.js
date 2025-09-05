@@ -864,187 +864,188 @@ async function renderJar() {
   }
 
   // Populate each circle wrapper (images, texts, hit target)
-  ballsGroup.querySelectorAll("g.ballWrap > circle[data-id]").forEach(baseCircle => {
-    const id = baseCircle.dataset.id;
-    const w = map[id];
-    if (!w) { baseCircle.style.display = 'none'; return; }
-    baseCircle.style.display = 'block';
+ballsGroup.querySelectorAll("g.ballWrap > circle[data-id]").forEach(baseCircle => {
+  const id = baseCircle.dataset.id;
+  const w = map[id];
+  if (!w) { baseCircle.style.display = 'none'; return; }
+  baseCircle.style.display = 'block';
 
-    const cx = +baseCircle.getAttribute('cx');
-    const cy = +baseCircle.getAttribute('cy');
-    const r  = +baseCircle.getAttribute('r');
-    const wrap = baseCircle.parentNode;
-    baseCircle.style.pointerEvents = 'none'; // actual click handled by hit
+  const cx = +baseCircle.getAttribute('cx');
+  const cy = +baseCircle.getAttribute('cy');
+  const r  = +baseCircle.getAttribute('r');
+  const wrap = baseCircle.parentNode;
+  baseCircle.style.pointerEvents = 'none'; // actual clicks handled by hit
 
-    // remove previously appended dynamic elements (images, text, hit, glow)
-    [...wrap.querySelectorAll('image, text, .ball-hit, circle[id^="glow-"]')].forEach(el => {
-      // avoid removing the baseCircle itself
-      if (el !== baseCircle) el.remove();
-    });
-
-    // --- glow outline (inserted under the baseCircle) ---
-    const glowId = `glow-${id}`;
-    let glow = wrap.querySelector(`circle#${glowId}`);
-    if (!glow) {
-      glow = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      glow.setAttribute('id', glowId);
-      glow.classList.add('orb-outline');
-      glow.setAttribute('fill', 'none');
-      glow.setAttribute('cx', cx);
-      glow.setAttribute('cy', cy);
-      glow.setAttribute('r', r);
-      glow.setAttribute('filter', 'url(#insideOutGlow)');
-      glow.style.opacity = '0';
-      glow.style.transformOrigin = `${cx}px ${cy}px`;
-      glow.style.transformBox = 'fill-box';
-      // insert before baseCircle so it renders underneath
-      wrap.insertBefore(glow, baseCircle);
-    } else {
-      glow.setAttribute('cx', cx);
-      glow.setAttribute('cy', cy);
-      glow.setAttribute('r', r);
-      glow.style.opacity = '0';
-    }
-
-    // set glow stroke depending on granted or not (we'll hide for granted)
-    if (w.granted) {
-      glow.setAttribute('stroke', 'none');
-      glow.style.opacity = '0';
-    } else {
-      const strokeW = Math.max(2, Math.round(r * 0.2));
-      glow.setAttribute('stroke-width', strokeW);
-      glow.setAttribute('stroke', '#ffffff');
-      glow.setAttribute('stroke-opacity', '0.95');
-    }
-
-    // --- gradient (yellow if granted, otherwise emotion color) ---
-    const gradId = `grad-${id}`;
-    let grad = document.getElementById(gradId);
-    const gradColor = w.granted ? '#FDE047' : (EMOTION_COLORS[w.emotion] || '#FDE047');
-    if (!grad) {
-      grad = document.createElementNS("http://www.w3.org/2000/svg", "radialGradient");
-      grad.setAttribute("id", gradId);
-      const stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-      stop1.setAttribute("offset", "0%");
-      stop1.setAttribute("stop-color", "#fff");
-      stop1.setAttribute("stop-opacity", "0.2");
-      const stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-      stop2.setAttribute("offset", "100%");
-      stop2.setAttribute("stop-color", gradColor);
-      stop2.setAttribute("stop-opacity", "0.95");
-      grad.appendChild(stop1);
-      grad.appendChild(stop2);
-      defs.appendChild(grad);
-    } else {
-      // update color when re-rendering
-      const stops = grad.querySelectorAll('stop');
-      if (stops[1]) stops[1].setAttribute('stop-color', gradColor);
-    }
-
-    // ensure baseCircle uses the gradient fill and set opacity
-    baseCircle.setAttribute("fill", `url(#${gradId})`);
-    baseCircle.style.opacity = w.granted ? "1" : "0.85";
-
-    // remove white stroke/outline for granted wishes
-    if (w.granted) {
-      baseCircle.style.stroke = "none";
-      baseCircle.style.strokeWidth = "0";
-    } else {
-      baseCircle.style.stroke = "none"; // no persistent stroke; hover shows outline
-      baseCircle.style.strokeWidth = "0";
-    }
-
-    // --- layering: baseCircle (color) -> image/text (above color) -> hit (top) ---
-    if (w.situation_image_url) {
-      // ensure clip path exists and matches current position
-      const clipId = `clip-${id}`;
-      let clip = document.getElementById(clipId);
-      if (!clip) {
-        clip = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
-        clip.setAttribute("id", clipId);
-        const cc = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        cc.setAttribute("cx", cx); cc.setAttribute("cy", cy); cc.setAttribute("r", r);
-        clip.appendChild(cc);
-        defs.appendChild(clip);
-      } else {
-        const cc = clip.querySelector('circle');
-        if (cc) { cc.setAttribute('cx', cx); cc.setAttribute('cy', cy); cc.setAttribute('r', r); }
-      }
-
-      // image appended AFTER baseCircle so it renders above color
-      const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
-      img.setAttribute("href", w.situation_image_url);
-      img.setAttribute("x", cx - r + 1);
-      img.setAttribute("y", cy - r + 1);
-      img.setAttribute("width", r * 2 - 2);
-      img.setAttribute("height", r * 2 - 2);
-      img.setAttribute("preserveAspectRatio", "xMidYMid slice");
-      img.setAttribute("clip-path", `url(#${clipId})`);
-      img.setAttribute("filter", "url(#insideOutGlow)");
-      img.style.pointerEvents = 'none'; // ensure image doesn't block clicks
-      wrap.appendChild(baseCircle); // color layer (ensure base is present)
-      wrap.appendChild(img);        // image above color
-    } else {
-      // no image: append baseCircle then icon/text
-      wrap.appendChild(baseCircle);
-      const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      txt.setAttribute("x", cx);
-      txt.setAttribute("y", cy);
-      txt.setAttribute("fill", "#fff");
-      txt.setAttribute("text-anchor", "middle");
-      txt.setAttribute("dominant-baseline", "central");
-      txt.setAttribute("font-weight", "700");
-      txt.setAttribute("font-size", Math.max(10, Math.floor(r * 0.6)));
-      txt.textContent = CATEGORY_ICON[w.category] || "🎒";
-      wrap.appendChild(txt);
-    }
-
-    // re-apply subtle filter for baseCircle (keeps consistent look)
-    baseCircle.setAttribute("filter", "url(#insideOutGlow)");
-
-    // --- hit target (always appended last to capture events) ---
-    const hit = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    hit.classList.add('ball-hit');
-    hit.setAttribute('cx', cx);
-    hit.setAttribute('cy', cy);
-    hit.setAttribute('r', r);
-    hit.setAttribute('fill', 'transparent');
-    hit.style.cursor = 'pointer';
-    hit.style.pointerEvents = 'all';
-    wrap.appendChild(hit);
-
-    // --- hover handlers (preserve existing behavior, but no drag) ---
-    const onEnter = (ev) => {
-      if (wrap.classList.contains('is-dragging')) return; // still safe if you set that elsewhere
-      if (glow && !w.granted) {
-        glow.style.opacity = '1';
-        glow.style.transform = 'scale(1)';
-        glow.setAttribute('stroke-opacity', '0.98');
-      }
-      // show a thin white stroke on hover for non-granted orbs
-      if (!w.granted) {
-        baseCircle.style.stroke = 'rgba(255,255,255,0.98)';
-        baseCircle.style.strokeWidth = '1';
-      }
-      wrap.classList.add('is-hover');
-    };
-    const onLeave = (ev) => {
-      if (glow) glow.style.opacity = '0';
-      // restore stroke state (none for granted)
-      baseCircle.style.stroke = w.granted ? "none" : "none";
-      baseCircle.style.strokeWidth = w.granted ? "0" : "0";
-      wrap.classList.remove('is-hover');
-    };
-
-    hit.addEventListener('pointerenter', onEnter);
-    hit.addEventListener('pointerleave', onLeave);
-
-    // click -> open modal
-    hit.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      try { openModal(id); } catch (e) { console.log('openModal missing', e); }
-    });
+  // remove previously appended dynamic elements except baseCircle
+  [...wrap.querySelectorAll('image, text, .ball-hit, circle[id^="glow-"], clipPath[id^="clip-"]')].forEach(el => {
+    if (el !== baseCircle) el.remove();
   });
+
+  // --- glow outline (under the top layers but shown on hover) ---
+  const glowId = `glow-${id}`;
+  let glow = wrap.querySelector(`circle#${glowId}`);
+  if (!glow) {
+    glow = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    glow.setAttribute('id', glowId);
+    glow.classList.add('orb-outline');
+    glow.setAttribute('fill', 'none');
+    const strokeW = Math.max(2, Math.round(r * 0.2));
+    glow.setAttribute('stroke-width', strokeW);
+    glow.setAttribute('cx', cx);
+    glow.setAttribute('cy', cy);
+    glow.setAttribute('r', r + strokeW * 0.5);
+    glow.setAttribute('filter', 'url(#insideOutGlow)');
+    glow.style.opacity = '0';
+    glow.style.transformOrigin = `${cx}px ${cy}px`;
+    glow.style.transformBox = 'fill-box';
+    wrap.insertBefore(glow, baseCircle); // insert beneath the other dynamic elements we will append
+  } else {
+    const strokeW = Math.max(2, Math.round(r * 0.2));
+    glow.setAttribute('stroke-width', strokeW);
+    glow.setAttribute('cx', cx);
+    glow.setAttribute('cy', cy);
+    glow.setAttribute('r', r + strokeW * 0.5);
+    glow.style.opacity = '0';
+  }
+  // always set glow stroke so hover can show it (we'll control opacity on enter/leave)
+  glow.setAttribute('stroke', '#ffffff');
+  glow.setAttribute('stroke-opacity', '0.95');
+
+  // --- gradient (yellow if granted, otherwise emotion color) ---
+  const gradId = `grad-${id}`;
+  let grad = document.getElementById(gradId);
+  const gradColor = w.granted ? '#FDE047' : (EMOTION_COLORS[w.emotion] || '#FDE047');
+  if (!grad) {
+    grad = document.createElementNS("http://www.w3.org/2000/svg", "radialGradient");
+    grad.setAttribute("id", gradId);
+    const stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+    stop1.setAttribute("offset", "0%");
+    stop1.setAttribute("stop-color", "#fff");
+    stop1.setAttribute("stop-opacity", "0.2");
+    const stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+    stop2.setAttribute("offset", "100%");
+    stop2.setAttribute("stop-color", gradColor);
+    stop2.setAttribute("stop-opacity", "0.95");
+    grad.appendChild(stop1);
+    grad.appendChild(stop2);
+    defs.appendChild(grad);
+  } else {
+    const stops = grad.querySelectorAll('stop');
+    if (stops[1]) stops[1].setAttribute('stop-color', gradColor);
+  }
+
+  // baseCircle fill will be the gradient, but we will decide layering below
+  baseCircle.setAttribute("fill", `url(#${gradId})`);
+  // default opacity: granted fully opaque, non-granted slightly translucent (overlay intensity)
+  baseCircle.style.opacity = w.granted ? "1" : "0.6"; // lower alpha for overlay look when placed above image
+
+  // remove persistent stroke; hover will add it
+  baseCircle.style.stroke = "none";
+  baseCircle.style.strokeWidth = "0";
+
+  // --- layering logic ---
+  if (w.situation_image_url) {
+    // ensure clip path exists for this orb
+    const clipId = `clip-${id}`;
+    let clip = document.getElementById(clipId);
+    if (!clip) {
+      clip = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
+      clip.setAttribute("id", clipId);
+      const cc = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      cc.setAttribute("cx", cx); cc.setAttribute("cy", cy); cc.setAttribute("r", r);
+      clip.appendChild(cc);
+      defs.appendChild(clip);
+    } else {
+      const cc = clip.querySelector('circle'); if (cc) { cc.setAttribute('cx', cx); cc.setAttribute('cy', cy); cc.setAttribute('r', r); }
+    }
+
+    // create image element (pointer-events none so hit remains on top)
+    const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+    img.setAttribute("href", w.situation_image_url);
+    img.setAttribute("x", cx - r + 1);
+    img.setAttribute("y", cy - r + 1);
+    img.setAttribute("width", r * 2 - 2);
+    img.setAttribute("height", r * 2 - 2);
+    img.setAttribute("preserveAspectRatio", "xMidYMid slice");
+    img.setAttribute("clip-path", `url(#${clipId})`);
+    img.setAttribute("filter", "url(#insideOutGlow)");
+    img.style.pointerEvents = 'none';
+
+    if (w.granted) {
+      // granted: image above color (keeps original behavior)
+      wrap.appendChild(baseCircle); // color underneath
+      wrap.appendChild(img);        // image above color
+      baseCircle.style.mixBlendMode = ''; // normal
+    } else {
+      // non-granted: image UNDER color overlay to create blurred/color overlay effect
+      wrap.appendChild(img);        // image first (under)
+      // the baseCircle (gradient) will be appended AFTER the image so it overlays it
+      // give the overlay a blend mode for nicer result (use screen/overlay as desired)
+      baseCircle.style.mixBlendMode = 'overlay';
+      baseCircle.style.opacity = "0.6"; // overlay intensity
+      wrap.appendChild(baseCircle);     // overlay above image
+    }
+  } else {
+    // no image: keep color then text/icon on top
+    wrap.appendChild(baseCircle);
+    const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    txt.setAttribute("x", cx);
+    txt.setAttribute("y", cy);
+    txt.setAttribute("fill", "#fff");
+    txt.setAttribute("text-anchor", "middle");
+    txt.setAttribute("dominant-baseline", "central");
+    txt.setAttribute("font-weight", "700");
+    txt.setAttribute("font-size", Math.max(10, Math.floor(r * 0.6)));
+    txt.textContent = CATEGORY_ICON[w.category] || "🎒";
+    wrap.appendChild(txt);
+  }
+
+  // ensure subtle filter present on base circle for consistent look
+  baseCircle.setAttribute("filter", "url(#insideOutGlow)");
+
+  // --- hit target (top) ---
+  const hit = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  hit.classList.add('ball-hit');
+  hit.setAttribute('cx', cx);
+  hit.setAttribute('cy', cy);
+  hit.setAttribute('r', r);
+  hit.setAttribute('fill', 'transparent');
+  hit.style.cursor = 'pointer';
+  hit.style.pointerEvents = 'all';
+  wrap.appendChild(hit);
+
+  // --- hover handlers: show outline/glow for both granted & non-granted ---
+  const onEnter = (ev) => {
+    if (wrap.classList.contains('is-dragging')) return; // compatibility if you used is-dragging elsewhere
+    // show glow outline
+    if (glow) {
+      glow.style.opacity = '1';
+      glow.style.transform = 'scale(1)';
+      glow.setAttribute('stroke-opacity', '0.98');
+    }
+    // show thin white stroke on hover for both granted and non-granted
+    baseCircle.style.stroke = 'rgba(255,255,255,0.98)';
+    baseCircle.style.strokeWidth = '1';
+    wrap.classList.add('is-hover');
+  };
+  const onLeave = (ev) => {
+    if (glow) glow.style.opacity = '0';
+    // restore stroke state: none by default
+    baseCircle.style.stroke = "none";
+    baseCircle.style.strokeWidth = "0";
+    wrap.classList.remove('is-hover');
+  };
+
+  hit.addEventListener('pointerenter', onEnter);
+  hit.addEventListener('pointerleave', onLeave);
+
+  // click -> open modal
+  hit.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    try { openModal(id); } catch (e) { console.log('openModal missing', e); }
+  });
+});
+
 
 // (refreshBallHighlights() likely called after this loop elsewhere in your code)
 
