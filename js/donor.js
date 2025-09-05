@@ -613,7 +613,7 @@ window.addEventListener('auth:changed', (ev) => {
 });
 
 // initial check on page load
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   updateAuthUIFromLocal();
 
 
