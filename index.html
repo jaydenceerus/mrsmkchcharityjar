@@ -296,8 +296,13 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
           </div>
         </div>
       </div>
-      <div id="modalEmotionWrapper">
-  <img id="modalEmotionCharacter" src="" alt="Emotion Character" />
+      <div id="modalEmotionWrapperRight">
+  <img id="modalEmotionCharacterRight" src="" alt="Emotion Character Right" />
+</div>
+
+<!-- Left emotion character -->
+<div id="modalEmotionWrapperLeft">
+  <img id="modalEmotionCharacterLeft" src="" alt="Emotion Character Left" />
 </div>
 
 <style>
@@ -312,24 +317,34 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
     50%      { filter: var(--glowMid); }
   }
 
-  #modalEmotionWrapper {
-    --tilt: -7deg;
-    --dur: 6s;
-    position: absolute;
-    top: 45%;
-    right: 18%;
-    transform: translateY(-50%);
-    animation: floaty var(--dur) ease-in-out infinite;
-    z-index: 60; /* above modal card */
-    pointer-events: none;
-  }
+   #modalEmotionWrapperRight,
+#modalEmotionWrapperLeft {
+  --tilt: -7deg;
+  --dur: 6s;
+  position: absolute;
+  top: 45%;
+  transform: translateY(-50%);
+  animation: floaty var(--dur) ease-in-out infinite;
+  z-index: 60;
+  pointer-events: none;
+}
 
-  #modalEmotionCharacter {
-    width: 240px;
-    height: 240px;
-    object-fit: contain;
-    animation: pulseGlow 2.5s ease-in-out infinite;
-  }
+#modalEmotionWrapperRight {
+  right: 15%;
+}
+
+#modalEmotionWrapperLeft {
+  left: 15%;
+}
+
+#modalEmotionCharacterRight,
+#modalEmotionCharacterLeft {
+  width: 240px;
+  height: 240px;
+  object-fit: contain;
+  animation: pulseGlow 2.5s ease-in-out infinite;
+}
+
 </style>
     </div>
 
