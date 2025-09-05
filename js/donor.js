@@ -343,27 +343,27 @@ async function initDonateForm() {
         case 'serenity':
           emotionImgEl.style.top = '-6px';
           emotionImgEl.style.right = '12px';
-          emotionImgEl.style.width = '84px';
-          emotionImgEl.style.height = '84px';
+          emotionImgEl.style.width = '200px';
+          emotionImgEl.style.height = '200px';
           break;
         case 'chirpy':
           emotionImgEl.style.top = '-10px';
           emotionImgEl.style.right = '8px';
-          emotionImgEl.style.width = '72px';
-          emotionImgEl.style.height = '72px';
+          emotionImgEl.style.width = '200px';
+          emotionImgEl.style.height = '200px';
           break;
         case 'worry':
           emotionImgEl.style.top = '-4px';
           emotionImgEl.style.right = '6px';
-          emotionImgEl.style.width = '88px';
-          emotionImgEl.style.height = '88px';
+          emotionImgEl.style.width = '200px';
+          emotionImgEl.style.height = '200px';
           break;
         default:
           // default sitting pose
           emotionImgEl.style.top = '-6px';
           emotionImgEl.style.right = '8px';
-          emotionImgEl.style.width = '80px';
-          emotionImgEl.style.height = '80px';
+          emotionImgEl.style.width = '200px';
+          emotionImgEl.style.height = '200px';
       }
     }
   } catch (err) {
@@ -1090,6 +1090,8 @@ if (modalChar) {
     "--glowMid",
     `drop-shadow(0 0 25px rgba(255,255,255,1)) drop-shadow(0 0 45px ${glowColor}E6)`
   );
+  modalChar.style.transform = "scaleX(-1)";
+
 }
 
 
