@@ -1234,19 +1234,7 @@ async function openModal(wishId) {
   }
 
   // Header styling (image > gradient > fallback)
-  if (modalHeader) {
-    if (w.situation_image_url && w.situation_image_url.trim() !== '') {
-      // if granted, overlay a subtle yellow tint on the header image
-      if (w.granted) {
-        modalHeader.style.background = `linear-gradient(135deg, ${addedAlpha(grantedYellow,0.85)}, ${addedAlpha(grantedYellow,0.6)}), url(${w.situation_image_url}) center/cover no-repeat`;
-      } else {
-        modalHeader.style.background = `url(${w.situation_image_url}) center/cover no-repeat`;
-      }
-    } else {
-      modalHeader.style.background = `linear-gradient(135deg, ${color}, ${color}AA)`;
-    }
-    modalHeader.style.color = 'white';
-  }
+  
 
   // Avatar glow
   if (avatar) {
