@@ -1068,38 +1068,39 @@ async function openModal(wishId) {
 
   const modalChar = document.getElementById("modalEmotionCharacter");
   if (modalChar) {
-  const emotionKey = (w.emotion || "").toLowerCase();
-  const emoSet = EMOTION_CHARACTERS[emotionKey];
+    const emotionKey = (w.emotion || "").toLowerCase();
+    const emoSet = EMOTION_CHARACTERS[emotionKey];
 
-  let chosenImg = "assets/chirpypensive.png"; // fallback
-  if (emoSet) {
-  const poses = Object.values(emoSet);
+    let chosenImg = "assets/chirpypensive.png"; // fallback
+    if (emoSet) {
+      const poses = Object.values(emoSet);
 
-  // Random pose for each character
-  const chosenRight = poses[Math.floor(Math.random() * poses.length)];
-  const chosenLeft = poses[Math.floor(Math.random() * poses.length)];
+      // Random pose for each character
+      const chosenRight = poses[Math.floor(Math.random() * poses.length)];
+      const chosenLeft = poses[Math.floor(Math.random() * poses.length)];
 
-  const charRight = document.getElementById("modalEmotionCharacterRight");
-  const charLeft = document.getElementById("modalEmotionCharacterLeft");
+      const charRight = document.getElementById("modalEmotionCharacterRight");
+      const charLeft = document.getElementById("modalEmotionCharacterLeft");
 
-  if (charRight) {
-    charRight.src = chosenRight;
-    // Randomly flip right character
-    ccharLeft.style.transform = "scaleX(-1)";
-    const glowColor = EMOTION_COLORS[emotionKey] || "#6366F1";
-    charRight.style.setProperty("--glowStart", `drop-shadow(0 0 15px rgba(255,255,255,0.8)) drop-shadow(0 0 30px ${glowColor}99)`);
-    charRight.style.setProperty("--glowMid", `drop-shadow(0 0 25px rgba(255,255,255,1)) drop-shadow(0 0 45px ${glowColor}E6)`);
+      if (charRight) {
+        charRight.src = chosenRight;
+        // Randomly flip right character
+        charRight.style.transform = Math.random() < 0.5 ? "scaleX(-1)" : "scaleX(1)";
+        const glowColor = EMOTION_COLORS[emotionKey] || "#6366F1";
+        charRight.style.setProperty("--glowStart", `drop-shadow(0 0 15px rgba(255,255,255,0.8)) drop-shadow(0 0 30px ${glowColor}99)`);
+        charRight.style.setProperty("--glowMid", `drop-shadow(0 0 25px rgba(255,255,255,1)) drop-shadow(0 0 45px ${glowColor}E6)`);
+      }
+
+      if (charLeft) {
+        charLeft.src = chosenLeft;
+        // Do NOT flip left character
+        charLeft.style.transform = "scaleX(1)";
+        const glowColor = EMOTION_COLORS[emotionKey] || "#6366F1";
+        charLeft.style.setProperty("--glowStart", `drop-shadow(0 0 15px rgba(255,255,255,0.8)) drop-shadow(0 0 30px ${glowColor}99)`);
+        charLeft.style.setProperty("--glowMid", `drop-shadow(0 0 25px rgba(255,255,255,1)) drop-shadow(0 0 45px ${glowColor}E6)`);
+      }
+    }
   }
-
-  if (charLeft) {
-    charLeft.src = chosenLeft;
-    // Do NOT flip left character
-    charLeft.style.transform = "scaleX(1)";
-    const glowColor = EMOTION_COLORS[emotionKey] || "#6366F1";
-    charLeft.style.setProperty("--glowStart", `drop-shadow(0 0 15px rgba(255,255,255,0.8)) drop-shadow(0 0 30px ${glowColor}99)`);
-    charLeft.style.setProperty("--glowMid", `drop-shadow(0 0 25px rgba(255,255,255,1)) drop-shadow(0 0 45px ${glowColor}E6)`);
-  }
-}
 
 
   const imgEl = document.getElementById('wishStudentImage');
