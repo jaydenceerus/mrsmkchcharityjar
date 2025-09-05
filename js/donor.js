@@ -1309,9 +1309,10 @@ async function loadDefaultPledgeData() {
         
         // Show current pledge (most recent active one)
         const currentDonation = donations.find(d => d.donor_id === userId && d.status_phase < 2) || donations.find(d => d.donor_id === userId);
-        const currentWish = wishes.find(w => w.id === currentDonation.wish_id);
         
-        if (currentDonation && currentWish) {
+        if (currentDonation) {
+          const currentWish = wishes.find(w => w.id === currentDonation.wish_id);
+          if (!currentWish) { return; }
           const statusText = currentDonation.status_phase === 2 ? 'Completed - Wish Granted' : 
                            currentDonation.status_phase === 1 ? 'Active - Donation Received' : 
                            'Active - Payment Pending';
