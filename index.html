@@ -312,7 +312,7 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
     100% { transform: translateY(-50%) translateY(0) rotate(var(--tilt)); }
   }
 
-   @keyframes pulseGlow {
+   @keyframes charPulseGlow {
     0%, 100% { filter: var(--glowStart); }
     50%      { filter: var(--glowMid); }
   }
@@ -343,7 +343,7 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
   width: 240px;
   height: 240px;
   object-fit: contain;
-  animation: pulseGlow 2.5s ease-in-out infinite;
+  animation: charPulseGlow 2.5s ease-in-out infinite;
   --glowStart: drop-shadow(0 0 15px rgba(255,255,255,0.8)) drop-shadow(0 0 30px #6366F199);
   --glowMid: drop-shadow(0 0 25px rgba(255,255,255,1)) drop-shadow(0 0 45px #6366F1E6);
 }
@@ -360,16 +360,6 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
   }
 
   /* Pulse glow animation (applied to img) */
-  @keyframes pulseGlow {
-    0%, 100% {
-      filter: drop-shadow(0 0 15px rgba(255,255,255,0.8))
-              drop-shadow(0 0 30px rgba(99,102,241,0.6));
-    }
-    50% {
-      filter: drop-shadow(0 0 25px rgba(255,255,255,1))
-              drop-shadow(0 0 45px rgba(99,102,241,0.9));
-    }
-  }
 
   #emotionWrapper {
     --tilt: -3deg;
@@ -387,7 +377,7 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
     width: 300px;
     height: 300px;
     object-fit: contain;
-    animation: pulseGlow 2.5s ease-in-out infinite;
+    animation: charPulseGlow 2.5s ease-in-out infinite;
   }
 </style>
 
