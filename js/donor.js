@@ -663,6 +663,7 @@ function routeTo(name){
   });
   if (name === 'home') renderJar();
   if (name === 'inbox') renderInbox();
+  if (name === 'status') loadDefaultPledgeData();
   if (name === 'achievements') renderAchievements();
   if (name === 'donate') initDonateForm();   // <<-- call form init when showing donate
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1302,6 +1303,7 @@ async function loadDefaultPledgeData() {
           document.getElementById('pastPledges').style.display = 'none';
           return;
         }
+        const userId = user.id;
         const donations = await loadDonations();
         const wishes = await loadWishes();
         
