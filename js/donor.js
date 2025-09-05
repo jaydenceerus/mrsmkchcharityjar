@@ -1135,6 +1135,24 @@ async function openModal(wishId) {
   let displayEmotionKey = emotionKey;
   if (w.granted) {
     displayEmotionKey = POSITIVE_COUNTERPART[emotionKey] || emotionKey;
+    if (modalHeader) {
+    modalHeader.classList.remove(
+      "from-indigo-600", "via-purple-600", "to-pink-600"
+    );
+    modalHeader.classList.add(
+      "from-yellow-400", "via-yellow-500", "to-yellow-600"
+    );
+  }
+} else {
+  // Reset back to default gradient if not granted
+  if (modalHeader) {
+    modalHeader.classList.remove(
+      "from-yellow-400", "via-yellow-500", "to-yellow-600"
+    );
+    modalHeader.classList.add(
+      "from-indigo-600", "via-purple-600", "to-pink-600"
+    );
+  }
   }
   // Update visible emotion text (capitalized)
   wishEmotion.textContent = displayEmotionKey ? (displayEmotionKey[0].toUpperCase() + displayEmotionKey.slice(1)) : '-';
