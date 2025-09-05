@@ -24,12 +24,37 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const EMOTION_COLORS = { envy:'#2E8B57', shy:'#FF6EC7', worry:'#6A5ACD', serenity:'#FEFEFA', chirpy:'#FFFF00', gratitude:'#FFAD00' };
 const CATEGORY_ICON = { shoes:'👟', stationery:'✏️', meals:'🧃', data:'📶', transport:'🚲', other:'🎒' };
 const EMOTION_CHARACTERS = {
-  chirpy: "assets/chirpy.png",
-  serenity: "assets/serenity.png",
-  gratitude: "assets/gratitude.png",
-  envy: "assets/envy.png",
-  worry: "assets/worry.png",
-  shy: "assets/shy.png",
+  chirpy: {
+    default: "assets/chirpy_standing.png",
+    happy: "assets/chirpy_squatting.png",
+    happiest: "assets/chirpy_jumping.png",
+  },
+  serenity: {
+    default: "assets/serenity_pray.png",
+    meditating: "assets/serenity_meditating.png",
+    handsopen: "assets/serenity_handsopen.png"
+  },
+  gratitude: {
+    default: "assets/gratitude_pray.png",
+    wave: "assets/gratitude_waving.png",
+    grateful: "assets/gratitude_handsclasped.png"
+  },
+  envy: {
+    default: "assets/envy_standing.png",
+    jealous: "assets/envy_sideeye.png",
+    chill: "assets/envy_handsbehindhead.png"
+  },
+  worry: {
+    default: "assets/worry_nervous.png",
+    anxious: "assets/worry_handonhead.png",
+    crouch: "assets/worry_crouching.png"
+  },
+  shy: {
+    default: "assets/shy_handsclasped.png",
+    relieved: "assets/shy_relieved.png",
+    hiding: "assets/shy_hiding.png",
+    crouch: "assets/shy_crouch.png"
+  }
 };
 
 // Utilities
@@ -1044,20 +1069,29 @@ async function openModal(wishId) {
   const modalChar = document.getElementById("modalEmotionCharacter");
 if (modalChar) {
   const emotionKey = (w.emotion || "").toLowerCase();
-  modalChar.src = EMOTION_CHARACTERS[emotionKey] || "assets/chirpypensive.png";
-}
+  const emoSet = EMOTION_CHARACTERS[emotionKey];
+
+  let chosenImg = "assets/chirpypensive.png"; // fallback
+  if (emoSet) {
+    const poses = Object.values(emoSet);           // get all poses for that emotion
+    chosenImg = poses[Math.floor(Math.random() * poses.length)]; // pick a random one
+  }
+
+  modalChar.src = chosenImg;
 
   const glowColor = EMOTION_COLORS[emotionKey] || "#6366F1"; // fallback indigo
 
-    // Update CSS vars for pulse animation
-    modalChar.style.setProperty(
-      "--glowStart",
-      `drop-shadow(0 0 15px rgba(255,255,255,0.8)) drop-shadow(0 0 30px ${glowColor}99)`
-    );
-    modalChar.style.setProperty(
-      "--glowMid",
-      `drop-shadow(0 0 25px rgba(255,255,255,1)) drop-shadow(0 0 45px ${glowColor}E6)`
-    );
+  // Update CSS vars for pulse animation
+  modalChar.style.setProperty(
+    "--glowStart",
+    `drop-shadow(0 0 15px rgba(255,255,255,0.8)) drop-shadow(0 0 30px ${glowColor}99)`
+  );
+  modalChar.style.setProperty(
+    "--glowMid",
+    `drop-shadow(0 0 25px rgba(255,255,255,1)) drop-shadow(0 0 45px ${glowColor}E6)`
+  );
+}
+
 
   const imgEl = document.getElementById('wishStudentImage');
   const placeholder = document.getElementById('wishStudentPlaceholder');
