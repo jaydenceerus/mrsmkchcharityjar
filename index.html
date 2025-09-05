@@ -397,39 +397,40 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
 
       <!-- Wish details -->
       <div id="donateWishDetails"
-           class="mt-6 relative rounded-xl border border-white/10 p-4 text-left overflow-hidden">
+     class="mt-6 relative rounded-xl border border-white/10 p-4 text-left overflow-hidden">
 
-        <!-- Background image layer with gradient mask -->
-        <div id="donateWishBg"
-             class="absolute inset-0 z-0"
-             style="background-image: url('assets/avatar-placeholder.jpeg');
-                    background-size: cover;
-                    background-position: center right;
-                    background-repeat: no-repeat;
-                    mask: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,1) 100%);
-                    -webkit-mask: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,1) 100%);">
-        </div>
+  <!-- Background image layer with gradient mask -->
+  <div id="donateWishBg"
+       class="absolute inset-0 z-0"
+       style="background-image: url('assets/avatar-placeholder.jpeg');
+              background-size: cover;
+              background-position: center right;
+              background-repeat: no-repeat;
+              mask: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,1) 100%);
+              -webkit-mask: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,1) 100%);">
+  </div>
 
-        <!-- Dark overlay -->
-        <div class="absolute inset-0 bg-yellow/20 z-0"></div>
+  <!-- Dark overlay -->
+  <div class="absolute inset-0 bg-yellow/20 z-0"></div>
 
-        <!-- Foreground content -->
-        <h3 class="text-xl font-semibold mb-2 relative z-10">Wish Details</h3>
-        <div class="mt-4 flex flex-col md:flex-row items-start md:items-center gap-4 relative z-10">
-          <div class="flex-1 min-w-0">
-            <p class="truncate"><span class="font-bold">Nickname:</span> <span id="specficWishNickname">—</span></p>
-            <p class="mt-2"><span class="font-bold">Wish Item:</span> <span id="wishItem">—</span></p>
-            <p class="mt-2"><span class="font-bold">Situation:</span> <span id="specficWishSituation">—</span></p>
-          </div>
-        </div>
+  <!-- Foreground content -->
+  <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-4">
+    <div class="flex-1 max-w-[70%]">
+      <h3 class="text-xl font-semibold mb-2">Wish Details</h3>
+      <p class="truncate"><span class="font-bold">Nickname:</span> <span id="specficWishNickname">—</span></p>
+      <p class="mt-2"><span class="font-bold">Wish Item:</span> <span id="wishItem">—</span></p>
+      <p class="mt-2"><span class="font-bold">Situation:</span> <span id="specficWishSituation">—</span></p>
+    </div>
 
-        <!-- Emotion character wrapper -->
-        <div id="emotionWrapper">
-          <img id="donateEmotionCharacter"
-               src="assets/chirpypensive.png"
-               alt="Emotion character" />
-        </div>
-      </div>
+    <!-- Emotion character wrapper -->
+    <div id="emotionWrapper" class="flex-shrink-0">
+      <img id="donateEmotionCharacter"
+           src="assets/chirpypensive.png"
+           alt="Emotion character" />
+    </div>
+  </div>
+</div>
+
 
       <!-- Pledge form -->
       <form id="donorForm" class="mt-6 space-y-5" onsubmit="return false;">

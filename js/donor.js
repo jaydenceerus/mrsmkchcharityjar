@@ -313,10 +313,10 @@ async function initDonateForm() {
   let emoSrc = "";
 switch (randomEmotion) {
   case 'serenity':
-    emoSrc = EMOTION_CHARACTERS.serenity.serenity_pray; // serenity_pray
+    emoSrc = EMOTION_CHARACTERS.serenity.default; // serenity_pray
     break;
   case 'gratitude':
-    emoSrc = EMOTION_CHARACTERS.gratitude.gratitude_handsclasped; // hands clasped
+    emoSrc = EMOTION_CHARACTERS.gratitude.grateful; // hands clasped
     break;
 }
 
