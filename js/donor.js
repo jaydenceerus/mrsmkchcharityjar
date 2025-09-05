@@ -1349,7 +1349,7 @@ async function loadDefaultPledgeData() {
         }
 
         // Show past pledges (completed ones)
-        const pastDonations = donations.filter(d => d.donor_id === userId && d.status_phase === 2 && d.id !== currentDonation.id && d.granted_at !== null);
+        const pastDonations = donations.filter(d => d.donor_id === userId && d.status_phase === 2 && d.wish_id !== currentDonation.id && d.granted_at !== null);
         const pastPledgesList = document.getElementById('pastPledgesList');
         
         if (pastDonations.length > 0) {
