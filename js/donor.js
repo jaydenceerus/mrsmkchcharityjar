@@ -24,7 +24,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const EMOTION_COLORS = { envy:'#2E8B57', shy:'#FF6EC7', worry:'#6A5ACD', serenity:'#FEFEFA', chirpy:'#FFFF00', gratitude:'#FFAD00' };
 const CATEGORY_ICON = { shoes:'👟', stationery:'✏️', meals:'🧃', data:'📶', transport:'🚲', other:'🎒' };
 const EMOTION_CHARACTERS = {
-  chirpy: "assets/chirpyhappy.png",
+  chirpy: "assets/chirpy.png",
   serenity: "assets/serenity.png",
   gratitude: "assets/gratitude.png",
   envy: "assets/envy.png",
