@@ -1154,8 +1154,7 @@ grantBtn?.addEventListener('click',async ()=> {
   const donations = await loadDonations();
   const prof = await getActiveProfile();
 
-  const isAlreadyPledged = donations.some(d => d.wish_id === currentWishId);
-  if (isAlreadyPledged) { alert('Sorry, this wish has already been reserved by another donor.'); return; }
+
 
   const usersLatestPledge = prof?.latestCode;
   const latestDonation = donations.find(d => d.code === usersLatestPledge);
@@ -1174,11 +1173,12 @@ grantBtn?.addEventListener('click',async ()=> {
     alert('This wish has already been granted!');
     return;
   }
-
-  donateWishBadge.textContent = `Granting: ${w.nickname}`;
-  closeModal();
-  routeTo('donate');
-});
+  const isAlreadyPledged = donations.some(d => d.wish_id === currentWishId);
+  if (isAlreadyPledged || w.donationcode !== null) { alert('Sorry, this wish has already been reserved by another donor.'); return; }
+    donateWishBadge.textContent = `Granting: ${w.nickname}`;
+    closeModal();
+    routeTo('donate');
+  });
 
 /* -------------------------
    Pledge form (anonymous)
