@@ -1071,6 +1071,7 @@ async function openModal(wishId) {
   let chosenRight = "assets/chirpypensive.png"; // fallback
   let chosenLeft = "assets/chirpypensive.png"; // fallback
   const glowColor = EMOTION_COLORS[emotionKey] || "#6366F1";
+  console.log(glowColor);
 
   if (emoSet) {
     const poses = Object.values(emoSet);
