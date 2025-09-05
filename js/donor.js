@@ -909,7 +909,20 @@ ballsGroup.querySelectorAll("g.ballWrap > circle[data-id]").forEach(baseCircle =
   }
   // always set glow stroke so hover can show it (we'll control opacity on enter/leave)
   glow.setAttribute('stroke', '#ffffff');
-  glow.setAttribute('stroke-opacity', '0.95');
+  glow.setAttribute('stroke-opacity', '0.85');
+
+  if (w.granted) {
+  const extraId = `extra-glow-${id}`;
+  let extraGlow = wrap.querySelector(`circle#${extraId}`);
+  if (!extraGlow) {
+    extraGlow = glow.cloneNode(false);
+    extraGlow.setAttribute('id', extraId);
+    wrap.insertBefore(extraGlow, baseCircle);
+  }
+  extraGlow.setAttribute('stroke', '#FACC15');  // bright yellow
+  extraGlow.setAttribute('stroke-opacity', '0.9');
+  extraGlow.style.opacity = '0'; // hidden until hover
+}
 
   // --- gradient (yellow if granted, otherwise emotion color) ---
   const gradId = `grad-${id}`;
