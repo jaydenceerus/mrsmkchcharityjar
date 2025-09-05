@@ -23,6 +23,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // Demo defaults (copied from original full.html)
 const EMOTION_COLORS = { envy:'#2E8B57', shy:'#FF6EC7', worry:'#6A5ACD', serenity:'#FEFEFA', chirpy:'#FFFF00', gratitude:'#FFAD00' };
 const CATEGORY_ICON = { shoes:'👟', stationery:'✏️', meals:'🧃', data:'📶', transport:'🚲', other:'🎒' };
+const EMOTION_CHARACTERS = {
+  chirpy: "assets/chirpyhappy.png",
+  serenity: "assets/serenity.png",
+  gratitude: "assets/gratitude.png",
+  envy: "assets/envy.png",
+  worry: "assets/worry.png",
+  shy: "assets/shy.png",
+};
 
 // Utilities
 let activeChannel = null;
@@ -1032,6 +1040,12 @@ async function openModal(wishId) {
   wishEmotion.textContent = w.emotion ? (w.emotion[0].toUpperCase() + w.emotion.slice(1)) : '-';
   wishSituation.textContent = w.situation || '';
   wishText.textContent = w.wish || '';
+
+  const modalChar = document.getElementById("modalEmotionCharacter");
+if (modalChar) {
+  const emotionKey = (w.emotion || "").toLowerCase();
+  modalChar.src = EMOTION_CHARACTERS[emotionKey] || "assets/chirpypensive.png";
+}
 
   const imgEl = document.getElementById('wishStudentImage');
   const placeholder = document.getElementById('wishStudentPlaceholder');

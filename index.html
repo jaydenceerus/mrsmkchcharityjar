@@ -296,9 +296,90 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
           </div>
         </div>
       </div>
+      <div id="modalEmotionWrapper">
+  <img id="modalEmotionCharacter" src="" alt="Emotion Character" />
+</div>
+
+<style>
+  @keyframes floaty {
+    0%   { transform: translateY(-50%) translateY(0) rotate(var(--tilt)); }
+    50%  { transform: translateY(-50%) translateY(-12px) rotate(calc(var(--tilt) + 2deg)); }
+    100% { transform: translateY(-50%) translateY(0) rotate(var(--tilt)); }
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% {
+      filter: drop-shadow(0 0 15px rgba(255,255,255,0.8))
+              drop-shadow(0 0 30px rgba(99,102,241,0.6));
+    }
+    50% {
+      filter: drop-shadow(0 0 25px rgba(255,255,255,1))
+              drop-shadow(0 0 45px rgba(99,102,241,0.9));
+    }
+  }
+
+  #modalEmotionWrapper {
+    --tilt: -3deg;
+    --dur: 6s;
+    position: absolute;
+    top: 50%;
+    right: 2rem;
+    transform: translateY(-50%);
+    animation: floaty var(--dur) ease-in-out infinite;
+    z-index: 60; /* above modal card */
+    pointer-events: none;
+  }
+
+  #modalEmotionCharacter {
+    width: 220px;
+    height: 220px;
+    object-fit: contain;
+    animation: pulseGlow 2.5s ease-in-out infinite;
+  }
+</style>
     </div>
 
-    <!-- DONATE / PLEDGE FORM -->
+    <style>
+  /* Floaty sway animation (applied to wrapper, not the img) */
+  @keyframes floaty {
+    0%   { transform: translateY(-50%) translateY(0) rotate(var(--tilt)); }
+    50%  { transform: translateY(-50%) translateY(-12px) rotate(calc(var(--tilt) + 2deg)); }
+    100% { transform: translateY(-50%) translateY(0) rotate(var(--tilt)); }
+  }
+
+  /* Pulse glow animation (applied to img) */
+  @keyframes pulseGlow {
+    0%, 100% {
+      filter: drop-shadow(0 0 15px rgba(255,255,255,0.8))
+              drop-shadow(0 0 30px rgba(99,102,241,0.6));
+    }
+    50% {
+      filter: drop-shadow(0 0 25px rgba(255,255,255,1))
+              drop-shadow(0 0 45px rgba(99,102,241,0.9));
+    }
+  }
+
+  #emotionWrapper {
+    --tilt: -3deg;
+    --dur: 6s;
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    animation: floaty var(--dur) ease-in-out infinite;
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  #donateEmotionCharacter {
+    width: 300px;
+    height: 300px;
+    object-fit: contain;
+    animation: pulseGlow 2.5s ease-in-out infinite;
+  }
+</style>
+
+<!-- DONATE / PLEDGE FORM -->
 <section id="page-donate" class="page">
   <div class="max-w-3xl mx-auto px-6 py-10">
     <div class="rounded-2xl bg-white/10 border border-white/10 p-6">
@@ -306,104 +387,110 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
         <h2 class="text-3xl font-bold">Pledge Support</h2>
         <span id="donateWishBadge" class="text-xs bg-white/20 px-3 py-1 rounded-full"></span>
       </div>
-      <p class="mt-2 text-white/90">Want to contribute to this student? Fill in this pledge form & complete payment to promise you won't let them down!</p>
+      <p class="mt-2 text-white/90">
+        Want to contribute to this student? Fill in this pledge form & complete payment to promise you won't let them down!
+      </p>
 
       <!-- Wish details -->
-      
-<div id="donateWishDetails"
-     class="mt-6 relative rounded-xl border border-white/10 p-4 text-left overflow-hidden">
+      <div id="donateWishDetails"
+           class="mt-6 relative rounded-xl border border-white/10 p-4 text-left overflow-hidden">
 
-  <!-- Background image layer with gradient mask -->
-  <div id="donateWishBg"
-       class="absolute inset-0 z-0"
-       style="background-image: url('assets/avatar-placeholder.jpeg');
-              background-size: cover;
-              background-position: center right;
-              background-repeat: no-repeat;
-              mask: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,1) 100%);
-              -webkit-mask: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,1) 100%);">
-  </div>
+        <!-- Background image layer with gradient mask -->
+        <div id="donateWishBg"
+             class="absolute inset-0 z-0"
+             style="background-image: url('assets/avatar-placeholder.jpeg');
+                    background-size: cover;
+                    background-position: center right;
+                    background-repeat: no-repeat;
+                    mask: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,1) 100%);
+                    -webkit-mask: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,1) 100%);">
+        </div>
 
+        <!-- Dark overlay -->
+        <div class="absolute inset-0 bg-yellow/20 z-0"></div>
 
-  <!-- Dark overlay for readability -->
-  <div class="absolute inset-0 bg-black/10 z-0"></div>
+        <!-- Foreground content -->
+        <h3 class="text-xl font-semibold mb-2 relative z-10">Wish Details</h3>
+        <div class="mt-4 flex flex-col md:flex-row items-start md:items-center gap-4 relative z-10">
+          <div class="flex-1 min-w-0">
+            <p class="truncate"><span class="font-bold">Nickname:</span> <span id="specficWishNickname">—</span></p>
+            <p class="mt-2"><span class="font-bold">Wish Item:</span> <span id="wishItem">—</span></p>
+            <p class="mt-2"><span class="font-bold">Situation:</span> <span id="specficWishSituation">—</span></p>
+          </div>
+        </div>
 
-  <!-- Foreground content -->
-  <h3 class="text-xl font-semibold mb-2 relative z-10">Wish Details</h3>
+        <!-- Emotion character wrapper -->
+        <div id="emotionWrapper">
+          <img id="donateEmotionCharacter"
+               src="assets/chirpypensive.png"
+               alt="Emotion character" />
+        </div>
+      </div>
 
-  <div class="mt-4 flex flex-col md:flex-row items-start md:items-center gap-4 relative z-10">
-    <!-- Left: text details -->
-    <div class="flex-1 min-w-0">
-      <p class="truncate"><span class="font-bold">Nickname:</span> <span id="specficWishNickname">—</span></p>
-      <p class="mt-2"><span class="font-bold">Wish Item:</span> <span id="wishItem">—</span></p>
-      <p class="mt-2"><span class="font-bold">Situation:</span> <span id="specficWishSituation">—</span></p>
-    </div>
-
-    <!-- Right: emotion character -->
-    <div class="relative w-40 md:w-48 flex-shrink-0 flex items-center justify-center">
-      <img id="donateEmotionCharacter"
-           src="assets/chirpypensive.png"
-           alt="Emotion character"
-           class="w-1/2 h-1/2 object-contain drop-shadow-xl char-img relative z-20" />
-    </div>
-  </div>
-</div>
-
-
-
+      <!-- Pledge form -->
       <form id="donorForm" class="mt-6 space-y-5" onsubmit="return false;">
-  <input type="hidden" name="wish_id" id="donateWishId">
+        <input type="hidden" name="wish_id" id="donateWishId">
 
-  <!-- Anonymous-only fields (toggled by JS) -->
-  <div id="anonymousFields" class="rounded-xl bg-white/10 border border-white/10 p-4 hidden">
-    <div class="text-sm opacity-80 mb-2">Choose how your name appears</div>
-    <div class="grid md:grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm mb-2">Full Name (optional)</label>
-        <input name="name" id="donorFullName" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400"
-          placeholder="Your full name" />
-      </div>
-      <div>
-        <label class="block text-sm mb-2">Nickname (optional)</label>
-        <input name="nickname" id="donorNick" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400"
-          placeholder="Shown to student if you prefer" />
-      </div>
+        <!-- Anonymous-only fields -->
+        <div id="anonymousFields" class="rounded-xl bg-white/10 border border-white/10 p-4 hidden">
+          <div class="text-sm opacity-80 mb-2">Choose how your name appears</div>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm mb-2">Full Name (optional)</label>
+              <input name="name" id="donorFullName"
+                     class="w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400"
+                     placeholder="Your full name" />
+            </div>
+            <div>
+              <label class="block text-sm mb-2">Nickname (optional)</label>
+              <input name="nickname" id="donorNick"
+                     class="w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400"
+                     placeholder="Shown to student if you prefer" />
+            </div>
+          </div>
+          <div class="text-xs opacity-80 mt-2">
+            Fill either one. If both are filled, Full Name is used.
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm mb-2">Email</label>
+            <input required type="email" name="email" id="donorEmail"
+                   class="w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400"
+                   placeholder="you@example.com" />
+          </div>
+          <div>
+            <label class="block text-sm mb-2">Phone (optional)</label>
+            <input name="phone" id="donorPhone"
+                   class="w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400"
+                   placeholder="+60 ..." />
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-1 gap-4">
+          <div>
+            <label class="block text-sm mb-2">Message to Admin (optional)</label>
+            <input name="message" id="donorMessage"
+                   class="w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400"
+                   placeholder="Any details or questions" />
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button id="proceedBtn" type="submit"
+                  class="px-5 py-3 rounded-xl bg-white text-indigo-700 font-semibold hover:bg-white/90">
+            Proceed
+          </button>
+          <button type="button" id="cancelDonate"
+                  class="px-5 py-3 rounded-xl bg-white/10 border border-white/20 hover:bg-white/20">
+            Cancel
+          </button>
+        </div>
+      </form>
     </div>
-    <div class="text-xs opacity-80 mt-2">Fill either one. If both are filled, Full Name is used.</div>
   </div>
-
-  <div class="grid md:grid-cols-2 gap-4">
-    <div>
-      <label class="block text-sm mb-2">Email</label>
-      <input required type="email" name="email" id="donorEmail"
-        class="w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400"
-        placeholder="you@example.com" />
-    </div>
-    <div>
-      <label class="block text-sm mb-2">Phone (optional)</label>
-      <input name="phone" id="donorPhone" class="w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400"
-        placeholder="+60 ..." />
-    </div>
-  </div>
-
-  <div class="grid md:grid-cols-1 gap-4">
-    <div>
-      <label class="block text-sm mb-2">Message to Admin (optional)</label>
-      <input name="message" id="donorMessage"
-        class="w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400"
-        placeholder="Any details or questions" />
-    </div>
-  </div>
-
-  <div class="flex items-center gap-3">
-    <!-- changed to type="button" so this does not submit the form -->
-    <button id="proceedBtn" type="submit"
-      class="px-5 py-3 rounded-xl bg-white text-indigo-700 font-semibold hover:bg-white/90">Proceed</button>
-
-    <button type="button" id="cancelDonate"
-      class="px-5 py-3 rounded-xl bg-white/10 border border-white/20 hover:bg-white/20">Cancel</button>
-  </div>
-</form>
+</section>
 
 <!-- --- PAYMENT STEP (hidden until Proceed is clicked) --- -->
 <div id="paymentStep" class="mt-6 rounded-xl bg-white/5 border border-white/10 p-4 hidden">
