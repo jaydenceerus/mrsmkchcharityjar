@@ -1257,8 +1257,10 @@ donorForm?.addEventListener('submit', async (e) => {
   const { error: wishUpdateError } = await supabase.from('wishes').update({ donationcode: code }).eq('id', target.id);
   if (wishUpdateError) console.error("Error updating wish with donation code:", wishUpdateError);
 
+  let createdConvo = '';
+
   if (user.isAuth) {
-  const { data: convo, error: convoError } = await supabase.from('conversations').insert([{
+    const { data: convo, error: convoError } = await supabase.from('conversations').insert([{
     donor_id: user.id,
     donation_code: code,
     title: `Pledge for ${target.nickname} (${code})`,
@@ -1268,6 +1270,7 @@ donorForm?.addEventListener('submit', async (e) => {
   if (convoError) {
     console.error("Error creating conversation:", convoError);
   } else {
+    createdConvo = convo;
     await supabase.from('messages').insert([{
       conversation_id: convo.id,
       sender_id: null,
@@ -1282,7 +1285,7 @@ donorForm?.addEventListener('submit', async (e) => {
 if (user.isAuth) {
   alert('Pledge submitted! You can chat in Inbox.');
   routeTo('inbox');
-  if (convo && convo.id) openThread(convo.id, convo.title);
+  if (createdConvo && createdConvo.id) openThread(createdConvo.id, createdConvo.title);
 } else {
   alert('Pledge submitted! Please submit payment as soon as possible.');
   routeTo('home');
