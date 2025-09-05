@@ -937,18 +937,7 @@ ballsGroup.querySelectorAll("g.ballWrap > circle[data-id]").forEach(baseCircle =
   glow.setAttribute('stroke', '#ffffff');
   glow.setAttribute('stroke-opacity', '0.85');
 
-  if (w.granted) {
-  const extraId = `extra-glow-${id}`;
-  let extraGlow = wrap.querySelector(`circle#${extraId}`);
-  if (!extraGlow) {
-    extraGlow = glow.cloneNode(false);
-    extraGlow.setAttribute('id', extraId);
-    wrap.insertBefore(extraGlow, baseCircle);
-  }
-  extraGlow.setAttribute('stroke', '#FACC15');  // bright yellow
-  extraGlow.setAttribute('stroke-opacity', '0.9');
-  extraGlow.style.opacity = '1'; // always visible for granted
-}
+
 
   // --- gradient (yellow if granted, otherwise emotion color) ---
   const gradId = `grad-${id}`;
@@ -976,7 +965,7 @@ ballsGroup.querySelectorAll("g.ballWrap > circle[data-id]").forEach(baseCircle =
   // baseCircle fill will be the gradient, but we will decide layering below
   baseCircle.setAttribute("fill", `url(#${gradId})`);
   // default opacity: granted fully opaque, non-granted slightly translucent (overlay intensity)
-  baseCircle.style.opacity = w.granted ? "1" : "0.6"; // lower alpha for overlay look when placed above image
+  baseCircle.style.opacity = w.granted ? "0.8" : "0.6"; // lower alpha for overlay look when placed above image
 
   // remove persistent stroke; hover will add it
   baseCircle.style.stroke = "none";
