@@ -184,7 +184,7 @@ if (!formEl) {
 
         if (msg.toLowerCase().includes('already') || msg.toLowerCase().includes('registered')) {
           show('apiError', 'Email already registered. Try signing in or use password reset.');
-          setTimeout(()=> { window.location.href = 'index.html'; }, 1800);
+          setTimeout(()=> { window.location.href = 'login.html'; }, 1800);
           return;
         }
 
@@ -203,7 +203,7 @@ if (!formEl) {
       }
 
       alert('Registration started. Please check your email and confirm your address. After confirming, sign in and your profile will be created automatically.');
-      window.location.href = 'index.html';
+      window.location.href = 'login.html';
       return;
 
     } catch (err) {
