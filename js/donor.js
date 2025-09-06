@@ -101,6 +101,19 @@ async function getActiveUser() {
   return { id: anon.id, username: anon.username, email: null, isAuth: false };
 }
 
+function sumNumbersInText(text) {
+  if (!text) return 0;
+  // match integers or decimals (handles 123, 123.45 or 123,45)
+  const matches = (text || '').match(/(\d+[.,]?\d*)/g);
+  if (!matches) return 0;
+  return matches.reduce((sum, token) => {
+    // normalize decimal comma -> dot and remove stray non-numeric characters
+    const normalized = token.replace(',', '.').replace(/[^\d.]/g, '');
+    const n = parseFloat(normalized);
+    return sum + (isNaN(n) ? 0 : n);
+  }, 0);
+}
+
 // *** getActiveProfile: for auth users fetch profile, otherwise use/create anon profile row ***
 async function getActiveProfile() {
   // Attempt to detect real logged-in user
@@ -1351,7 +1364,9 @@ donorForm?.addEventListener('submit', async (e) => {
 
   const now = new Date().toISOString();
 
-
+  const extractedAmount = sumNumbersInText(target.wish);
+  // you may want to default to 0.00 instead of leaving empty
+  const amount = Number((extractedAmount || 0).toFixed(2));
   const donation = {
     // optional new column 'donation_uuid' if you add it server-side; harmless if not present
     code,
@@ -1359,6 +1374,7 @@ donorForm?.addEventListener('submit', async (e) => {
     wish_nickname: target.nickname,
     timestamp: now,
     donor_id: user.id,
+    amount,
     donor: {
       displayName: donorDisplayName,
       // include form values so anonymous donor info is visible if provided
@@ -1367,7 +1383,7 @@ donorForm?.addEventListener('submit', async (e) => {
       email: fd.get('email') || null,
       phone: fd.get('phone') || null,
       type: null,
-      amount: null,
+      amount,
       timeline: null,
       message: fd.get('message') || null
     },
@@ -1440,12 +1456,17 @@ async function loadDefaultPledgeData() {
         if (currentDonation) {
           const currentWish = wishes.find(w => w.id === currentDonation.wish_id);
           if (!currentWish) { return; }
-          const statusText = currentDonation.status_phase === 2 ? 'Completed - Wish Granted' : 
-                           currentDonation.status_phase === 1 ? 'Active - Donation Received' : 
+          const amount = (typeof currentDonation.amount === 'number' && !isNaN(currentDonation.amount))
+            ? Number(currentDonation.amount)
+            : Number((sumNumbersInText(currentWish.wish) || 0).toFixed(2));
+
+          const statusText = currentDonation.status_phase === 2 ? 'Completed - Wish Granted' :
+                           currentDonation.status_phase === 1 ? 'Active - Donation Received' :
                            'Active - Payment Pending';
+
           const paymentText = currentDonation.status_phase >= 1
-      ? `$${amount} (Paid)`
-      : `Not yet paid ($${amount} pledged)`;
+            ? `$${amount.toFixed(2)} (Paid)`
+            : `Not yet paid ($${amount.toFixed(2)} pledged)`;
 
           // Create delivery tracker for current pledge
           const phase = currentDonation.status_phase ?? 0;
@@ -1468,11 +1489,11 @@ async function loadDefaultPledgeData() {
           document.getElementById('currentWishSituation').textContent = 'Student in need of support';
           document.getElementById('currentWishItem').textContent = currentWish.wish;
           document.getElementById('currentDatePledged').textContent = new Date(currentDonation.pledged_at).toLocaleDateString();
-          const payNowBtn = phase < 1 ? `
-      <button onclick="startPaymentFlow('${currentDonation.code}')"
-              class="mt-3 px-4 py-2 rounded-lg bg-yellow-400 text-yellow-900 font-semibold hover:bg-yellow-300">
-        Pay Now
-      </button>` : '';
+          const payNowBtn = (phase < 2) ? `
+            <button onclick="startPaymentFlow('${currentDonation.code}')"
+                    class="mt-3 px-4 py-2 rounded-lg bg-yellow-400 text-yellow-900 font-semibold hover:bg-yellow-300">
+              Pay Now
+            </button>` : '';
           document.getElementById('currentPledgeStatus').innerHTML = `
             <div class="bg-white/5 rounded-xl p-4 mt-2">
               <div class="grid gap-4">${stepItems}</div>
