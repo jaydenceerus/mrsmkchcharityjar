@@ -517,7 +517,13 @@ function updateAuthUIFromLocal() {
 
     clearProfileUI();
   }
+
+
 }
+
+document.getElementById('loginBtn')?.addEventListener('click', () => {
+  window.location.href = 'login.html';
+});
 
 // populate the profile modal / badges with a user object
 function populateProfileUI(user) {
