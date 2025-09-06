@@ -458,6 +458,8 @@ function startPaymentFlow(donationCode) {
   console.log("Starting payment flow for", donationCode);
 }
 
+window.startPaymentFlow = startPaymentFlow;
+
 function showPaymentPrompt(donationCode) {
   if (document.getElementById('paymentPrompt')) return;
   const container = document.createElement('div'); container.id = 'paymentPrompt'; container.className = 'fixed bottom-6 right-6 z-[9999]'; container.style.width = '320px';
@@ -1441,13 +1443,9 @@ async function loadDefaultPledgeData() {
           const statusText = currentDonation.status_phase === 2 ? 'Completed - Wish Granted' : 
                            currentDonation.status_phase === 1 ? 'Active - Donation Received' : 
                            'Active - Payment Pending';
-          const paymentText = currentDonation.status_phase >= 1 
-  ? `$${currentDonation.amount} (Paid)` 
-  : `Not yet paid ($${currentDonation.amount} pledged) 
-     <button onclick="startPaymentFlow('${currentDonation.code}')" 
-             class="ml-2 px-3 py-1 rounded-lg bg-yellow-400 text-yellow-900 font-semibold hover:bg-yellow-300">
-       Pay Now
-     </button>`;
+          const paymentText = currentDonation.status_phase >= 1
+      ? `$${amount} (Paid)`
+      : `Not yet paid ($${amount} pledged)`;
 
           // Create delivery tracker for current pledge
           const phase = currentDonation.status_phase ?? 0;
@@ -1471,17 +1469,17 @@ async function loadDefaultPledgeData() {
           document.getElementById('currentWishItem').textContent = currentWish.wish;
           document.getElementById('currentDatePledged').textContent = new Date(currentDonation.pledged_at).toLocaleDateString();
           const payNowBtn = phase < 1 ? `
-  <button onclick="startPaymentFlow('${currentDonation.code}')"
-          class="mt-3 px-4 py-2 rounded-lg bg-yellow-400 text-yellow-900 font-semibold hover:bg-yellow-300">
-    Pay Now
-  </button>` : '';
+      <button onclick="startPaymentFlow('${currentDonation.code}')"
+              class="mt-3 px-4 py-2 rounded-lg bg-yellow-400 text-yellow-900 font-semibold hover:bg-yellow-300">
+        Pay Now
+      </button>` : '';
           document.getElementById('currentPledgeStatus').innerHTML = `
             <div class="bg-white/5 rounded-xl p-4 mt-2">
               <div class="grid gap-4">${stepItems}</div>
               ${payNowBtn}
             </div>
           `;
-          document.getElementById('currentPaymentAmount').textContent = paymentText;
+          document.getElementById('currentPaymentAmount').innerHTML = paymentText + (phase < 1 ? payNowBtn : '');
         }
 
         // Show past pledges (completed ones)
