@@ -499,44 +499,22 @@ function updateAuthUIFromLocal() {
   const user = getActiveUserLocal();
   const profileBtn = document.getElementById('profileBtn');
   const logoutBtn = document.getElementById('logoutBtn');
+  const loginBtn = document.getElementById('loginBtn');
   const profileModal = document.getElementById('profileModal');
-
-  // login button management (create if anonymous)
-  let loginBtn = document.getElementById('loginBtn');
 
   if (user && user.isAuth) {
     // authenticated
-    if (loginBtn) loginBtn.remove();
+    if (loginBtn) loginBtn.style.display = 'none';
     if (profileBtn) profileBtn.style.display = '';
     if (logoutBtn) logoutBtn.style.display = '';
 
-    // populate profile UI
     populateProfileUI(user);
   } else {
-    // anonymous: hide profile/logout, show login
+    // anonymous
+    if (loginBtn) loginBtn.style.display = '';
     if (profileBtn) profileBtn.style.display = 'none';
     if (logoutBtn) logoutBtn.style.display = 'none';
 
-    if (!loginBtn) {
-      const nav = document.querySelector('header nav');
-      if (nav) {
-        loginBtn = document.createElement('button');
-        loginBtn.id = 'loginBtn';
-        loginBtn.className = 'px-3 py-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20';
-        loginBtn.textContent = 'Login';
-        loginBtn.addEventListener('click', () => {
-          // route to your login page or open a modal
-          window.location.href = 'login.html';
-        });
-        const ref = nav.querySelector('.inline-block') || nav.querySelector('#profileBtn') || nav.querySelector('#logoutBtn');
-        if (ref) nav.insertBefore(loginBtn, ref);
-        else nav.appendChild(loginBtn);
-      }
-    } else {
-      loginBtn.style.display = '';
-    }
-
-    // also clear profile modal content (optional)
     clearProfileUI();
   }
 }
@@ -1457,8 +1435,13 @@ async function loadDefaultPledgeData() {
           const statusText = currentDonation.status_phase === 2 ? 'Completed - Wish Granted' : 
                            currentDonation.status_phase === 1 ? 'Active - Donation Received' : 
                            'Active - Payment Pending';
-          const paymentText = currentDonation.status_phase >= 1 ? `$${currentDonation.amount} (Paid)` : 
-                             `Not yet paid ($${currentDonation.amount} pledged)`;
+          const paymentText = currentDonation.status_phase >= 1 
+  ? `$${currentDonation.amount} (Paid)` 
+  : `Not yet paid ($${currentDonation.amount} pledged) 
+     <button onclick="startPaymentFlow('${currentDonation.code}')" 
+             class="ml-2 px-3 py-1 rounded-lg bg-yellow-400 text-yellow-900 font-semibold hover:bg-yellow-300">
+       Pay Now
+     </button>`;
 
           // Create delivery tracker for current pledge
           const phase = currentDonation.status_phase ?? 0;
@@ -1481,9 +1464,15 @@ async function loadDefaultPledgeData() {
           document.getElementById('currentWishSituation').textContent = 'Student in need of support';
           document.getElementById('currentWishItem').textContent = currentWish.wish;
           document.getElementById('currentDatePledged').textContent = new Date(currentDonation.pledged_at).toLocaleDateString();
+          const payNowBtn = phase < 1 ? `
+  <button onclick="startPaymentFlow('${currentDonation.code}')"
+          class="mt-3 px-4 py-2 rounded-lg bg-yellow-400 text-yellow-900 font-semibold hover:bg-yellow-300">
+    Pay Now
+  </button>` : '';
           document.getElementById('currentPledgeStatus').innerHTML = `
             <div class="bg-white/5 rounded-xl p-4 mt-2">
               <div class="grid gap-4">${stepItems}</div>
+              ${payNowBtn}
             </div>
           `;
           document.getElementById('currentPaymentAmount').textContent = paymentText;
@@ -1574,32 +1563,37 @@ document.getElementById('lookupBtn')?.addEventListener('click', async ()=> {
       <div class="text-xs opacity-70 mt-2">Sent ${new Date(ty.created_at).toLocaleString()}</div>
     </div>
   ` : '';
-
+  const payNowBtn = phase < 1 ? `
+    <button onclick="startPaymentFlow('${d.code}')"
+            class="mt-3 px-4 py-2 rounded-lg bg-yellow-400 text-yellow-900 font-semibold hover:bg-yellow-300">
+      Pay Now
+    </button>` : '';
   statusResult.innerHTML = `
-    <div class="flex flex-col gap-5">
-      <div class="flex items-center justify-between">
-        <div>
-          <div class="text-sm opacity-80">Donation Code</div>
-          <div class="text-xl font-semibold">${d.code}</div>
-        </div>
-        <div class="text-sm">
-          <span class="px-3 py-1 rounded-full ${phase === 2 ? 'bg-green-400 text-green-900' : phase === 1 ? 'bg-blue-300 text-blue-900' : 'bg-yellow-300 text-yellow-900'} font-semibold">
-            ${phase === 2 ? 'Granted' : phase === 1 ? 'Received' : 'Pledged'}
-          </span>
-        </div>
+  <div class="flex flex-col gap-5">
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="text-sm opacity-80">Donation Code</div>
+        <div class="text-xl font-semibold">${d.code}</div>
       </div>
-      <div class="rounded-xl bg-white/10 border border-white/10 p-5">
-        <div class="grid gap-4">${items}</div>
-      </div>
-      ${tyBlock}
-      <div class="rounded-xl bg-white/10 border border-white/10 p-5">
-        <div class="text-sm opacity-80 mb-1">Student</div>
-        <div class="font-semibold">${d.wish_nickname}</div>
-        <div class="text-sm opacity-80 mt-3">Wish</div>
-        <div>${w?.wish || '-'}</div>
+      <div class="text-sm">
+        <span class="px-3 py-1 rounded-full ${phase === 2 ? 'bg-green-400 text-green-900' : phase === 1 ? 'bg-blue-300 text-blue-900' : 'bg-yellow-300 text-yellow-900'} font-semibold">
+          ${phase === 2 ? 'Granted' : phase === 1 ? 'Received' : 'Pledged'}
+        </span>
       </div>
     </div>
-  `;
+    <div class="rounded-xl bg-white/10 border border-white/10 p-5">
+      <div class="grid gap-4">${items}</div>
+    </div>
+    ${tyBlock}
+    <div class="rounded-xl bg-white/10 border border-white/10 p-5">
+      <div class="text-sm opacity-80 mb-1">Student</div>
+      <div class="font-semibold">${d.wish_nickname}</div>
+      <div class="text-sm opacity-80 mt-3">Wish</div>
+      <div>${w?.wish || '-'}</div>
+      ${payNowBtn}   <!-- ✅ Button appears only if not paid -->
+    </div>
+  </div>
+`;
   refreshBallHighlights();
 });
 
