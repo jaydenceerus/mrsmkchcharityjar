@@ -1454,55 +1454,60 @@ async function loadDefaultPledgeData() {
         const currentDonation = donations.find(d => d.donor_id === userId && d.status_phase < 2) || donations.find(d => d.donor_id === userId);
         
         if (currentDonation) {
-          const currentWish = wishes.find(w => w.id === currentDonation.wish_id);
-          if (!currentWish) { return; }
-          const amount = (typeof currentDonation.amount === 'number' && !isNaN(currentDonation.amount))
-            ? Number(currentDonation.amount)
-            : Number((sumNumbersInText(currentWish.wish) || 0).toFixed(2));
+  const currentWish = wishes.find(w => w.id === currentDonation.wish_id);
+  if (!currentWish) { return; }
 
-          const statusText = currentDonation.status_phase === 2 ? 'Completed - Wish Granted' :
-                           currentDonation.status_phase === 1 ? 'Active - Donation Received' :
-                           'Active - Payment Pending';
+  const amount = (typeof currentDonation.amount === 'number' && !isNaN(currentDonation.amount))
+    ? Number(currentDonation.amount)
+    : Number((sumNumbersInText(currentWish.wish) || 0).toFixed(2));
 
-          const paymentText = currentDonation.status_phase >= 1
-            ? `$${amount.toFixed(2)} (Paid)`
-            : `Not yet paid ($${amount.toFixed(2)} pledged)`;
+  const statusText = currentDonation.status_phase === 2 ? 'Completed - Wish Granted' :
+                   currentDonation.status_phase === 1 ? 'Active - Donation Received' :
+                   'Active - Payment Pending';
 
-          // Create delivery tracker for current pledge
-          const phase = currentDonation.status_phase ?? 0;
-          const steps = [
-            { label: 'Pledge given', date: currentDonation.pledged_at, done: phase >= 0, icon: '📝' },
-            { label: 'Donation received', date: currentDonation.received_at, done: phase >= 1, icon: '📦' },
-            { label: 'Wish granted', date: currentDonation.granted_at, done: phase >= 2, icon: '✨' },
-          ];
-          const stepItems = steps.map((s,i) => `
-            <div class="flex items-start gap-3">
-              <div class="h-8 w-8 rounded-full ${s.done ? 'bg-green-400 text-green-900' : 'bg-white/20 text-white'} flex items-center justify-center font-semibold text-sm">${s.icon}</div>
-              <div>
-                <div class="font-semibold ${s.done ? '' : 'opacity-80'}">${s.label}${s.done ? ' • Completed' : ''}</div>
-                <div class="text-xs opacity-80">${s.date ? new Date(s.date).toLocaleDateString() : (i===phase+1 ? 'In progress' : '')}</div>
-              </div>
-            </div>
-          `).join('<div class="ml-3 h-6 border-l border-white/20"></div>');
+  const paymentText = currentDonation.status_phase >= 1
+    ? `$${amount.toFixed(2)} (Paid)`
+    : `Not yet paid ($${amount.toFixed(2)} pledged)`;
 
-          document.getElementById('currentWishName').textContent = `${currentDonation.wish_nickname}'s Wish`;
-          document.getElementById('currentWishSituation').textContent = 'Student in need of support';
-          document.getElementById('currentWishItem').textContent = currentWish.wish;
-          document.getElementById('currentDatePledged').textContent = new Date(currentDonation.pledged_at).toLocaleDateString();
-          const payNowBtn = (phase < 2) ? `
-            <button onclick="startPaymentFlow('${currentDonation.code}')"
-                    class="mt-3 px-4 py-2 rounded-lg bg-yellow-400 text-yellow-900 font-semibold hover:bg-yellow-300">
-              Pay Now
-            </button>` : '';
-          document.getElementById('currentPledgeStatus').innerHTML = `
-            <div class="bg-white/5 rounded-xl p-4 mt-2">
-              <div class="grid gap-4">${stepItems}</div>
-              ${payNowBtn}
-            </div>
-          `;
-          document.getElementById('currentPaymentAmount').innerHTML = paymentText + (phase < 1 ? payNowBtn : '');
-        }
+  const phase = currentDonation.status_phase ?? 0;
+  const steps = [
+    { label: 'Pledge given', date: currentDonation.pledged_at, done: phase >= 0, icon: '📝' },
+    { label: 'Donation received', date: currentDonation.received_at, done: phase >= 1, icon: '📦' },
+    { label: 'Wish granted', date: currentDonation.granted_at, done: phase >= 2, icon: '✨' },
+  ];
+  const stepItems = steps.map((s,i) => `
+    <div class="flex items-start gap-3">
+      <div class="h-8 w-8 rounded-full ${s.done ? 'bg-green-400 text-green-900' : 'bg-white/20 text-white'} flex items-center justify-center font-semibold text-sm">${s.icon}</div>
+      <div>
+        <div class="font-semibold ${s.done ? '' : 'opacity-80'}">${s.label}${s.done ? ' • Completed' : ''}</div>
+        <div class="text-xs opacity-80">${s.date ? new Date(s.date).toLocaleDateString() : (i===phase+1 ? 'In progress' : '')}</div>
+      </div>
+    </div>
+  `).join('<div class="ml-3 h-6 border-l border-white/20"></div>');
 
+  // Update UI
+  document.getElementById('currentWishName').textContent = `${currentDonation.wish_nickname}'s Wish`;
+  document.getElementById('currentWishSituation').textContent = 'Student in need of support';
+  document.getElementById('currentWishItem').textContent = currentWish.wish;
+  document.getElementById('currentDatePledged').textContent = new Date(currentDonation.pledged_at).toLocaleDateString();
+  document.getElementById('currentPaymentAmount').textContent = paymentText;
+
+  // Single Pay Now button below steps
+  const payNowBtn = (phase < 2) ? `
+    <div class="mt-4 flex justify-end">
+      <button onclick="startPaymentFlow('${currentDonation.code}')"
+              class="px-4 py-2 rounded-lg bg-yellow-400 text-yellow-900 font-semibold hover:bg-yellow-300">
+        Pay Now
+      </button>
+    </div>` : '';
+
+  document.getElementById('currentPledgeStatus').innerHTML = `
+    <div class="bg-white/5 rounded-xl p-4 mt-2">
+      <div class="grid gap-4">${stepItems}</div>
+      ${payNowBtn}
+    </div>
+  `;
+}
         // Show past pledges (completed ones)
         const pastDonations = donations.filter(d => d.donor_id === userId && d.status_phase === 2 && d.wish_id !== currentDonation.id && d.granted_at !== null);
         const pastPledgesList = document.getElementById('pastPledgesList');
@@ -1588,12 +1593,15 @@ document.getElementById('lookupBtn')?.addEventListener('click', async ()=> {
       <div class="text-xs opacity-70 mt-2">Sent ${new Date(ty.created_at).toLocaleString()}</div>
     </div>
   ` : '';
-  const payNowBtn = phase < 1 ? `
+  const payNowBtn = phase < 2 ? `
+  <div class="mt-4 flex justify-end">
     <button onclick="startPaymentFlow('${d.code}')"
-            class="mt-3 px-4 py-2 rounded-lg bg-yellow-400 text-yellow-900 font-semibold hover:bg-yellow-300">
+            class="px-4 py-2 rounded-lg bg-yellow-400 text-yellow-900 font-semibold hover:bg-yellow-300">
       Pay Now
-    </button>` : '';
-  statusResult.innerHTML = `
+    </button>
+  </div>` : '';
+
+statusResult.innerHTML = `
   <div class="flex flex-col gap-5">
     <div class="flex items-center justify-between">
       <div>
@@ -1606,16 +1614,19 @@ document.getElementById('lookupBtn')?.addEventListener('click', async ()=> {
         </span>
       </div>
     </div>
+
     <div class="rounded-xl bg-white/10 border border-white/10 p-5">
       <div class="grid gap-4">${items}</div>
+      ${payNowBtn}
     </div>
+
     ${tyBlock}
+
     <div class="rounded-xl bg-white/10 border border-white/10 p-5">
       <div class="text-sm opacity-80 mb-1">Student</div>
       <div class="font-semibold">${d.wish_nickname}</div>
       <div class="text-sm opacity-80 mt-3">Wish</div>
       <div>${w?.wish || '-'}</div>
-      ${payNowBtn}   <!-- ✅ Button appears only if not paid -->
     </div>
   </div>
 `;
