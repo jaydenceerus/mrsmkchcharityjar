@@ -22,7 +22,10 @@
     50%  { transform: translateY(-6px); }
     100% { transform: translateY(0); }
 }
-
+@keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
     /* sway only rotates (no translate) */
     @keyframes sway {
       0%   { transform: rotate(-3deg); }
@@ -40,6 +43,40 @@
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
+    }
+    .skp-character {
+  opacity: 0;
+  animation: fadeInUp 1s ease forwards;
+}
+
+.skp-character img {
+  animation: sway 5s ease-in-out infinite;
+  animation-delay: 1s; /* sway starts after fade in */
+}
+
+.skp-character .glow {
+  animation: fadeInUp 1.2s ease forwards;
+}
+
+.slide-text {
+  opacity: 0;
+  animation: fadeInUp 1s ease forwards;
+  animation-delay: 1.4s; /* text appears last */
+}
+    /* Glow for SKP images */
+    .skp-img {
+      position: relative;
+      z-index: 1;
+    }
+
+    .skp-img::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%);
+      filter: blur(40px);
+      z-index: -1;
     }
 
     #wish-jar {
@@ -463,6 +500,16 @@
     --glowStart: drop-shadow(0 0 15px rgba(255,255,255,0.8)) drop-shadow(0 0 30px #6366F199);
   --glowMid: drop-shadow(0 0 25px rgba(255,255,255,1)) drop-shadow(0 0 45px #6366F1E6);
   }
+
+  /* Hide emotion character on small screens to avoid overlap */
+@media (max-width: 768px) {
+  #emotionWrapper,
+  #donateEmotionCharacter {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}
 </style>
 
 <!-- DONATE / PLEDGE FORM -->
@@ -755,108 +802,118 @@
     
     <!-- Banner 1 -->
     <div class="skp-banner flex-shrink-0 w-full h-screen bg-cover bg-center relative" style="background-image:url('assets/bg1.jpeg')">
-      <div class="absolute inset-0 bg-yellow-500/20"></div>
+  <div class="absolute inset-0 bg-yellow-500/20"></div>
+  <div class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
 
-      <div class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
-      <div class="relative z-10 flex items-center justify-center h-full px-8">
-        <img src="assets/chirpy.png" class="skp-img mr-8">
-        <div class="text-white max-w-xl">
-          <div class="text-white max-w-xl slide-text">
-          <h3 class="text-4xl font-bold mb-4 text-yellow-300">Badan Wakil Pelajar (BWP)</h3>
-          <p class="text-lg">BWP manages and updates the Dream Drops website, keeping all information accurate and up to date.</p>
-        </div>
-        </div>
-      </div>
+  <div class="relative z-10 flex items-center justify-center h-full px-8">
+    <!-- Character with glow -->
+    <div class="skp-character relative mr-8 text-yellow-400">
+      <div class="absolute inset-0 rounded-full bg-current opacity-40 blur-3xl glow"></div>
+      <img src="assets/chirpy.png" class="relative skp-img">
     </div>
 
-    <!-- Banner 2 -->
-    <div class="skp-banner flex-shrink-0 w-full h-screen bg-cover bg-center relative" style="background-image:url('assets/bg3.jpeg')">
-      <div class="absolute inset-0 bg-purple-500/20"></div>
-      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-      <div class="relative z-10 flex items-center justify-center h-full px-8">
-        <img src="assets/serenity.png" class="skp-img mr-8">
-        <div class="text-white max-w-xl">
-          <div class="text-white max-w-xl slide-text">
-          <h3 class="text-4xl font-bold mb-4 text-white">Pembimbing Rakan Sebaya (PRS)</h3>
-          <p class="text-lg">PRS collects the names of students eligible to join and encourages participation in the program.</p>
-        </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Repeat for Envy, Gratitude, Shy, Worry -->
-    <div class="skp-banner flex-shrink-0 w-full h-screen bg-cover bg-center relative" style="background-image:url('assets/jpabg.JPG')">
-      <div class="absolute inset-0 bg-green-500/20"></div>
-      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-      <div class="relative z-10 flex items-center justify-center h-full px-8">
-        <img src="assets/envy.png" class="skp-img mr-8">
-        <div class="text-white max-w-xl">
-          <div class="text-white max-w-xl slide-text">
-          <h3 class="text-4xl font-bold mb-4 text-green-400">Jawatan Pengurusan Asrama (JPA)</h3>
-          <p class="text-lg">JPA delivers the granted wishes to students, making each moment special.</p>
-        </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="skp-banner flex-shrink-0 w-full h-screen bg-cover bg-center relative" style="background-image:url('assets/bg2.jpeg')">
-      <div class="absolute inset-0 bg-orange-500/20"></div>
-      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-      <div class="relative z-10 flex items-center justify-center h-full px-8">
-        <img src="assets/gratitude.png" class="skp-img mr-8">
-        <div class="text-white max-w-xl">
-          <div class="text-white max-w-xl slide-text">
-          <h3 class="text-4xl font-bold mb-4 text-orange-300">English Motivational Commitee (EMC)</h3>
-          <p class="text-lg">EMC promotes the Dream Drops website on social media to raise awareness.</p>
-        </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="skp-banner flex-shrink-0 w-full h-screen bg-cover bg-center relative" style="background-image:url('assets/bg4.jpeg')">
-      <div class="absolute inset-0 bg-pink-500/20"></div>
-      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-      <div class="relative z-10 flex items-center justify-center h-full px-8">
-        <img src="assets/shy.png" class="skp-img mr-8">
-        <div class="text-white max-w-xl">
-          <div class="text-white max-w-xl slide-text">
-          <h3 class="text-4xl font-bold mb-4 text-pink-300">Lembaga Disiplin Pelajar (LDP)</h3>
-          <p class="text-lg">LDP collects and organizes information from students joining the program.</p>
-        </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="skp-banner flex-shrink-0 w-full h-screen bg-cover bg-center relative" style="background-image:url('assets/deskbg.jpeg')">
-      <div class="absolute inset-0 bg-blue-500/20"></div>
-      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-      <div class="relative z-10 flex items-center justify-center h-full px-8">
-        <img src="assets/worry.png" class="skp-img mr-8">
-        <div class="text-white max-w-xl">
-          <div class="text-white max-w-xl slide-text">
-          <h3 class="text-4xl font-bold mb-4 text-purple-300">Sidang Redaksi (SR)</h3>
-          <p class="text-lg">SR captures the moments where students receive their wishes, highlighting the happiness & sharing the gratefulness for everyone to see.</p>
-        </div>
-        </div>
-      </div>
+    <!-- Text fades in after character -->
+    <div class="text-white max-w-xl slide-text">
+      <h3 class="text-4xl font-bold mb-4 text-yellow-300">Chirpy</h3>
+      <p class="text-lg">BWP manages and updates the Dream Drops website, keeping all information accurate and up to date.</p>
     </div>
   </div>
+</div>
+
+
+
+    <!-- Banner 2 -->
+    <!-- PRS -->
+<div class="skp-banner flex-shrink-0 w-full h-screen bg-cover bg-center relative" style="background-image:url('assets/bg3.jpeg')">
+  <div class="absolute inset-0 bg-purple-500/20"></div>
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+  <div class="relative z-10 flex items-center justify-center h-full px-8">
+    <div class="skp-character relative mr-8 text-purple-400">
+      <div class="absolute inset-0 rounded-full bg-current opacity-40 blur-3xl glow"></div>
+      <img src="assets/serenity.png" class="relative skp-img">
+    </div>
+    <div class="text-white max-w-xl slide-text">
+      <h3 class="text-4xl font-bold mb-4 text-white">Pembimbing Rakan Sebaya (PRS)</h3>
+      <p class="text-lg">PRS collects the names of students eligible to join and encourages participation in the program.</p>
+    </div>
+  </div>
+</div>
+
+<!-- JPA -->
+<div class="skp-banner flex-shrink-0 w-full h-screen bg-cover bg-center relative" style="background-image:url('assets/jpabg.JPG')">
+  <div class="absolute inset-0 bg-green-500/20"></div>
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+  <div class="relative z-10 flex items-center justify-center h-full px-8">
+    <div class="skp-character relative mr-8 text-green-400">
+      <div class="absolute inset-0 rounded-full bg-current opacity-40 blur-3xl glow"></div>
+      <img src="assets/envy.png" class="relative skp-img">
+    </div>
+    <div class="text-white max-w-xl slide-text">
+      <h3 class="text-4xl font-bold mb-4 text-green-400">Jawatan Pengurusan Asrama (JPA)</h3>
+      <p class="text-lg">JPA delivers the granted wishes to students, making each moment special.</p>
+    </div>
+  </div>
+</div>
+
+<!-- EMC -->
+<div class="skp-banner flex-shrink-0 w-full h-screen bg-cover bg-center relative" style="background-image:url('assets/bg2.jpeg')">
+  <div class="absolute inset-0 bg-orange-500/20"></div>
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+  <div class="relative z-10 flex items-center justify-center h-full px-8">
+    <div class="skp-character relative mr-8 text-orange-300">
+      <div class="absolute inset-0 rounded-full bg-current opacity-40 blur-3xl glow"></div>
+      <img src="assets/gratitude.png" class="relative skp-img">
+    </div>
+    <div class="text-white max-w-xl slide-text">
+      <h3 class="text-4xl font-bold mb-4 text-orange-300">English Motivational Commitee (EMC)</h3>
+      <p class="text-lg">EMC promotes the Dream Drops website on social media to raise awareness.</p>
+    </div>
+  </div>
+</div>
+
+<!-- LDP -->
+<div class="skp-banner flex-shrink-0 w-full h-screen bg-cover bg-center relative" style="background-image:url('assets/bg4.jpeg')">
+  <div class="absolute inset-0 bg-pink-500/20"></div>
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+  <div class="relative z-10 flex items-center justify-center h-full px-8">
+    <div class="skp-character relative mr-8 text-pink-300">
+      <div class="absolute inset-0 rounded-full bg-current opacity-40 blur-3xl glow"></div>
+      <img src="assets/shy.png" class="relative skp-img">
+    </div>
+    <div class="text-white max-w-xl slide-text">
+      <h3 class="text-4xl font-bold mb-4 text-pink-300">Lembaga Disiplin Pelajar (LDP)</h3>
+      <p class="text-lg">LDP collects and organizes information from students joining the program.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SR -->
+<div class="skp-banner flex-shrink-0 w-full h-screen bg-cover bg-center relative" style="background-image:url('assets/deskbg.jpeg')">
+  <div class="absolute inset-0 bg-blue-500/20"></div>
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+  <div class="relative z-10 flex items-center justify-center h-full px-8">
+    <div class="skp-character relative mr-8 text-purple-300">
+      <div class="absolute inset-0 rounded-full bg-current opacity-40 blur-3xl glow"></div>
+      <img src="assets/worry.png" class="relative skp-img">
+    </div>
+    <div class="text-white max-w-xl slide-text">
+      <h3 class="text-4xl font-bold mb-4 text-purple-300">Sidang Redaksi (SR)</h3>
+      <p class="text-lg">SR captures the moments where students receive their wishes, highlighting the happiness & sharing the gratefulness for everyone to see.</p>
+    </div>
+  </div>
+</div>
+
 
   <!-- Slider Controls -->
-  <button id="prevBtn" class="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white px-4 py-2 rounded-full">‹</button>
-  <button id="nextBtn" class="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white px-4 py-2 rounded-full">›</button>
+<button id="prevBtn"><span>‹</span></button>
+<button id="nextBtn"><span>›</span></button>
   </section>
 
   <style>
   /* Hexagon style */
   /* Character images */
-. skp-img {
-  width: 280px;
-  transition: transform .3s;
-}
-.skp-img:hover {
-  transform: scale(1.08) rotate(-3deg);
-}
+
+
 
 /* Initially hidden with opacity */
 #skp-slider {
@@ -869,16 +926,24 @@
   opacity: 1;
 }
 
+/* Character + glow fade in */
+.skp-banner .skp-character,
 .skp-banner .slide-text {
   opacity: 0;
   transform: translateY(20px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition: all 0.6s ease;
 }
 
-/* When active slide */
+.skp-banner.active .skp-character {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.2s;
+}
+
 .skp-banner.active .slide-text {
   opacity: 1;
   transform: translateY(0);
+  transition-delay: 0.5s;
 }
 
 .banner img{
@@ -887,6 +952,46 @@
   filter: grayscale(100%) brightness(80%); /* black-and-white + slightly dim */
 }
 
+#prevBtn, #nextBtn {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 20%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 3rem;
+  font-weight: bold;
+  cursor: pointer;
+  opacity: 0;
+  z-index: 100; /* ⬅️ raise above all banners */
+  transition: opacity 0.4s ease;
+  background: transparent;
+  pointer-events: none;
+}
+
+#prevBtn span, #nextBtn span {
+  background: rgba(0,0,0,0.4);
+  border-radius: 9999px;
+  padding: 0.25em 0.5em;
+  pointer-events: auto; /* arrows remain clickable */
+}
+
+/* Hover zones */
+#skp-slider:hover #prevBtn,
+#skp-slider:hover #nextBtn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Button placement */
+#prevBtn {
+  left: 0;
+}
+#nextBtn {
+  right: 0;
+}
 
 .banner:hover {
   filter: grayscale(0%) brightness(100%); /* full color + normal brightness */
@@ -1053,8 +1158,31 @@ function updateSlider() {
       <p class="mt-4 leading-relaxed">
         Students submit requests anonymously, SKP verifies, and donors step in to help. Every process is transparent and private.
       </p>
+      <!-- New SKP Banners -->
+<div class="mt-10 grid gap-6">
+  <!-- SRC -->
+  <div class="rounded-2xl bg-white/10 border border-white/10 p-6 backdrop-blur-md shadow-lg">
+    <h3 class="text-xl font-semibold mb-2">Student Representative Council (SRC)</h3>
+    <p class="text-white/80">The SRC represents the voices of students, manages initiatives, and bridges communication between students and school leadership.</p>
+  </div>
+  <!-- Peer Counselors -->
+  <div class="rounded-2xl bg-white/10 border border-white/10 p-6 backdrop-blur-md shadow-lg">
+    <h3 class="text-xl font-semibold mb-2">Peer Counselors</h3>
+    <p class="text-white/80">Peer Counselors provide emotional support, guidance, and create a safe space for students to share their concerns.</p>
+  </div>
+  <!-- Koperasi -->
+  <div class="rounded-2xl bg-white/10 border border-white/10 p-6 backdrop-blur-md shadow-lg">
+    <h3 class="text-xl font-semibold mb-2">Ahli Lembaga Koperasi</h3>
+    <p class="text-white/80">The Cooperative Board manages student business activities, helping fund initiatives and teaching financial responsibility.</p>
+  </div>
+  <!-- Editorial -->
+  <div class="rounded-2xl bg-white/10 border border-white/10 p-6 backdrop-blur-md shadow-lg">
+    <h3 class="text-xl font-semibold mb-2">Editorial Board</h3>
+    <p class="text-white/80">The Editorial Board documents student life, publishes content, and ensures school activities are well-communicated.</p>
+  </div>
+</div>
+
     </div>
-    <img src="illustration.png" alt="Process Illustration" class="rounded-2xl shadow-lg">
   </div>
 </section>
 
