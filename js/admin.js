@@ -711,7 +711,7 @@ document.querySelectorAll('[data-slider]').forEach(slider => {
             // Fetch current profile counters
             const { data: profile, error: pErr } = await supabase
               .from('profiles')
-              .select('wishes_granted, total_pledges, total_donated')
+              .select('wishes_granted, total_donated')
               .eq('id', donorId)
               .maybeSingle();
 

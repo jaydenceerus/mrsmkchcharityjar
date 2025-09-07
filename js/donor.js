@@ -103,13 +103,14 @@ async function getActiveUser() {
 
 function sumNumbersInText(text) {
   if (!text) return 0;
-  // match integers or decimals (handles 123, 123.45 or 123,45)
-  const matches = (text || '').match(/(\d+[.,]?\d*)/g);
+  // match numbers that come after RM (case-insensitive, allows decimals/comma)
+  const matches = (text || '').match(/RM\s*([\d.,]+)/gi);
   if (!matches) return 0;
+
   return matches.reduce((sum, token) => {
-    // normalize decimal comma -> dot and remove stray non-numeric characters
-    const normalized = token.replace(',', '.').replace(/[^\d.]/g, '');
-    const n = parseFloat(normalized);
+    // extract the numeric part after RM
+    const numPart = token.replace(/RM\s*/i, '').replace(',', '.').replace(/[^\d.]/g, '');
+    const n = parseFloat(numPart);
     return sum + (isNaN(n) ? 0 : n);
   }, 0);
 }
@@ -123,7 +124,7 @@ async function getActiveProfile() {
       const u = data.user;
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('username, full_name, hide_full_name, phone, affiliation, total_pledges, wishes_granted, total_donated, latest_code')
+        .select('username, full_name, hide_full_name, phone, affiliation, wishes_granted, total_donated, latest_code')
         .eq('id', u.id)
         .maybeSingle();
 
@@ -151,7 +152,6 @@ async function getActiveProfile() {
           hideFullName: profile.hide_full_name,
           phone: profile.phone,
           affiliation: profile.affiliation,
-          totalPledges: profile.total_pledges,
           wishesGranted: profile.wishes_granted,
           totalDonated: profile.total_donated,
           latestCode: profile.latest_code
@@ -186,7 +186,7 @@ async function getActiveProfile() {
   try {
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('username, full_name, hide_full_name, phone, affiliation, total_pledges, wishes_granted, total_donated, latest_code')
+      .select('username, full_name, hide_full_name, phone, affiliation, wishes_granted, total_donated, latest_code')
       .eq('id', anon.id)
       .maybeSingle();
 
@@ -206,7 +206,6 @@ async function getActiveProfile() {
         hideFullName: profile.hide_full_name,
         phone: profile.phone,
         affiliation: profile.affiliation,
-        totalPledges: profile.total_pledges,
         wishesGranted: profile.wishes_granted,
         totalDonated: profile.total_donated,
         latestCode: profile.latest_code
@@ -218,7 +217,6 @@ async function getActiveProfile() {
       id: anon.id,
       username: anon.username,
       created_at: new Date().toISOString(),
-      total_pledges: 0,
       wishes_granted: 0,
       total_donated: 0
     };
@@ -1466,8 +1464,8 @@ async function loadDefaultPledgeData() {
                    'Active - Payment Pending';
 
   const paymentText = currentDonation.status_phase >= 1
-    ? `$${amount.toFixed(2)} (Paid)`
-    : `Not yet paid ($${amount.toFixed(2)} pledged)`;
+  ? `RM${amount.toFixed(2)} (Paid)`
+  : `Not yet paid (RM${amount.toFixed(2)} pledged)`;
 
   const phase = currentDonation.status_phase ?? 0;
   const steps = [
@@ -1593,15 +1591,12 @@ document.getElementById('lookupBtn')?.addEventListener('click', async ()=> {
       <div class="text-xs opacity-70 mt-2">Sent ${new Date(ty.created_at).toLocaleString()}</div>
     </div>
   ` : '';
-  const payNowBtn = phase < 2 ? `
-  <div class="mt-4 flex justify-end">
+  const payNowBtn = phase < 1 ? `
     <button onclick="startPaymentFlow('${d.code}')"
-            class="px-4 py-2 rounded-lg bg-yellow-400 text-yellow-900 font-semibold hover:bg-yellow-300">
+            class="mt-3 px-4 py-2 rounded-lg bg-yellow-400 text-yellow-900 font-semibold hover:bg-yellow-300">
       Pay Now
-    </button>
-  </div>` : '';
-
-statusResult.innerHTML = `
+    </button>` : '';
+  statusResult.innerHTML = `
   <div class="flex flex-col gap-5">
     <div class="flex items-center justify-between">
       <div>
@@ -1614,19 +1609,16 @@ statusResult.innerHTML = `
         </span>
       </div>
     </div>
-
     <div class="rounded-xl bg-white/10 border border-white/10 p-5">
       <div class="grid gap-4">${items}</div>
-      ${payNowBtn}
     </div>
-
     ${tyBlock}
-
     <div class="rounded-xl bg-white/10 border border-white/10 p-5">
       <div class="text-sm opacity-80 mb-1">Student</div>
       <div class="font-semibold">${d.wish_nickname}</div>
       <div class="text-sm opacity-80 mt-3">Wish</div>
       <div>${w?.wish || '-'}</div>
+      ${payNowBtn}   <!-- ✅ Button appears only if not paid -->
     </div>
   </div>
 `;
@@ -1718,10 +1710,10 @@ async function openThread(conversationId, title) {
    Achievements + refresh highlights
    ------------------------- */
 async function renderAchievements() {
-  const topPledges = document.getElementById('topPledges');
+  const topWishes = document.getElementById('topWishes');
   const topValue = document.getElementById('topValue');
-  if (!topPledges || !topValue) return;
-  topPledges.innerHTML = '';
+  if (!topWishes || !topValue) return;
+  topWishes.innerHTML = '';
   topValue.innerHTML = '';
 
   const ds = await loadDonations();
