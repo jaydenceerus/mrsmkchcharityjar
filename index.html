@@ -202,12 +202,8 @@
     100% { transform: translateY(0) rotate(var(--tilt)); }
   }
   .char-img {
-  animation: floaty var(--dur,6s) ease-in-out infinite;
-  position: absolute;         /* take it out of normal flow */
-  top: 50%;                   /* push down 50% of parent */
-  left: 50%;                  /* push right 50% of parent */
-  transform: translate(-50%,-50%) rotate(var(--tilt));
-}
+    animation: floaty var(--dur,6s) ease-in-out infinite;
+  }
 </style>
 
 <!-- Top-left -->
@@ -215,7 +211,7 @@
   <div class="absolute inset-0 rounded-full" style="background: rgba(34,197,94,0.5); filter: blur(50px);"></div>
   <img src="assets/envy_handsbehindhead.png"
        alt="Green boy"
-       class="drop-shadow-xl object-contain char-img"
+       class="relative drop-shadow-xl object-contain char-img"
        style="height: 211px; --tilt: -5deg; --dur: 6.2s;"
        loading="lazy" />
 </div>
@@ -225,7 +221,7 @@
   <div class="absolute inset-0 rounded-full" style="background: rgba(249,115,22,0.3); filter: blur(50px);"></div>
   <img src="assets/gratitude_waving.png"
        alt="Orange boy"
-       class="drop-shadow-xl object-contain char-img"
+       class="relative drop-shadow-xl object-contain char-img"
        style="height: 211px; --tilt: -5deg; --dur: 5.8s;"
        loading="lazy" />
 </div>
@@ -235,7 +231,7 @@
   <div class="absolute inset-0 rounded-full" style="background: rgba(236,72,153,0.3); filter: blur(50px);"></div>
   <img src="assets/shy_crouch.png"
        alt="Pink girl sitting"
-       class="drop-shadow-xl object-contain char-img"
+       class="relative drop-shadow-xl object-contain char-img"
        style="height: 211px; --tilt: -5deg; --dur: 6.5s;"
        loading="lazy" />
 </div>
@@ -245,7 +241,7 @@
   <div class="absolute inset-0 rounded-full" style="background: rgba(250,204,21,0.3); filter: blur(50px);"></div>
   <img src="assets/chirpy_squatting.png"
        alt="Yellow girl standing"
-       class="drop-shadow-xl object-contain char-img"
+       class="relative drop-shadow-xl object-contain char-img"
        style="height: 240px; --tilt: 6deg; --dur: 5.9s;"
        loading="lazy" />
 </div>
@@ -255,7 +251,7 @@
   <div class="absolute inset-0 rounded-full" style="background: rgba(255,255,255,0.4); filter: blur(50px);"></div>
   <img src="assets/serenity_handsopen.png"
        alt="White character"
-       class="drop-shadow-xl object-contain char-img"
+       class="relative drop-shadow-xl object-contain char-img"
        style="height: 280px; --tilt: 4deg; --dur: 6.1s;"
        loading="lazy" />
 </div>
@@ -265,7 +261,7 @@
   <div class="absolute inset-0 rounded-full" style="background: rgba(159,230,255,0.4); filter: blur(50px);"></div>
   <img src="assets/worry_nervous.png"
        alt="Purple character"
-       class="drop-shadow-xl object-contain char-img"
+       class="relative drop-shadow-xl object-contain char-img"
        style="height: 240px; --tilt: -3deg; --dur: 6.4s;"
        loading="lazy" />
 </div>
