@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/x-icon" href="/assets/logoddrops.ico">
-  <style>
+   <style>
     :root { --glass: rgba(255,255,255,0.12); }
     body { font-family: 'Poppins', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
     .page { display: none; }
@@ -18,134 +18,134 @@
     .modal-visible { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); transition: all .18s ease; }
 
     @keyframes bob {
-  0%   { transform: translateY(0); }
-  50%  { transform: translateY(-6px); }
-  100% { transform: translateY(0); }
+    0%   { transform: translateY(0); }
+    50%  { transform: translateY(-6px); }
+    100% { transform: translateY(0); }
 }
 
-/* sway only rotates (no translate) */
-@keyframes sway {
-  0%   { transform: rotate(-3deg); }
-  50%  { transform: rotate(3deg); }
-  100% { transform: rotate(-3deg); }
-}
+    /* sway only rotates (no translate) */
+    @keyframes sway {
+      0%   { transform: rotate(-3deg); }
+      50%  { transform: rotate(3deg); }
+      100% { transform: rotate(-3deg); }
+    }
 
-body {
-  background: linear-gradient(135deg, #6b5bff, #ff6ec7, #5df7c3);
-  background-size: 400% 400%;
-  animation: gradientMove 15s ease infinite;
-}
+    body {
+      background: linear-gradient(135deg, #6b5bff, #ff6ec7, #5df7c3);
+      background-size: 400% 400%;
+      animation: gradientMove 15s ease infinite;
+    }
 
-@keyframes gradientMove {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
 
-#wish-jar {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px);
-  border-radius: 40px;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 0 20px rgba(255,255,255,0.2);
-}
+    #wish-jar {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      border-radius: 40px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 0 20px rgba(255,255,255,0.2);
+    }
 
-h1, h2 {
-  text-shadow: 0 0 10px rgba(255,255,255,0.5);
-}
+    h1, h2 {
+      text-shadow: 0 0 10px rgba(255,255,255,0.5);
+    }
 
-/* Outer wrapper handles bob (translate). Inner sway wrapper handles rotate. */
-g.ballWrap {
-  /* bob runs on this element (you already had inline bob timing) */
-  transform-box: fill-box; /* important for SVG transform origin handling */
-}
+    /* Outer wrapper handles bob (translate). Inner sway wrapper handles rotate. */
+    g.ballWrap {
+      /* bob runs on this element (you already had inline bob timing) */
+      transform-box: fill-box; /* important for SVG transform origin handling */
+    }
 
-/* Inner wrapper for rotation */
-g.sway {
-  transform-box: fill-box;
-  transform-origin: center center;
-  /* keep pointer events off on inner group so click hits the hit-circle when present */
-  pointer-events: none;
-}
+    /* Inner wrapper for rotation */
+    g.sway {
+      transform-box: fill-box;
+      transform-origin: center center;
+      /* keep pointer events off on inner group so click hits the hit-circle when present */
+      pointer-events: none;
+    }
 
-/* Pause while dragging if you use an is-dragging class on the outer wrap */
-g.ballWrap.is-dragging { animation-play-state: paused !important; }
+    /* Pause while dragging if you use an is-dragging class on the outer wrap */
+    g.ballWrap.is-dragging { animation-play-state: paused !important; }
     @keyframes glowPulse { 0%{box-shadow:0 0 0 0 rgba(255,255,255,0.35)} 70%{box-shadow:0 0 40px 8px rgba(255,255,255,0.15)} 100%{box-shadow:0 0 0 0 rgba(255,255,255,0)} }
 
     @keyframes pulseGlow {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-}
-@media (max-width: 768px) {
-  header { --header-h: 64px; }
-  main { padding-top: 0.75rem; } /* header is reasonably small already */
-}
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+    }
+    @media (max-width: 768px) {
+      header { --header-h: 64px; }
+      main { padding-top: 0.75rem; } /* header is reasonably small already */
+    }
 
-/* Hide large decorative characters on small screens to avoid overlap */
-@media (max-width: 1024px) {
-  .decorative-character { display: none !important; } /* class applied to big images */
-}
+    /* Hide large decorative characters on small screens to avoid overlap */
+    @media (max-width: 1024px) {
+      .decorative-character { display: none !important; } /* class applied to big images */
+    }
 
-/* Make jar responsive: width relative to viewport, with sensible max */
-#jarButton {
-  width: 85vw;
-  max-width: 520px;
-  height: 65vh;
-  max-height: 720px;
-}
+    /* Make jar responsive: width relative to viewport, with sensible max */
+    #jarButton {
+      width: 85vw;
+      max-width: 520px;
+      height: 65vh;
+      max-height: 720px;
+    }
 
-/* For very small screens, make jar height smaller so it won't overlap footer */
-@media (max-width: 420px) {
-  #jarButton { height: 62vh; }
-}
+    /* For very small screens, make jar height smaller so it won't overlap footer */
+    @media (max-width: 420px) {
+      #jarButton { height: 62vh; }
+    }
 
-/* Modal: allow vertical scrolling and keep it centered & usable on small screens */
-#wishModal > div:first-child {
-  max-height: 90vh;
-  overflow-y: auto;
-}
+    /* Modal: allow vertical scrolling and keep it centered & usable on small screens */
+    #wishModal > div:first-child {
+      max-height: 90vh;
+      overflow-y: auto;
+    }
 
-/* Student image container inside modal: convert to relative layout on small screens */
-@media (max-width: 640px) {
-  #wishStudentImageContainer {
-    position: relative !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    top: 0 !important;
-    margin-top: -48px;
-  }
-  #wishStudentImage, #wishStudentPlaceholder { width: 72px !important; height: 72px !important; }
-}
+    /* Student image container inside modal: convert to relative layout on small screens */
+    @media (max-width: 640px) {
+      #wishStudentImageContainer {
+        position: relative !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        top: 0 !important;
+        margin-top: -48px;
+      }
+      #wishStudentImage, #wishStudentPlaceholder { width: 72px !important; height: 72px !important; }
+    }
 
-/* Ensure any large "emotion" side art doesn't overlap modal on small screens */
-#modalEmotionWrapperRight, #modalEmotionWrapperLeft {
-  display: none;
-}
+    /* Ensure any large "emotion" side art doesn't overlap modal on small screens */
+    #modalEmotionWrapperRight, #modalEmotionWrapperLeft {
+      display: none;
+    }
 
-/* Ensure images scale down and never overflow */
-img, svg { max-width: 100%; height: auto; }
+    /* Ensure images scale down and never overflow */
+    img, svg { max-width: 100%; height: auto; }
 
-/* Make iframe in payment area responsive */
-#paymentIframe { min-height: 400px; }
+    /* Make iframe in payment area responsive */
+    #paymentIframe { min-height: 400px; }
 
-/* Utility: make inputs and buttons breathe on tiny screens */
-input, button, select, textarea { font-size: 15px; }
+    /* Utility: make inputs and buttons breathe on tiny screens */
+    input, button, select, textarea { font-size: 15px; }
 
-/* Ensure any absolute floating UI doesn't cause horizontal scroll */
-html, body { overflow-x: hidden; }
+    /* Ensure any absolute floating UI doesn't cause horizontal scroll */
+    html, body { overflow-x: hidden; }
 
-/* Extra: make the nav collapse button visible only on small screens */
-#mobileNavBtn { display: none; }
-@media (max-width: 768px) {
-  nav.desktop-nav { display: none; }
-  #mobileNavBtn { display: inline-flex; }
-}
+    /* Extra: make the nav collapse button visible only on small screens */
+    #mobileNavBtn { display: none; }
+    @media (max-width: 768px) {
+      nav.desktop-nav { display: none; }
+      #mobileNavBtn { display: inline-flex; }
+    }
 
-/* Small-screen modal backdrop spacing */
-#wishModal { padding: 1rem; }
+    /* Small-screen modal backdrop spacing */
+    #wishModal { padding: 1rem; }
   </style>
 </head>
 <body class="min-h-screen text-white overflow-x-hidden relative"
