@@ -137,7 +137,6 @@ async function getActiveProfile() {
           hideFullName: false,
           phone: null,
           affiliation: null,
-          totalPledges: 0,
           wishesGranted: 0,
           totalDonated: 0,
           latestCode: null
@@ -173,7 +172,7 @@ async function getActiveProfile() {
         hideFullName: false,
         phone: null,
         affiliation: null,
-        totalPledges: 0,
+
         wishesGranted: 0,
         totalDonated: 0,
         latestCode: null
@@ -194,7 +193,7 @@ async function getActiveProfile() {
       console.error("Error loading anon profile:", error);
       return {
         id: anon.id, username: anon.username, fullName: null, hideFullName: false,
-        phone: null, affiliation: null, totalPledges: 0, wishesGranted: 0, totalDonated: 0, latestCode: null
+        phone: null, affiliation: null, wishesGranted: 0, totalDonated: 0, latestCode: null
       };
     }
 
@@ -230,7 +229,6 @@ async function getActiveProfile() {
       hideFullName: false,
       phone: null,
       affiliation: null,
-      totalPledges: 0,
       wishesGranted: 0,
       totalDonated: 0,
       latestCode: null
@@ -239,7 +237,7 @@ async function getActiveProfile() {
     console.error('Unexpected error in getActiveProfile:', e);
     return {
       id: anon.id, username: anon.username, fullName: null, hideFullName: false,
-      phone: null, affiliation: null, totalPledges: 0, wishesGranted: 0, totalDonated: 0, latestCode: null
+      phone: null, affiliation: null, wishesGranted: 0, totalDonated: 0, latestCode: null
     };
   }
 }
@@ -546,7 +544,6 @@ function populateProfileUI(user) {
   const profAvatar = document.getElementById('profAvatar');
   const profUsername = document.getElementById('profUsername');
   const profRole = document.getElementById('profRole');
-  const profPledges = document.getElementById('profPledges');
   const profGranted = document.getElementById('profGranted');
   const profDonated = document.getElementById('profDonated');
   const profRecent = document.getElementById('profRecent');
@@ -572,7 +569,6 @@ function populateProfileUI(user) {
 
   if (profUsername) profUsername.textContent = displayName;
   if (profRole) profRole.textContent = (user.role || 'Donor');
-  if (profPledges) profPledges.textContent = (user.pledges_count ?? 0);
   if (profGranted) profGranted.textContent = (user.granted_count ?? 0);
   if (profDonated) profDonated.textContent = `RM${(user.donated_total ?? 0).toFixed(2)}`;
   if (profRecent) profRecent.textContent = (user.recent_pledge ?? '-') ;
@@ -585,7 +581,7 @@ function clearProfileUI() {
   const profAvatar = document.getElementById('profAvatar');
   const profUsername = document.getElementById('profUsername');
   const profRole = document.getElementById('profRole');
-  const profPledges = document.getElementById('profPledges');
+
   const profGranted = document.getElementById('profGranted');
   const profDonated = document.getElementById('profDonated');
   const profRecent = document.getElementById('profRecent');
@@ -595,7 +591,6 @@ function clearProfileUI() {
   if (profAvatar) { profAvatar.style.backgroundImage = ''; profAvatar.textContent = 'U'; }
   if (profUsername) profUsername.textContent = '-';
   if (profRole) profRole.textContent = '-';
-  if (profPledges) profPledges.textContent = '0';
   if (profGranted) profGranted.textContent = '0';
   if (profDonated) profDonated.textContent = 'RM0.00';
   if (profRecent) profRecent.textContent = '-';
@@ -1730,13 +1725,6 @@ async function renderAchievements() {
   const pledgesSorted = rows.slice().sort((a,b) => b.count - a.count).slice(0,5);
   const valueSorted   = rows.slice().sort((a,b) => b.value - a.value).slice(0,5);
 
-  pledgesSorted.forEach((r) => {
-    const line = document.createElement('div');
-    line.className = 'flex items-center justify-between rounded-xl bg-white/10 border border-white/10 p-3';
-    line.innerHTML = `<div class="font-semibold">${r.name}</div><div class="text-sm opacity-90">${r.count} pledge(s)</div>`;
-    topPledges.appendChild(line);
-  });
-
   valueSorted.forEach((r) => {
     const line = document.createElement('div');
     line.className = 'flex items-center justify-between rounded-xl bg-white/10 border border-white/10 p-3';
@@ -1768,7 +1756,6 @@ document.getElementById('profileBtn')?.addEventListener('click', async ()=> {
   document.getElementById('profileModal').classList.remove('hidden');
   document.getElementById('profUsername').textContent = user?.username;
   document.getElementById('profRole').textContent = user?.affiliation || '-';
-  document.getElementById('profPledges').textContent = user?.totalPledges || '-';
   document.getElementById('profDonated').textContent = user?.totalDonated || '-';
   document.getElementById('profGranted').textContent = user?.wishesGranted || '-';
   document.getElementById('profRecent').textContent = user?.latestCode || '-';
