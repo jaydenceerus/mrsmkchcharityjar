@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>DreamDrops — Donor</title>
+  <title>DreamDrops</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/x-icon" href="/assets/logoddrops.ico">
@@ -96,28 +96,26 @@
       overflow-y: auto;
     }
 
-    /* Student image container inside modal: convert to relative layout on small screens */
-    @media (max-width: 640px) {
-      #wishStudentImageContainer {
-        position: relative !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        top: 0 !important;
-        margin-top: -48px;
-      }
-      #wishStudentImage, #wishStudentPlaceholder { width: 72px !important; height: 72px !important; }
-    }
 
     /* Ensure any large "emotion" side art doesn't overlap modal on small screens */
-    #modalEmotionWrapperRight, #modalEmotionWrapperLeft {
-      display: none;
-    }
+    #modalEmotionWrapperRight, 
+#modalEmotionWrapperLeft {
+  display: block;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+/* On small screens: fade out */
+@media (max-width: 768px) {
+  #modalEmotionWrapperRight, 
+  #modalEmotionWrapperLeft {
+    opacity: 0;
+    pointer-events: none; /* prevent blocking modal clicks */
+  }
+}
 
     /* Ensure images scale down and never overflow */
     img, svg { max-width: 100%; height: auto; }
-
-    /* Make iframe in payment area responsive */
-    #paymentIframe { min-height: 400px; }
 
     /* Utility: make inputs and buttons breathe on tiny screens */
     input, button, select, textarea { font-size: 15px; }
@@ -150,7 +148,9 @@
   <header class="sticky top-0 z-40 bg-white/10 backdrop-blur border-b border-white/10">
     <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/20">🫙</span>
+        <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/0">
+          <img src="assets/transparentlogo.png" alt="Jar Icon" class="h-15 w-15 object-contain" />
+        </span>
         <div>
           <div class="font-bold text-lg leading-tight">DreamDrops</div>
           <div class="text-xs opacity-85">Tiny drop, big impact</div>
@@ -202,8 +202,12 @@
       100% { transform: translateY(0) rotate(var(--tilt)); }
     }
     .char-img {
-      animation: floaty var(--dur,6s) ease-in-out infinite;
-    }
+  animation: floaty var(--dur,6s) ease-in-out infinite;
+  position: absolute;         /* take it out of normal flow */
+  top: 50%;                   /* push down 50% of parent */
+  left: 30%;                  /* push right 50% of parent */
+  transform: translate(-50%,-50%) rotate(var(--tilt));
+}
   </style>
 
   <!-- Top-left -->
@@ -237,12 +241,12 @@
 </div>
 
 <!-- Bottom-right -->
-<div class="decorative-character hidden md:block absolute bottom-[10%] right-[8%] w-100 h-72 rounded-full flex items-center justify-center" style="transform: scaleX(-1);">
+<div class="decorative-character hidden md:block absolute bottom-[10%] right-[8%] w-72 h-72 rounded-full flex items-center justify-center" style="transform: scaleX(-1);">
   <div class="absolute inset-0 rounded-full" style="background: rgba(250,204,21,0.3); filter: blur(50px);"></div>
   <img src="assets/chirpy_squatting.png"
        alt="Yellow girl standing"
-       class="relative h-60 drop-shadow-xl object-contain char-img"
-       style="--tilt: 6deg; --dur: 5.9s;"
+       class="relative drop-shadow-xl object-contain char-img"
+       style="height: 211px;--tilt: 6deg; --dur: 5.9s;"
        loading="lazy" />
 </div>
 
@@ -993,19 +997,6 @@ function updateSlider() {
     }
   });
 }
-document.getElementById('mobileNavBtn')?.addEventListener('click', () => {
-    const panel = document.getElementById('mobileNavPanel');
-    if (!panel) return;
-    panel.classList.toggle('hidden');
-  });
-  // close mobile panel when clicking a route
-  document.querySelectorAll('#mobileNavPanel button[data-route]').forEach(b => {
-    b.addEventListener('click', (e) => {
-      const r = e.currentTarget.getAttribute('data-route');
-      if (r && typeof routeTo === 'function') routeTo(r);
-      document.getElementById('mobileNavPanel').classList.add('hidden');
-    });
-  });
 
 </script>
 

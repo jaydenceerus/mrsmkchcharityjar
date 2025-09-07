@@ -667,6 +667,20 @@ document.getElementById('logoutBtn')?.addEventListener('click', ()=> {
   window.location.href = 'login.html';
 });
 
+document.getElementById('mobileNavBtn')?.addEventListener('click', () => {
+    const panel = document.getElementById('mobileNavPanel');
+    if (!panel) return;
+    panel.classList.toggle('hidden');
+  });
+  // close mobile panel when clicking a route
+  document.querySelectorAll('#mobileNavPanel button[data-route]').forEach(b => {
+    b.addEventListener('click', (e) => {
+      const r = e.currentTarget.getAttribute('data-route');
+      if (r && typeof routeTo === 'function') routeTo(r);
+      document.getElementById('mobileNavPanel').classList.add('hidden');
+    });
+  });
+
 async function updateAuthUI() {
   const user = await getActiveUser(); // uses existing helper
   const profileBtn = document.getElementById('profileBtn');
