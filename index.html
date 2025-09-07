@@ -79,7 +79,73 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
     transform: scale(1.05);
   }
 }
+@media (max-width: 768px) {
+  header { --header-h: 64px; }
+  main { padding-top: 0.75rem; } /* header is reasonably small already */
+}
 
+/* Hide large decorative characters on small screens to avoid overlap */
+@media (max-width: 1024px) {
+  .decorative-character { display: none !important; } /* class applied to big images */
+}
+
+/* Make jar responsive: width relative to viewport, with sensible max */
+#jarButton {
+  width: 85vw;
+  max-width: 520px;
+  height: 65vh;
+  max-height: 720px;
+}
+
+/* For very small screens, make jar height smaller so it won't overlap footer */
+@media (max-width: 420px) {
+  #jarButton { height: 62vh; }
+}
+
+/* Modal: allow vertical scrolling and keep it centered & usable on small screens */
+#wishModal > div:first-child {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Student image container inside modal: convert to relative layout on small screens */
+@media (max-width: 640px) {
+  #wishStudentImageContainer {
+    position: relative !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    top: 0 !important;
+    margin-top: -48px;
+  }
+  #wishStudentImage, #wishStudentPlaceholder { width: 72px !important; height: 72px !important; }
+}
+
+/* Ensure any large "emotion" side art doesn't overlap modal on small screens */
+#modalEmotionWrapperRight, #modalEmotionWrapperLeft {
+  display: none;
+}
+
+/* Ensure images scale down and never overflow */
+img, svg { max-width: 100%; height: auto; }
+
+/* Make iframe in payment area responsive */
+#paymentIframe { min-height: 400px; }
+
+/* Utility: make inputs and buttons breathe on tiny screens */
+input, button, select, textarea { font-size: 15px; }
+
+/* Ensure any absolute floating UI doesn't cause horizontal scroll */
+html, body { overflow-x: hidden; }
+
+/* Extra: make the nav collapse button visible only on small screens */
+#mobileNavBtn { display: none; }
+@media (max-width: 768px) {
+  nav.desktop-nav { display: none; }
+  #mobileNavBtn { display: inline-flex; }
+}
+
+/* Small-screen modal backdrop spacing */
+#wishModal { padding: 1rem; }
   </style>
 </head>
 <body class="min-h-screen text-white overflow-x-hidden relative"
@@ -103,17 +169,37 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
         </div>
       </div>
       <nav class="flex items-center gap-2 text-sm">
-        <button data-route="home" class="navlink px-3 py-2 rounded-lg hover:bg-white/20 font-semibold bg-white/20">Wish Jar</button>
-        <button data-route="about" class="navlink px-3 py-2 rounded-lg hover:bg-white/20">About</button>
-        <button data-route="achievements" class="navlink px-3 py-2 rounded-lg hover:bg-white/20">Achievements</button>
-        <button data-route="status" class="navlink px-3 py-2 rounded-lg hover:bg-white/20">Donor Status</button>
-        <button data-route="inbox" class="navlink px-3 py-2 rounded-lg hover:bg-white/20">Inbox</button>
-        <span class="inline-block w-px h-6 bg-white/20 mx-1"></span>
-        <button id="profileBtn" class="px-3 py-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20">Profile</button>
-        <button id="logoutBtn" class="px-3 py-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20">Logout</button>
-        <button id="loginBtn" class="px-3 py-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20">Login</button>
+  <!-- Desktop nav (hidden on small screens) -->
+  <div class="desktop-nav hidden sm:flex items-center gap-2">
+    <button data-route="home" class="navlink px-3 py-2 rounded-lg hover:bg-white/20 font-semibold bg-white/20">Wish Jar</button>
+    <button data-route="about" class="navlink px-3 py-2 rounded-lg hover:bg-white/20">About</button>
+    <button data-route="achievements" class="navlink px-3 py-2 rounded-lg hover:bg-white/20">Achievements</button>
+    <button data-route="status" class="navlink px-3 py-2 rounded-lg hover:bg-white/20">Donor Status</button>
+    <button data-route="inbox" class="navlink px-3 py-2 rounded-lg hover:bg-white/20">Inbox</button>
+    <span class="inline-block w-px h-6 bg-white/20 mx-1"></span>
+    <button id="profileBtn" class="px-3 py-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20">Profile</button>
+    <button id="logoutBtn" class="px-3 py-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20">Logout</button>
+    <button id="loginBtn" class="px-3 py-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20">Login</button>
+  </div>
 
-      </nav>
+  <!-- Mobile hamburger (shown on small screens) -->
+  <button id="mobileNavBtn" class="sm:hidden px-3 py-2 rounded-lg bg-white/10 border border-white/20" aria-label="Open menu">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 12h18M3 18h18" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+</nav>
+
+<!-- Mobile menu panel (hidden by default) -->
+<div id="mobileNavPanel" class="fixed top-16 right-4 z-50 hidden bg-white/5 backdrop-blur rounded-xl p-3">
+  <div class="flex flex-col gap-2">
+    <button data-route="home" class="px-4 py-2 rounded-lg text-left">Wish Jar</button>
+    <button data-route="about" class="px-4 py-2 rounded-lg text-left">About</button>
+    <button data-route="achievements" class="px-4 py-2 rounded-lg text-left">Achievements</button>
+    <button data-route="status" class="px-4 py-2 rounded-lg text-left">Donor Status</button>
+    <button data-route="inbox" class="px-4 py-2 rounded-lg text-left">Inbox</button>
+    <hr class="border-white/10 my-2" />
+    <button id="mobileLogin" class="px-4 py-2 rounded-lg text-left">Login</button>
+  </div>
+</div>
     </div>
   </header>
 
@@ -133,7 +219,7 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
   </style>
 
   <!-- Top-left -->
-<div class="absolute top-[8%] left-[4%] w-72 h-72 rounded-full flex items-center justify-center">
+<div class="decorative-character hidden md:block absolute top-[8%] left-[4%] w-72 h-72 rounded-full flex items-center justify-center">
   <div class="absolute inset-0 rounded-full" style="background: rgba(34,197,94,0.5); filter: blur(50px);"></div>
   <img src="assets/envy_handsbehindhead.png"
        alt="Green boy"
@@ -143,7 +229,7 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
 </div>
 
 <!-- Top-right -->
-<div class="absolute top-[6%] right-[4%] w-72 h-72 rounded-full flex items-center justify-center" style="transform: scaleX(-1);">
+<div class="decorative-character hidden md:block absolute top-[6%] right-[4%] w-72 h-72 rounded-full flex items-center justify-center" style="transform: scaleX(-1);">
   <div class="absolute inset-0 rounded-full" style="background: rgba(249,115,22,0.3); filter: blur(50px);"></div>
   <img src="assets/gratitude_waving.png"
        alt="Orange boy"
@@ -153,7 +239,7 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
 </div>
 
 <!-- Bottom-left -->
-<div class="absolute bottom-[12%] left-[6%] w-72 h-72 rounded-full flex items-center justify-center">
+<div class="decorative-character hidden md:block absolute bottom-[12%] left-[6%] w-72 h-72 rounded-full flex items-center justify-center">
   <div class="absolute inset-0 rounded-full" style="background: rgba(236,72,153,0.3); filter: blur(50px);"></div>
   <img src="assets/shy_crouch.png"
        alt="Pink girl sitting"
@@ -163,7 +249,7 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
 </div>
 
 <!-- Bottom-right -->
-<div class="absolute bottom-[10%] right-[8%] w-100 h-72 rounded-full flex items-center justify-center" style="transform: scaleX(-1);">
+<div class="decorative-character hidden md:block absolute bottom-[10%] right-[8%] w-100 h-72 rounded-full flex items-center justify-center" style="transform: scaleX(-1);">
   <div class="absolute inset-0 rounded-full" style="background: rgba(250,204,21,0.3); filter: blur(50px);"></div>
   <img src="assets/chirpy_squatting.png"
        alt="Yellow girl standing"
@@ -174,7 +260,7 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
 
 </div>
   <!-- New: White Character -->
-  <div class="absolute top-[35%] left-[8%] w-72 h-72 rounded-full flex items-center justify-center">
+  <div class="decorative-character hidden md:block absolute top-[35%] left-[8%] w-72 h-72 rounded-full flex items-center justify-center">
     <div class="absolute inset-0 rounded-full" style="background: rgba(255,255,255,0.4); filter: blur(50px);"></div>
     <img src="assets/serenity_handsopen.png"
          alt="White character"
@@ -184,7 +270,7 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
   </div>
 
   <!-- New: Purple Character -->
-  <div class="absolute top-[35%] right-[6%] w-72 h-72 rounded-full flex items-center justify-center" style="transform: scaleX(-1);">
+  <div class="decorative-character hidden md:block absolute top-[35%] right-[6%] w-72 h-72 rounded-full flex items-center justify-center" style="transform: scaleX(-1);">
     <div class="absolute inset-0 rounded-full" style="background: rgba(159,230,255,0.4); filter: blur(50px);"></div>
     <img src="assets/worry_nervous.png"
          alt="Purple character"
@@ -197,7 +283,7 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
         <p class="text-white/90 text-lg leading-relaxed mt-3">Each ball is an anonymous student wish. Click to see their story and pledge support.</p>
         <div class="mt-10 flex flex-col items-center">
           <div id="jarButton" role="button" tabindex="0" aria-label="Wish Jar"
-               class="group relative mx-auto w-[380px] h-[580px] md:w-[520px] md:h-[720px] rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/12 transition-all duration-300"
+               class="group relative mx-auto w-[85vw] max-w-[520px] h-[62vh] max-h-[720px] rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/12 transition-all duration-300"
                style="animation: glowPulse 3s ease-in-out infinite">
             <svg viewBox="0 0 360 660" class="absolute inset-0 w-full h-full">
               <defs>
@@ -244,8 +330,8 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
 
     <!-- WISH MODAL -->
     <div id="modalBackdrop" class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity"></div>
-    <div id="wishModal" class="fixed z-50 inset-0 flex items-center justify-center p-6 modal-hidden">
-      <div class="w-full max-w-lg bg-white text-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+    <div id="wishModal" class="fixed z-50 inset-0 flex items-center justify-center p-4 modal-hidden">
+      <div class="w-full max-w-lg bg-white text-slate-800 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh]">
         <div id="wishModalHeader" class="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 h-28">
           <button id="closeModalTop" aria-label="Close" class="absolute top-3 right-3 rounded-full bg-white/20 hover:bg-white/30 text-white p-2 transition">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -253,7 +339,7 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
             </svg>
           </button>
 <div id="wishStudentImageContainer"
-     class="absolute -bottom-10 left-1/2 -translate-x-1/2 h-20 w-20 rounded-full ring-4 ring-white overflow-hidden bg-white flex items-center justify-center">
+     class="md:absolute relative md:-bottom-10 left-1/2 -translate-x-1/2 h-20 w-20 rounded-full ring-4 ring-white overflow-hidden bg-white flex items-center justify-center">
   
   <!-- Actual student image (hidden by default) -->
   <img id="wishStudentImage"
@@ -389,7 +475,7 @@ g.ballWrap.is-dragging { animation-play-state: paused !important; }
 
 <!-- DONATE / PLEDGE FORM -->
 <section id="page-donate" class="page">
-  <div class="max-w-3xl mx-auto px-6 py-10">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8">
     <div class="rounded-2xl bg-white/10 border border-white/10 p-6">
       <div class="flex items-center justify-between">
         <h2 class="text-3xl font-bold">Pledge Support</h2>
@@ -919,6 +1005,20 @@ function updateSlider() {
     }
   });
 }
+document.getElementById('mobileNavBtn')?.addEventListener('click', () => {
+    const panel = document.getElementById('mobileNavPanel');
+    if (!panel) return;
+    panel.classList.toggle('hidden');
+  });
+  // close mobile panel when clicking a route
+  document.querySelectorAll('#mobileNavPanel button[data-route]').forEach(b => {
+    b.addEventListener('click', (e) => {
+      const r = e.currentTarget.getAttribute('data-route');
+      if (r && typeof routeTo === 'function') routeTo(r);
+      document.getElementById('mobileNavPanel').classList.add('hidden');
+    });
+  });
+
 </script>
 
 <!-- Generic Module Section (Background Image) -->

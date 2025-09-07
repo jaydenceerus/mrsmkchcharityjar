@@ -1533,7 +1533,7 @@ async function loadDefaultPledgeData() {
                   </div>
                   <div>
                     <span class="text-sm text-white/70">Payment Amount:</span>
-                    <p class="font-medium text-green-300">$${donation.amount} (Paid)</p>
+                    <p class="font-medium text-green-300">RM${donation.amount} (Paid)</p>
                   </div>
                 </div>
               </div>
