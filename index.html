@@ -196,22 +196,26 @@
     <section id="page-home" class="page active">
       <div class="absolute inset-0 overflow-hidden -z-10 pointer-events-none">
   <style>
-    @keyframes floaty {
-      0%   { transform: translateY(0) rotate(var(--tilt)); }
-      50%  { transform: translateY(-12px) rotate(calc(var(--tilt) + 2deg)); }
-      100% { transform: translateY(0) rotate(var(--tilt)); }
-    }
-    .char-img {
-      animation: floaty var(--dur,6s) ease-in-out infinite;
-    }
-  </style>
+  @keyframes floaty {
+    0%   { transform: translateY(0) rotate(var(--tilt)); }
+    50%  { transform: translateY(-12px) rotate(calc(var(--tilt) + 2deg)); }
+    100% { transform: translateY(0) rotate(var(--tilt)); }
+  }
+  .char-img {
+  animation: floaty var(--dur,6s) ease-in-out infinite;
+  position: absolute;         /* take it out of normal flow */
+  top: 50%;                   /* push down 50% of parent */
+  left: 50%;                  /* push right 50% of parent */
+  transform: translate(-50%,-50%) rotate(var(--tilt));
+}
+</style>
 
-  <!-- Top-left -->
+<!-- Top-left -->
 <div class="decorative-character hidden md:block absolute top-[8%] left-[4%] w-72 h-72 rounded-full flex items-center justify-center">
   <div class="absolute inset-0 rounded-full" style="background: rgba(34,197,94,0.5); filter: blur(50px);"></div>
   <img src="assets/envy_handsbehindhead.png"
        alt="Green boy"
-       class="relative drop-shadow-xl object-contain char-img"
+       class="drop-shadow-xl object-contain char-img"
        style="height: 211px; --tilt: -5deg; --dur: 6.2s;"
        loading="lazy" />
 </div>
@@ -241,31 +245,31 @@
   <div class="absolute inset-0 rounded-full" style="background: rgba(250,204,21,0.3); filter: blur(50px);"></div>
   <img src="assets/chirpy_squatting.png"
        alt="Yellow girl standing"
-       class="relative h-60 drop-shadow-xl object-contain char-img"
-       style="--tilt: 6deg; --dur: 5.9s;"
+       class="relative drop-shadow-xl object-contain char-img"
+       style="height: 240px; --tilt: 6deg; --dur: 5.9s;"
        loading="lazy" />
 </div>
 
+<!-- White Character -->
+<div class="decorative-character hidden md:block absolute top-[35%] left-[8%] w-72 h-72 rounded-full flex items-center justify-center">
+  <div class="absolute inset-0 rounded-full" style="background: rgba(255,255,255,0.4); filter: blur(50px);"></div>
+  <img src="assets/serenity_handsopen.png"
+       alt="White character"
+       class="relative drop-shadow-xl object-contain char-img"
+       style="height: 280px; --tilt: 4deg; --dur: 6.1s;"
+       loading="lazy" />
 </div>
-  <!-- New: White Character -->
-  <div class="decorative-character hidden md:block absolute top-[35%] left-[8%] w-72 h-72 rounded-full flex items-center justify-center">
-    <div class="absolute inset-0 rounded-full" style="background: rgba(255,255,255,0.4); filter: blur(50px);"></div>
-    <img src="assets/serenity_handsopen.png"
-         alt="White character"
-         class="relative drop-shadow-xl object-contain char-img"
-         style="height: 280px; --tilt: 4deg; --dur: 6.1s;"
-         loading="lazy" />
-  </div>
 
-  <!-- New: Purple Character -->
-  <div class="decorative-character hidden md:block absolute top-[35%] right-[6%] w-72 h-72 rounded-full flex items-center justify-center" style="transform: scaleX(-1);">
-    <div class="absolute inset-0 rounded-full" style="background: rgba(159,230,255,0.4); filter: blur(50px);"></div>
-    <img src="assets/worry_nervous.png"
-         alt="Purple character"
-         class="relative drop-shadow-xl object-contain char-img"
-         style="height: 240px; --tilt: -3deg; --dur: 6.4s;"
-         loading="lazy" />
-  </div>
+<!-- Purple Character -->
+<div class="decorative-character hidden md:block absolute top-[35%] right-[6%] w-72 h-72 rounded-full flex items-center justify-center" style="transform: scaleX(-1);">
+  <div class="absolute inset-0 rounded-full" style="background: rgba(159,230,255,0.4); filter: blur(50px);"></div>
+  <img src="assets/worry_nervous.png"
+       alt="Purple character"
+       class="relative drop-shadow-xl object-contain char-img"
+       style="height: 240px; --tilt: -3deg; --dur: 6.4s;"
+       loading="lazy" />
+</div>
+
       <div class="max-w-6xl mx-auto px-6 py-10 text-center">
         <h1 class="text-3xl md:text-4xl font-bold tracking-tight">Choose a Wish to Brighten a Day</h1>
         <p class="text-white/90 text-lg leading-relaxed mt-3">Each ball is an anonymous student wish. Click to see their story and pledge support.</p>
