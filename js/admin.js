@@ -638,140 +638,47 @@ document.querySelectorAll('[data-delete-donation]').forEach(btn => {
 });
 
 // --- Slider Logic ---
-document.querySelectorAll('[data-slider]').forEach(slider => {
+  document.querySelectorAll('[data-slider]').forEach(slider => {
   slider.addEventListener('input', async () => {
     const donationCode = slider.getAttribute('data-slider');
     const newPhase = parseInt(slider.value, 10);
-    const updateData = { status_phase: newPhase };
 
     console.log("changing", donationCode, newPhase);
 
-    // update donation status_phase
+    // Build updateData carefully
+    const updateData = { status_phase: newPhase };
+    if (newPhase === 1) {
+      // Only set received_at if it's currently null
+      const { data: donation } = await supabase
+        .from('donations')
+        .select('received_at')
+        .eq('code', donationCode)
+        .maybeSingle();
 
-    // UI: update the status badge immediately
-    const badge = slider.closest('.rounded-2xl')
-      .querySelector('span.px-3'); // status badge span
-    if (badge) {
-      badge.textContent =
-        newPhase === 2 ? 'Granted' :
-        newPhase === 1 ? 'Received' : 'Pledged';
-      badge.className =
-        `px-3 py-1 rounded-full font-semibold text-sm ${
-          newPhase === 2 ? 'bg-green-400 text-green-900' :
-          newPhase === 1 ? 'bg-blue-300 text-blue-900' :
-          'bg-yellow-300 text-yellow-900'
-        }`;
+      if (!donation?.received_at) {
+        updateData.received_at = new Date().toISOString();
+      }
+    } else if (newPhase === 0) {
+      updateData.received_at = null;
     }
-     if (newPhase === 1) {
-      // Mark as received
-      updateData.received_at = new Date().toISOString();
-    } else if (newPhase === 2) {
-      // Mark as granted
-      updateData.granted_at = new Date().toISOString();
-    }
+
+    // Update donation
     const { error: updateErr } = await supabase
       .from('donations')
       .update(updateData)
       .eq('code', donationCode);
 
-      if (updateErr) {
+    if (updateErr) {
       console.error("Error updating status:", updateErr);
       alert("Failed to update donation status.");
       return;
     }
 
-
-    // If the donation was moved to "Granted", update wish + profile totals
-    if (newPhase === 2) {
-      try {
-        // 1) Fetch the donation to get donor_id and wish_id & donor.amount
-        const { data: donation, error: dErr } = await supabase
-          .from('donations')
-          .select('*')
-          .eq('code', donationCode)
-          .maybeSingle();
-
-        if (dErr) {
-          console.error("Failed to fetch donation for post-grant updates:", dErr);
-        } else if (donation) {
-          const donorId = donation.donor_id;
-          const wishId = donation.wish_id;
-
-          // 2) Mark wish as granted and store donation code on wish
-          if (wishId) {
-            const { error: wishErr } = await supabase
-              .from('wishes')
-              .update({ granted: true })
-              .eq('id', wishId);
-            if (wishErr) console.error("Failed to update wish.granted:", wishErr);
-          }
-
-          // 3) Update profile counters for donor (if donor_id exists)
-          if (donorId) {
-            // Fetch current profile counters
-            const { data: profile, error: pErr } = await supabase
-              .from('profiles')
-              .select('wishes_granted, total_donated')
-              .eq('id', donorId)
-              .maybeSingle();
-
-            if (pErr) {
-              console.error("Error loading profile for donor:", pErr);
-            } else {
-              // parse donation amount from donation.donor.amount (safe parsing)
-              let donationAmount = 0;
-              try {
-                const raw = (donation.donor && donation.donor.amount) ? String(donation.donor.amount) : '';
-                donationAmount = parseFloat(raw.replace(/[^0-9.-]+/g, '')) || 0;
-              } catch (e) { donationAmount = 0; }
-
-              const newWishesGranted = (profile?.wishes_granted || 0) + 1;
-              const newTotalPledges = (profile?.total_pledges || 0) + 1;
-              const newTotalDonated = (parseFloat(profile?.total_donated || 0) || 0) + donationAmount;
-
-              const { error: updErr } = await supabase
-                .from('profiles')
-                .update({
-                  wishes_granted: newWishesGranted,
-                  total_pledges: newTotalPledges,
-                  total_donated: newTotalDonated
-                })
-                .eq('id', donorId);
-
-              if (updErr) console.error("Error updating profile counters:", updErr);
-            }
-          } else {
-            console.log("Donation has no donor_id; skipping profile updates.");
-          }
-        } else {
-          console.warn("Donation not found when trying to perform grant-side updates.");
-        }
-      } catch (e) {
-        console.error("Unexpected error while performing grant updates:", e);
-      }
-    } else {
-      try {
-        const { data: donation, error: dErr } = await supabase
-          .from('donations')
-          .select('*')
-          .eq('code', donationCode)
-          .maybeSingle();
-          if (dErr) {
-          console.error("Failed to fetch donation for post-grant updates:", dErr);
-        } else if (donation) {
-          const wishId = donation.wish_id;
-        const { error: wishErr } = await supabase
-          .from('wishes')
-          .update({ granted: false })
-          .eq('id', wishId);
-        if (wishErr) console.error("Failed to update wish.granted:", wishErr);
-      }
-      } catch (e) {
-        console.error("Unexpected error while performing grant updates:", e);
-      }
-    }
+    // ✅ Stats handled by DB triggers
   });
 });
+
+
 
 
     }
