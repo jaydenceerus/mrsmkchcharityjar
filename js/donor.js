@@ -1403,6 +1403,24 @@ donorForm?.addEventListener('submit', async (e) => {
   await saveDonation(donation);
   await setLatestCode(code);
 
+  // If donor provided email, send them pledge info
+const donorEmail = fd.get('email') || (user.email ?? null);
+if (donorEmail) {
+  const payNowLink = `${window.location.origin}/pay?code=${encodeURIComponent(code)}`;
+
+  const { error } = await supabase.functions.invoke('pledge-email', {
+    body: {
+      email: donorEmail,
+      name: donorDisplayName,
+      code,
+      link: payNowLink
+    }
+  });
+
+  if (error) console.error("Error sending pledge email:", error);
+}
+
+
   // set wish.donationcode
   const { error: wishUpdateError } = await supabase.from('wishes').update({ donationcode: code }).eq('id', target.id);
   if (wishUpdateError) console.error("Error updating wish with donation code:", wishUpdateError);
@@ -1436,6 +1454,7 @@ if (user.isAuth) {
   alert('Pledge submitted! You can chat in Inbox.');
   routeTo('inbox');
   if (createdConvo && createdConvo.id) openThread(createdConvo.id, createdConvo.title);
+
 } else {
   alert('Pledge submitted! Please submit payment as soon as possible.');
   routeTo('home');
