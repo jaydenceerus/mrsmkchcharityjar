@@ -1407,7 +1407,7 @@ donorForm?.addEventListener('submit', async (e) => {
 const donorEmail = fd.get('email') || (user.email ?? null);
 if (donorEmail) {
   console.log("test");
-  const payNowLink = `${window.location.origin}/pay?code=${encodeURIComponent(code)}`;
+  const payNowLink = `https://koperasimrsmkuchingberhad.onpay.my/order/form/6`;
 
   const { error } = await supabase.functions.invoke('pledge-email', {
     body: {
