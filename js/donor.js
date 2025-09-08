@@ -1403,23 +1403,23 @@ donorForm?.addEventListener('submit', async (e) => {
   await saveDonation(donation);
   await setLatestCode(code);
 
-  // If donor provided email, send them pledge info
-const donorEmail = fd.get('email') || (user.email ?? null);
-if (donorEmail) {
-  console.log("test");
-  const payNowLink = `https://koperasimrsmkuchingberhad.onpay.my/order/form/6`;
-
-  const { error } = await supabase.functions.invoke('pledge-email', {
-    body: {
-      email: donorEmail,
-      name: donorDisplayName,
-      code,
-      link: payNowLink
+  const donorEmail = fd.get('email') || (user.email ?? null);
+  if (donorEmail) {
+    try {
+      const payNowLink = `https://koperasimrsmkuchingberhad.onpay.my/order/form/6`;
+      const { error } = await supabase.functions.invoke('pledge-email', {
+        body: {
+          email: donorEmail,
+          name: donorDisplayName,
+          code,
+          link: payNowLink
+        }
+      });
+      if (error) console.error("Error sending pledge email:", error);
+    } catch (err) {
+      console.error("Exception while sending pledge email:", err);
     }
-  });
-
-  if (error) console.error("Error sending pledge email:", error);
-}
+  }
 
 
   // set wish.donationcode
