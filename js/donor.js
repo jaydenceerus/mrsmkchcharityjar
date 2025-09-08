@@ -1406,6 +1406,7 @@ donorForm?.addEventListener('submit', async (e) => {
   // If donor provided email, send them pledge info
 const donorEmail = fd.get('email') || (user.email ?? null);
 if (donorEmail) {
+  console.log("test");
   const payNowLink = `${window.location.origin}/pay?code=${encodeURIComponent(code)}`;
 
   const { error } = await supabase.functions.invoke('pledge-email', {
