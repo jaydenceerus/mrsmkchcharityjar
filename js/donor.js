@@ -1403,7 +1403,7 @@ donorForm?.addEventListener('submit', async (e) => {
   await saveDonation(donation);
   await setLatestCode(code);
 
-  const donorEmail = fd.get('email') || (user.email ?? null);
+   const donorEmail = fd.get('email') || (user.email ?? null);
   if (donorEmail) {
     try {
       const payNowLink = `https://koperasimrsmkuchingberhad.onpay.my/order/form/6`;
