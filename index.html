@@ -315,10 +315,10 @@
         <h1 class="text-3xl md:text-4xl font-bold tracking-tight">Choose a Wish to Brighten a Day</h1>
         <p class="text-white/90 text-lg leading-relaxed mt-3">Each ball is an anonymous student wish. Click to see their story and pledge support.</p>
         <div class="mt-10 flex flex-col items-center">
-          <div id="jarButton" role="button" tabindex="0" aria-label="Wish Jar"
-               class="group relative mx-auto w-[380px] h-[580px] md:w-[520px] md:h-[720px] rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/12 transition-all duration-300"
-               style="animation: glowPulse 3s ease-in-out infinite">
-            <svg viewBox="0 0 360 660" class="absolute inset-0 w-full h-full">
+  <div id="jarButton" role="button" tabindex="0" aria-label="Wish Jar"
+       class="group relative mx-auto w-full max-w-[380px] md:max-w-[520px] aspect-[380/580] md:aspect-[520/720] rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/12 transition-all duration-300"
+       style="animation: glowPulse 3s ease-in-out infinite">
+    <svg viewBox="0 0 360 660" class="absolute inset-0 w-full h-full">
               <defs>
                 <linearGradient id="jarGlass" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stop-color="rgba(255,255,255,0.7)"/>
@@ -366,29 +366,17 @@
     <div id="wishModal" class="fixed z-50 inset-0 flex items-center justify-center p-4 modal-hidden">
       <div class="w-full max-w-lg bg-white text-slate-800 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh]">
         <div id="wishModalHeader" class="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 h-28">
-          <button id="closeModalTop" aria-label="Close" class="absolute top-3 right-3 rounded-full bg-white/20 hover:bg-white/30 text-white p-2 transition">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M6 6l12 12M18 6L6 18" stroke="white" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </button>
-<div id="wishStudentImageContainer"
-     class="md:absolute relative md:-bottom-10 left-1/2 -translate-x-1/2 h-20 w-20 rounded-full ring-4 ring-white overflow-hidden bg-white flex items-center justify-center">
-  
-  <!-- Actual student image (hidden by default) -->
-  <img id="wishStudentImage"
-       src=""
-       alt="Student Image"
-       class="h-20 w-20 object-cover rounded-full hidden" />
-
-  <!-- Default placeholder avatar -->
-  <svg id="wishStudentPlaceholder" viewBox="0 0 64 64" class="h-16 w-16">
-    <circle cx="32" cy="32" r="30" fill="#EEF2FF"/>
-    <circle cx="32" cy="26" r="10" fill="#A78BFA"/>
-    <path d="M16 50c4-8 12-12 16-12s12 4 16 12" fill="#C4B5FD"/>
-  </svg>
+  <div id="wishStudentImageContainer"
+       class="absolute left-1/2 -translate-x-1/2 top-[70%] md:top-auto md:-bottom-10 h-20 w-20 rounded-full ring-4 ring-white overflow-hidden bg-white flex items-center justify-center">
+    <img id="wishStudentImage" src="" alt="Student Image" class="h-20 w-20 object-cover rounded-full hidden" />
+    <svg id="wishStudentPlaceholder" viewBox="0 0 64 64" class="h-16 w-16">
+      <circle cx="32" cy="32" r="30" fill="#EEF2FF"/>
+      <circle cx="32" cy="26" r="10" fill="#A78BFA"/>
+      <path d="M16 50c4-8 12-12 16-12s12 4 16 12" fill="#C4B5FD"/>
+    </svg>
+  </div>
 </div>
 
-        </div>
         <div class="px-6 pt-12 pb-6">
           <div class="text-center">
             <h2 id="wishNickname" class="text-2xl font-bold text-slate-900">Student</h2>
@@ -503,6 +491,8 @@
     animation: charPulseGlow 2.5s ease-in-out infinite;
     --glowStart: drop-shadow(0 0 15px rgba(255,255,255,0.8)) drop-shadow(0 0 30px #6366F199);
   --glowMid: drop-shadow(0 0 25px rgba(255,255,255,1)) drop-shadow(0 0 45px #6366F1E6);
+  transform: translateX(40px); /* adjust value as needed */
+
   }
 
   /* Hide emotion character on small screens to avoid overlap */
@@ -818,8 +808,8 @@
 
     <!-- Text fades in after character -->
     <div class="text-white max-w-xl slide-text">
-      <h3 class="text-4xl font-bold mb-4 text-yellow-300">Chirpy</h3>
-      <p class="text-lg">BWP manages and updates the Dream Drops website, keeping all information accurate and up to date.</p>
+      <h3 class="text-4xl font-bold mb-4 text-yellow-300">Mr. Chirpy</h3>
+      <p class="text-lg">When a student receives help through the Wish Jar, a chirpy feeling bubbles up inside them—light, warm, and unexpectedly joyful. It’s as if a weight has been lifted, and for a moment, worries about tuition, books, or daily necessities fade into the background.</p>
     </div>
   </div>
 </div>
@@ -837,8 +827,8 @@
       <img src="assets/serenity.png" class="relative skp-img">
     </div>
     <div class="text-white max-w-xl slide-text">
-      <h3 class="text-4xl font-bold mb-4 text-white">Pembimbing Rakan Sebaya (PRS)</h3>
-      <p class="text-lg">PRS collects the names of students eligible to join and encourages participation in the program.</p>
+      <h3 class="text-4xl font-bold mb-4 text-white">Mr. Serenity</h3>
+      <p class="text-lg">When a student experiences serenity after receiving support from the Wish Jar, a calm and steady peace settles over them. The usual tension about finances and daily struggles softens, replaced by a quiet assurance that they are not facing challenges alone.</p>
     </div>
   </div>
 </div>
@@ -853,8 +843,8 @@
       <img src="assets/envy.png" class="relative skp-img">
     </div>
     <div class="text-white max-w-xl slide-text">
-      <h3 class="text-4xl font-bold mb-4 text-green-400">Jawatan Pengurusan Asrama (JPA)</h3>
-      <p class="text-lg">JPA delivers the granted wishes to students, making each moment special.</p>
+      <h3 class="text-4xl font-bold mb-4 text-green-400">Mr. Envy</h3>
+      <p class="text-lg">Before receiving help, a student might feel envy as they watch others manage their studies and daily needs with ease. There’s a subtle sting in seeing peers afford things they struggle to get—books, meals, or even simple comforts—while they feel left behind.</p>
     </div>
   </div>
 </div>
@@ -869,8 +859,8 @@
       <img src="assets/gratitude.png" class="relative skp-img">
     </div>
     <div class="text-white max-w-xl slide-text">
-      <h3 class="text-4xl font-bold mb-4 text-orange-300">English Motivational Commitee (EMC)</h3>
-      <p class="text-lg">EMC promotes the Dream Drops website on social media to raise awareness.</p>
+      <h3 class="text-4xl font-bold mb-4 text-orange-300">Mr. Gratitude</h3>
+      <p class="text-lg">When a student feels gratitude after receiving help from the Wish Jar, their heart swells with appreciation and thankfulness. Every small act of support—be it a book, a meal, or tuition assistance—feels meaningful, and they are deeply aware of the care behind it.</p>
     </div>
   </div>
 </div>
@@ -885,8 +875,8 @@
       <img src="assets/shy.png" class="relative skp-img">
     </div>
     <div class="text-white max-w-xl slide-text">
-      <h3 class="text-4xl font-bold mb-4 text-pink-300">Lembaga Disiplin Pelajar (LDP)</h3>
-      <p class="text-lg">LDP collects and organizes information from students joining the program.</p>
+      <h3 class="text-4xl font-bold mb-4 text-pink-300">Ms. Shyness</h3>
+      <p class="text-lg">Before receiving help, a student might feel shyness or embarrassment, a quiet awkwardness about having to ask for or accept support. They may worry about being judged, feeling exposed or different from their peers who don’t face the same struggles.</p>
     </div>
   </div>
 </div>
@@ -901,8 +891,8 @@
       <img src="assets/worry.png" class="relative skp-img">
     </div>
     <div class="text-white max-w-xl slide-text">
-      <h3 class="text-4xl font-bold mb-4 text-purple-300">Sidang Redaksi (SR)</h3>
-      <p class="text-lg">SR captures the moments where students receive their wishes, highlighting the happiness & sharing the gratefulness for everyone to see.</p>
+      <h3 class="text-4xl font-bold mb-4 text-purple-300">Ms. Worry</h3>
+      <p class="text-lg">Before receiving help, a student may feel worry, a persistent knot of anxiety about how they will manage their studies and daily needs. Thoughts race about unpaid fees, missing meals, or falling behind in class, and each small challenge feels heavier than it should.</p>
     </div>
   </div>
 </div>
@@ -1204,8 +1194,8 @@ function updateSlider() {
           <div class="w-full flex-shrink-0 p-6">
             <div class="rounded-2xl bg-white/6 p-6 text-center">
               <img src="assets/pplface.jpeg" alt="" class="mx-auto rounded-xl mb-4 w-full max-w-[420px] h-52 object-cover">
-              <h3 class="text-xl font-semibold">Jayden Cyrus Paul</h3>
-              <p class="mt-2 opacity-80">“This project SAVED my life, I was so hungry and needed so much to survive but kind-hearted souls lent a hand through this website”</p>
+              <h3 class="text-xl font-semibold">J***** ******</h3>
+              <p class="mt-2 opacity-80">“These shoes aren’t just shoes—they’re freedom. I can run, play, and feel proud again. Thank you so much!”</p>
             </div>
           </div>
 
@@ -1213,8 +1203,8 @@ function updateSlider() {
           <div class="w-full flex-shrink-0 p-6">
             <div class="rounded-2xl bg-white/6 p-6 text-center">
               <img src="story2.jpg" alt="" class="mx-auto rounded-xl mb-4 w-full max-w-[420px] h-52 object-cover">
-              <h3 class="text-xl font-semibold">Student B</h3>
-              <p class="mt-2 opacity-80">“The support helped my family during a difficult time.”</p>
+              <h3 class="text-xl font-semibold">M******** ***** *** *****</h3>
+              <p class="mt-2 opacity-80">“This little lamp has changed my nights. I can study without straining my eyes and focus on my future. Thank you for giving me this light!”</p>
             </div>
           </div>
 
@@ -1222,7 +1212,7 @@ function updateSlider() {
           <div class="w-full flex-shrink-0 p-6">
             <div class="rounded-2xl bg-white/6 p-6 text-center">
               <img src="story3.jpg" alt="" class="mx-auto rounded-xl mb-4 w-full max-w-[420px] h-52 object-cover">
-              <h3 class="text-xl font-semibold">Student C</h3>
+              <h3 class="text-xl font-semibold">C*** **** ***</h3>
               <p class="mt-2 opacity-80">“It showed me that kindness exists everywhere.”</p>
             </div>
           </div>
