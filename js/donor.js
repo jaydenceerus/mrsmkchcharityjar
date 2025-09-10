@@ -611,7 +611,7 @@ window.addEventListener('auth:changed', (ev) => {
 // initial check on page load
 document.addEventListener('DOMContentLoaded', async () => {
   updateAuthUIFromLocal();
-
+  renderImpactThisMonth();
 
   await loadDefaultPledgeData();
 
@@ -684,6 +684,18 @@ document.getElementById('mobileNavBtn')?.addEventListener('click', () => {
       document.getElementById('mobileNavPanel').classList.add('hidden');
     });
   });
+
+  function animateCounter(el, target, duration = 1500) {
+  let start = 0;
+  const stepTime = Math.abs(Math.floor(duration / target));
+  const increment = target > 0 ? 1 : 0; // only count if target > 0
+
+  const timer = setInterval(() => {
+    start += increment;
+    el.textContent = start;
+    if (start >= target) clearInterval(timer);
+  }, stepTime);
+}
 
 async function updateAuthUI() {
   const user = await getActiveUser(); // uses existing helper
@@ -1763,6 +1775,15 @@ async function renderAchievements() {
   const pledgesSorted = rows.slice().sort((a,b) => b.count - a.count).slice(0,5);
   const valueSorted   = rows.slice().sort((a,b) => b.value - a.value).slice(0,5);
 
+  // Top Wishes (most pledges count)
+  pledgesSorted.forEach((r) => {
+    const line = document.createElement('div');
+    line.className = 'flex items-center justify-between rounded-xl bg-white/10 border border-white/10 p-3';
+    line.innerHTML = `<div class="font-semibold">${r.name}</div><div class="text-sm opacity-90">${r.count} pledges</div>`;
+    topWishes.appendChild(line);
+  });
+
+  // Top Value (highest total RM)
   valueSorted.forEach((r) => {
     const line = document.createElement('div');
     line.className = 'flex items-center justify-between rounded-xl bg-white/10 border border-white/10 p-3';
@@ -1770,6 +1791,20 @@ async function renderAchievements() {
     topValue.appendChild(line);
   });
 }
+
+async function renderImpactThisMonth() {
+  const wishes = await loadWishes();       // however you load
+  const donations = await loadDonations(); // your existing fn
+
+  const totalWishes = wishes.length;
+  const granted = wishes.filter(w => w.granted_at !== null).length;
+  const uniqueDonors = new Set(donations.map(d => d.donor_id)).size;
+
+  animateCounter(document.getElementById('statWishes'), totalWishes);
+  animateCounter(document.getElementById('statGranted'), granted);
+  animateCounter(document.getElementById('statDonors'), uniqueDonors);
+}
+
 
 async function refreshBallHighlights(){
   const latest = await getLatestCode();
