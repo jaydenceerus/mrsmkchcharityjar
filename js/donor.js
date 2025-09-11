@@ -1797,7 +1797,7 @@ async function renderImpactThisMonth() {
   const donations = await loadDonations(); // your existing fn
 
   const totalWishes = wishes.length;
-  const granted = wishes.filter(w => w.granted_at !== null).length;
+  const granted = wishes.filter(w => w.granted_at !== false).length;
   const uniqueDonors = new Set(donations.map(d => d.donor_id)).size;
 
   animateCounter(document.getElementById('statWishes'), totalWishes);

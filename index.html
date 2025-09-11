@@ -44,19 +44,7 @@
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
-    .skp-character {
-  opacity: 0;
-  animation: fadeInUp 1s ease forwards;
-}
-
-.skp-character img {
-  animation: sway 5s ease-in-out infinite;
-  animation-delay: 1s; /* sway starts after fade in */
-}
-
-.skp-character .glow {
-  animation: fadeInUp 1.2s ease forwards;
-}
+    
 
 .slide-text {
   opacity: 0;
@@ -899,8 +887,6 @@
 
 
   <!-- Slider Controls -->
-<button id="prevBtn"><span>‹</span></button>
-<button id="nextBtn"><span>›</span></button>
   </section>
 
   <style>
@@ -1054,18 +1040,7 @@ document.querySelectorAll(".banner").forEach(ban => {
 });
 
 // Button controls
-document.getElementById("prevBtn").addEventListener("click", () => {
-  if (currentIndex > 0) {
-    currentIndex--;
-    updateSlider();
-  }
-});
-document.getElementById("nextBtn").addEventListener("click", () => {
-  if (currentIndex < totalSlides - 1) {
-    currentIndex++;
-    updateSlider();
-  }
-});
+
 
 // Swipe support
 let startX = 0;
@@ -1084,18 +1059,81 @@ track.addEventListener("touchend", e => {
   }
 });
 
+// ensure updateSlider exists (your original updateSlider) — we'll augment it
 function updateSlider() {
   track.style.transform = `translateX(-${currentIndex * 100}%)`;
 
-  // Remove active class from all banners
+  // Remove / add active class correctly so CSS animations only trigger once per active slide
   document.querySelectorAll(".skp-banner").forEach((banner, idx) => {
-    if(idx === currentIndex) {
+    if (idx === currentIndex) {
       banner.classList.add("active");
     } else {
       banner.classList.remove("active");
     }
   });
+
+  // Make controls visible (useful on touch devices) by adding .show to slider container
+  document.getElementById("skp-slider").classList.add("show");
 }
+// Double-click (desktop) and double-tap (mobile) using the visible slider viewport
+const sliderViewport = document.getElementById('skp-slider'); // viewport element
+if (sliderViewport) {
+  // dblclick for desktop
+  sliderViewport.addEventListener('dblclick', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Use the visible viewport rect, not the long track
+    const rect = sliderViewport.getBoundingClientRect();
+    const mid = rect.left + rect.width / 2;
+    const x = (typeof e.clientX === 'number') ? e.clientX : (rect.left + rect.width / 2);
+
+    if (x < mid) {
+      if (currentIndex > 0) currentIndex--;
+    } else {
+      if (currentIndex < totalSlides - 1) currentIndex++;
+    }
+    updateSlider();
+  });
+
+  // double-tap detection for touch devices
+  let lastTapTime = 0;
+  let lastTapX = 0;
+  sliderViewport.addEventListener('touchend', (ev) => {
+    // only consider single-finger taps
+    if (!ev.changedTouches || ev.changedTouches.length === 0) return;
+    const t = ev.changedTouches[0];
+    const now = Date.now();
+    const dt = now - lastTapTime;
+    const dx = Math.abs(t.clientX - lastTapX);
+
+    // double-tap (within 350ms and small movement)
+    if (dt < 350 && dx < 40) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const rect = sliderViewport.getBoundingClientRect();
+      const mid = rect.left + rect.width / 2;
+      const x = t.clientX;
+
+      if (x < mid) {
+        if (currentIndex > 0) currentIndex--;
+      } else {
+        if (currentIndex < totalSlides - 1) currentIndex++;
+      }
+      updateSlider();
+
+      // reset
+      lastTapTime = 0;
+      lastTapX = 0;
+      return;
+    }
+
+    // record for next tap
+    lastTapTime = now;
+    lastTapX = t.clientX;
+  });
+}
+
 
 </script>
 
@@ -1133,7 +1171,7 @@ function updateSlider() {
     <div class="border-2 border-green-500 rounded-xl p-6 text-center text-white transition-all duration-300 hover:shadow-[0_0_20px_rgba(5,150,105,0.5)] hover:scale-105">
       <h4 class="text-xl font-bold mb-2 text-green-300">Supporting & Innovating SDG Goals</h4>
       <p class="text-white opacity-90">
-        Encouraging projects aligned with Sustainable Development Goals, promoting innovation and social responsibility among students.
+        Encouraging projects aligned with Sustainable Development Goals - SDG 1, SDG 4, SDG 12 - promoting innovation and social responsibility among students.
       </p>
     </div>
 
