@@ -405,6 +405,55 @@
 </div>
 
 <style>
+/* Magical blurred glow-balls for Stories of Impact */
+.stories-glow-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 0;               /* sit behind content */
+  pointer-events: none;     /* don't capture clicks */
+  overflow: hidden;
+}
+
+/* each glow ball sits absolutely; use CSS variables for color/size/pos */
+.stories-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.55;
+  mix-blend-mode: screen;
+  transform: translate3d(0,0,0);
+  will-change: transform, opacity, filter;
+  transition: opacity 500ms ease, transform 700ms ease;
+}
+
+/* subtle float animation */
+@keyframes glowFloat {
+  0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0.55; }
+  50%  { transform: translateY(-28px) translateX(14px) scale(1.06); opacity: 0.65; }
+  100% { transform: translateY(0) translateX(0) scale(1); opacity: 0.55; }
+}
+
+/* longer/offset animations so they don't sync */
+.stories-glow--a  { animation: glowFloat 12s ease-in-out infinite; }
+.stories-glow--b  { animation: glowFloat 10s ease-in-out infinite; animation-delay: -2s; }
+.stories-glow--c  { animation: glowFloat 14s ease-in-out infinite; animation-delay: -4s; }
+.stories-glow--d  { animation: glowFloat 11s ease-in-out infinite; animation-delay: -1s; }
+
+/* responsive sizes (smaller on narrow viewports) */
+@media (max-width: 640px) {
+  .stories-glow { filter: blur(44px); opacity: 0.5; }
+}
+
+/* respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .stories-glow,
+  .stories-glow-wrap { animation: none !important; transition: none !important; }
+}
+
+/* ensure the content sits above the glow */
+#galleryViewport, #galleryTrack, .rounded-2xl { position: relative; z-index: 2; }
+
+
   @keyframes floaty {
     0%   { transform: translateY(-50%) translateY(0) rotate(var(--tilt)); }
     50%  { transform: translateY(-50%) translateY(-12px) rotate(calc(var(--tilt) + 2deg)); }
@@ -1248,6 +1297,12 @@ if (sliderViewport) {
 
 <!-- Horizontal Tab/Gallery Section -->
 <section class="relative py-20 bg-gray-900">
+  <div class="stories-glow-wrap" aria-hidden="true">
+    <div class="stories-glow stories-glow--a" style="width:420px;height:420px;left:6%;top:8%;background:linear-gradient(135deg,#ff6ec7,#ff0080);"></div>
+    <div class="stories-glow stories-glow--b" style="width:360px;height:360px;right:8%;top:18%;background:linear-gradient(135deg,#61f7d6,#00a7ff);"></div>
+    <div class="stories-glow stories-glow--c" style="width:280px;height:280px;left:16%;bottom:14%;background:linear-gradient(135deg,#ffd66b,#ff9ad2);"></div>
+    <div class="stories-glow stories-glow--d" style="width:220px;height:220px;right:20%;bottom:8%;background:linear-gradient(135deg,#b993ff,#7bdff6);"></div>
+  </div>
   <div class="max-w-6xl mx-auto px-6 text-white">
     <h2 class="text-3xl font-bold text-center">Stories of Impact</h2>
     <p class="mt-2 text-lg text-center opacity-80">Swipe or click through to explore</p>
