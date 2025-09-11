@@ -638,72 +638,88 @@
     <!-- ABOUT (with stats + SKP details) -->
 <section id="page-about" class="page relative" >
 <div class="absolute inset-0 -z-10">
-    <span class="glow-ball" style="top:10%; left:20%; width:300px; height:300px; background:#ff0080;"></span>
-    <span class="glow-ball" style="top:40%; left:70%; width:250px; height:250px; background:#00ffff;"></span>
-    <span class="glow-ball" style="top:70%; left:30%; width:200px; height:200px; background:#ffcc00;"></span>
-    <span class="glow-ball" style="top:20%; left:80%; width:180px; height:180px; background:#00ff99;"></span>
-  </div>
+  <span class="glow-ball" style="top:10%; left:20%; width:300px; height:300px; background:#ff0080;"></span>
+  <span class="glow-ball" style="top:40%; left:70%; width:250px; height:250px; background:#00ffff;"></span>
+  <span class="glow-ball" style="top:70%; left:30%; width:200px; height:200px; background:#ffcc00;"></span>
+  <span class="glow-ball" style="top:20%; left:80%; width:180px; height:180px; background:#00ff99;"></span>
+</div>
 
-  <div class="relative max-w-6xl mx-auto px-6 py-10">
-    <h2 class="text-3xl md:text-4xl font-bold">About This Project</h2>
-    <p class="mt-4 text-white/90 text-lg leading-relaxed max-w-3xl">
-      A simple way to support students in need. Each anonymous wish is reviewed by school staff and listed here for donors to grant.
-    </p>
+<div class="relative max-w-6xl mx-auto px-6 py-10">
+  <h2 class="text-3xl md:text-4xl font-bold">About This Project</h2>
+  <p class="mt-4 text-white/90 text-lg leading-relaxed max-w-3xl">
+    A simple way to support students in need. Each anonymous wish is reviewed by school staff and listed here for donors to grant.
+  </p>
 
-    <div class="mt-8 grid lg:grid-cols-2 gap-6">
-      <!-- School Snapshot -->
-      <div class="rounded-2xl bg-white/10 border border-white/10 p-6">
-        <h3 class="text-xl font-semibold">School Snapshot</h3>
-        <div class="mt-4 space-y-4">
-          <div>
-            <div class="flex items-center justify-between text-sm"><span>B40 Students</span><span id="statB40Pct">45.7%</span></div>
-            <div class="mt-2 h-3 rounded-full bg-white/10 overflow-hidden">
-              <div id="barB40" class="h-3 bg-yellow-300 rounded-full" style="width:45.7%"></div>
-            </div>
+  <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- School Snapshot (original frame styling preserved) -->
+    <div class="rounded-2xl bg-white/10 border border-white/10 p-6 min-w-0">
+      <h3 class="text-xl font-semibold">School Snapshot</h3>
+      <div class="mt-4 space-y-4">
+        <!-- B40 Students -->
+        <div>
+          <div class="flex items-center justify-between text-sm md:text-base">
+            <span>B40 Students</span>
+            <span id="statB40Pct" class="font-semibold">39%</span>
           </div>
-          <div>
-            <div class="flex items-center justify-between text-sm"><span>Avg. Grant Time</span><span>3–7 days</span></div>
-            <div class="mt-2 h-3 rounded-full bg-white/10 overflow-hidden">
-              <div class="h-3 bg-green-300 rounded-full" style="width:45%"></div>
-            </div>
-          </div>
-          <div>
-            <div class="flex items-center justify-between text-sm"><span>Essentials Coverage (est.)</span><span>65%</span></div>
-            <div class="mt-2 h-3 rounded-full bg-white/10 overflow-hidden">
-              <div class="h-3 bg-indigo-300 rounded-full" style="width:65%"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Impact This Month -->
-      <div class="rounded-2xl bg-white/10 border border-white/10 p-6">
-        <h3 class="text-xl font-semibold">Impact This Month</h3>
-        <div class="grid grid-cols-3 gap-4 mt-4 text-center">
-          <div class="rounded-xl bg-white/10 p-4">
-            <div id="statWishes" class="text-3xl font-bold">0</div>
-            <div class="text-sm opacity-80">Wishes</div>
-          </div>
-          <div class="rounded-xl bg-white/10 p-4">
-            <div id="statGranted" class="text-3xl font-bold">0</div>
-            <div class="text-sm opacity-80">Granted</div>
-          </div>
-          <div class="rounded-xl bg-white/10 p-4">
-            <div id="statDonors" class="text-3xl font-bold">0</div>
-            <div class="text-sm opacity-80">Donors</div>
+          <div class="mt-2 h-2 md:h-3 rounded-full bg-white/10 overflow-hidden">
+            <div id="barB40" class="h-full bg-yellow-300 rounded-full" style="width:39%"></div>
           </div>
         </div>
 
-        <div class="mt-6 rounded-xl bg-white/10 p-4">
-          <div class="font-semibold">Contact MRSM Kuching</div>
-          <div class="mt-2 space-y-1 text-white/90">
-            <div>📞 +60 82-447 439</div>
-            <div>✉️ adminmrsmkuching@kuching.mrsm.edu.my</div>
+        <!-- Avg. Grant Time -->
+        <div>
+          <div class="flex items-center justify-between text-sm md:text-base">
+            <span>Avg. Grant Time</span>
+            <span>3–7 days</span>
+          </div>
+          <div class="mt-2 h-2 md:h-3 rounded-full bg-white/10 overflow-hidden">
+            <div class="h-full bg-green-300 rounded-full" style="width:45%"></div>
+          </div>
+        </div>
+
+        <!-- Essentials Coverage -->
+        <div>
+          <div class="flex items-center justify-between text-sm md:text-base">
+            <span>Essentials Coverage (est.)</span>
+            <span class="font-semibold">65%</span>
+          </div>
+          <div class="mt-2 h-2 md:h-3 rounded-full bg-white/10 overflow-hidden">
+            <div class="h-full bg-indigo-300 rounded-full" style="width:65%"></div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Impact This Month (original frame styling preserved) -->
+    <div class="rounded-2xl bg-white/10 border border-white/10 p-6 min-w-0">
+      <h3 class="text-xl font-semibold">Impact This Month</h3>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 text-center">
+        <div class="rounded-xl bg-white/10 p-4 flex flex-col items-center justify-center min-h-[84px]">
+          <div id="statWishes" class="text-3xl font-bold">0</div>
+          <div class="text-sm opacity-80">Wishes</div>
+        </div>
+        <div class="rounded-xl bg-white/10 p-4 flex flex-col items-center justify-center min-h-[84px]">
+          <div id="statGranted" class="text-3xl font-bold">0</div>
+          <div class="text-sm opacity-80">Granted</div>
+        </div>
+        <div class="rounded-xl bg-white/10 p-4 flex flex-col items-center justify-center min-h-[84px]">
+          <div id="statDonors" class="text-3xl font-bold">0</div>
+          <div class="text-sm opacity-80">Donors</div>
+        </div>
+      </div>
+
+      <div class="mt-6 rounded-xl bg-white/10 p-4">
+        <div class="font-semibold">Contact MRSM Kuching</div>
+        <div class="mt-2 space-y-1 text-white/90">
+          <div>📞 +60 82-447 439</div>
+          <div>✉️ adminmrsmkuching@kuching.mrsm.edu.my</div>
+        </div>
+      </div>
+    </div>
   </div>
+</div>
+
 
   <!-- SKP Hexagon Grid Section -->
   <section id="skp-banners" class="relative min-h-screen bg-black text-white overflow-hidden">
@@ -726,7 +742,7 @@
       
       <!-- Banner Template -->
       <div class="banner flex-1 relative bg-gray-800/70 rounded-xl overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-300 shadow-xl" data-index="0" data-color="yellow">
-        <div class="h-48 md:h-64 bg-cover bg-center" style="background-image:url('assets/chirpy.png');"></div>
+        <div class="h-48 md:h-64 bg-cover bg-center" style="background-image:url('assets/chirpy_squatting.png');"></div>
         <div class="p-4 text-center">
           <h3 class="text-2xl font-bold">Chirpy</h3>
           <p class="text-sm text-gray-300 mt-1">The energetic spirit of the student body</p>
@@ -734,7 +750,7 @@
       </div>
 
       <div class="banner flex-1 relative bg-gray-800/70 rounded-xl overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-300 shadow-xl" data-index="1" data-color="white">
-        <div class="h-48 md:h-64 bg-cover bg-center" style="background-image:url('assets/serenity.png');"></div>
+        <div class="h-48 md:h-64 bg-cover bg-center" style="background-image:url('assets/serenity_pray.png');"></div>
         <div class="p-4 text-center">
           <h3 class="text-2xl font-bold">Serenity</h3>
           <p class="text-sm text-gray-300 mt-1">Calm and composed presence</p>
@@ -742,7 +758,7 @@
       </div>
 
       <div class="banner flex-1 relative bg-gray-800/70 rounded-xl overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-300 shadow-xl" data-index="2" data-color="green">
-        <div class="h-48 md:h-64 bg-cover bg-center" style="background-image:url('assets/envy.png');"></div>
+        <div class="h-48 md:h-64 bg-cover bg-center" style="background-image:url('assets/envy_handsbehindhead.png');"></div>
         <div class="p-4 text-center">
           <h3 class="text-2xl font-bold">Envy</h3>
           <p class="text-sm text-gray-300 mt-1">The green-eyed challenger</p>
@@ -750,7 +766,7 @@
       </div>
 
       <div class="banner flex-1 relative bg-gray-800/70 rounded-xl overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-300 shadow-xl" data-index="3" data-color="orange">
-        <div class="h-48 md:h-64 bg-cover bg-center" style="background-image:url('assets/gratitude.png');"></div>
+        <div class="h-48 md:h-64 bg-cover bg-center" style="background-image:url('assets/gratitude_waving.png');"></div>
         <div class="p-4 text-center">
           <h3 class="text-2xl font-bold">Gratitude</h3>
           <p class="text-sm text-gray-300 mt-1">Always thankful, always bright</p>
@@ -758,7 +774,7 @@
       </div>
 
       <div class="banner flex-1 relative bg-gray-800/70 rounded-xl overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-300 shadow-xl" data-index="4" data-color="pink">
-        <div class="h-48 md:h-64 bg-cover bg-center" style="background-image:url('assets/shy.png');"></div>
+        <div class="h-48 md:h-64 bg-cover bg-center" style="background-image:url('assets/shy_handsclasped.png');"></div>
         <div class="p-4 text-center">
           <h3 class="text-2xl font-bold">Shy</h3>
           <p class="text-sm text-gray-300 mt-1">Quiet, thoughtful, reserved</p>
@@ -766,7 +782,7 @@
       </div>
 
       <div class="banner flex-1 relative bg-gray-800/70 rounded-xl overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-300 shadow-xl" data-index="5" data-color="purple">
-        <div class="h-48 md:h-64 bg-cover bg-center" style="background-image:url('assets/worry.png');"></div>
+        <div class="h-48 md:h-64 bg-cover bg-center" style="background-image:url('assets/worry_nervous.png');"></div>
         <div class="p-4 text-center">
           <h3 class="text-2xl font-bold">Worry</h3>
           <p class="text-sm text-gray-300 mt-1">Always thinking ahead</p>
@@ -791,7 +807,7 @@
     <!-- Character with glow -->
     <div class="skp-character relative mr-8 text-yellow-400">
       <div class="absolute inset-0 rounded-full bg-current opacity-40 blur-3xl glow"></div>
-      <img src="assets/chirpy.png" class="relative skp-img">
+      <img src="assets/chirpy_standing.png" class="relative skp-img">
     </div>
 
     <!-- Text fades in after character -->
@@ -812,7 +828,7 @@
   <div class="relative z-10 flex items-center justify-center h-full px-8">
     <div class="skp-character relative mr-8 text-purple-400">
       <div class="absolute inset-0 rounded-full bg-current opacity-40 blur-3xl glow"></div>
-      <img src="assets/serenity.png" class="relative skp-img">
+      <img src="assets/serenity_meditating.png" class="relative skp-img">
     </div>
     <div class="text-white max-w-xl slide-text">
       <h3 class="text-4xl font-bold mb-4 text-white">Mr. Serenity</h3>
@@ -828,7 +844,7 @@
   <div class="relative z-10 flex items-center justify-center h-full px-8">
     <div class="skp-character relative mr-8 text-green-400">
       <div class="absolute inset-0 rounded-full bg-current opacity-40 blur-3xl glow"></div>
-      <img src="assets/envy.png" class="relative skp-img">
+      <img src="assets/envy_sideeye.png" class="relative skp-img">
     </div>
     <div class="text-white max-w-xl slide-text">
       <h3 class="text-4xl font-bold mb-4 text-green-400">Mr. Envy</h3>
@@ -893,7 +909,19 @@
   /* Hexagon style */
   /* Character images */
 
+/* helper to prevent flex children overflowing on tiny screens */
+.rounded-xl, .rounded-2xl {
+  min-width: 0;
+}
 
+/* ensure progress bars never overflow their card on very narrow screens */
+#barB40, #barB40 ~ .h-full, .h-full {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* make glow-balls non-interactive and avoid them causing layout overflow */
+.glow-ball { pointer-events: none; }
 
 /* Initially hidden with opacity */
 #skp-slider {
@@ -1233,7 +1261,7 @@ if (sliderViewport) {
             <div class="rounded-2xl bg-white/6 p-6 text-center">
               <img src="assets/pplface.jpeg" alt="" class="mx-auto rounded-xl mb-4 w-full max-w-[420px] h-52 object-cover">
               <h3 class="text-xl font-semibold">J***** ******</h3>
-              <p class="mt-2 opacity-80">“These shoes aren’t just shoes—they’re freedom. I can run, play, and feel proud again. Thank you so much!”</p>
+              <p class="mt-2 opacity-80">“Thank you all so much! I can finally run, play, and feel proud again, without having to be embarassed of my old and torn shoes... I'll keep this in my heart forever!”</p>
             </div>
           </div>
 
@@ -1242,7 +1270,7 @@ if (sliderViewport) {
             <div class="rounded-2xl bg-white/6 p-6 text-center">
               <img src="story2.jpg" alt="" class="mx-auto rounded-xl mb-4 w-full max-w-[420px] h-52 object-cover">
               <h3 class="text-xl font-semibold">M******** ***** *** *****</h3>
-              <p class="mt-2 opacity-80">“This little lamp has changed my nights. I can study without straining my eyes and focus on my future. Thank you for giving me this light!”</p>
+              <p class="mt-2 opacity-80">“Walaupun permintaan saya amat sukar untuk ditunaikan, namun terdapat insan yang sudi menghulurkan tangan dan memberikan bantuan. Terima kasih!”</p>
             </div>
           </div>
 
@@ -1251,7 +1279,7 @@ if (sliderViewport) {
             <div class="rounded-2xl bg-white/6 p-6 text-center">
               <img src="story3.jpg" alt="" class="mx-auto rounded-xl mb-4 w-full max-w-[420px] h-52 object-cover">
               <h3 class="text-xl font-semibold">C*** **** ***</h3>
-              <p class="mt-2 opacity-80">“It showed me that kindness exists everywhere.”</p>
+              <p class="mt-2 opacity-80">"Kamek mok madah makseh dengan abang-abang dan kakak-kakak.. sebab selama tok kamek risau barang kamek akan gugok segal beg kamek dah lamak bisak.. Kamek akan menjaga mena-mena hadiah yang kitak berik dengan kamek tok!”</p>
             </div>
           </div>
         </div>
