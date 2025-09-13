@@ -640,125 +640,223 @@ document.addEventListener('DOMContentLoaded', async () => {
 /* -------------------------
    Router + wiring
    ------------------------- */
-const navlinks = document.querySelectorAll('.navlink');
-const pages = {
-  home: document.getElementById('page-home'),
-  about: document.getElementById('page-about'),
-  achievements: document.getElementById('page-achievements'),
-  status: document.getElementById('page-status'),
-  donate: document.getElementById('page-donate'),
-  inbox: document.getElementById('page-inbox')
-};
+(function(){
+  // Inject CSS for page transitions & reveals (idempotent)
+  const CSS_ID = 'animated-page-transitions-css';
+  if (!document.getElementById(CSS_ID)) {
+    const css = `
+      /* Animated page show/hide (overrides display:none approach) */
+      .page {
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity .36s cubic-bezier(.2,.9,.2,1), transform .36s cubic-bezier(.2,.9,.2,1);
+        pointer-events: none;
+        will-change: opacity, transform;
+      }
+      .page.active {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+      .page.is-leaving {
+        opacity: 0;
+        transform: translateY(-8px);
+        pointer-events: none;
+        transition-duration: .28s;
+      }
+      .page.is-entering { opacity: 0; transform: translateY(8px); }
 
-const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      /* Lazy reveal for about page / big sections */
+      .reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; will-change: opacity, transform; }
+      .reveal.revealed { opacity: 1; transform: translateY(0); }
 
-// idempotent about reveal initializer (kept local to this script)
-function initAboutReveal() {
-  if (window._aboutRevealInit) return;
-  window._aboutRevealInit = true;
+      /* Small nicety for skp slider */
+      #skp-slider { opacity: 0; transform: translateY(10px); transition: opacity .45s ease, transform .45s ease; }
+      #skp-slider.show { opacity: 1; transform: translateY(0); }
 
-  const selector = '#page-about .rounded-2xl, #skp-banners, #skp-slider, #page-about .banner, #page-about .stories-glow-wrap';
-  const revealTargets = Array.from(document.querySelectorAll(selector));
-  revealTargets.forEach(el => el.classList.add('reveal'));
+      @media (prefers-reduced-motion: reduce) {
+        .page, .page.is-leaving, .reveal, #skp-slider { transition: none !important; transform: none !important; }
+      }
+    `;
+    const s = document.createElement('style');
+    s.id = CSS_ID;
+    s.appendChild(document.createTextNode(css));
+    document.head.appendChild(s);
+  }
 
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('revealed');
-        io.unobserve(entry.target);
+  // query nodes
+  const navlinks = Array.from(document.querySelectorAll('.navlink'));
+  const pages = {
+    home: document.getElementById('page-home'),
+    about: document.getElementById('page-about'),
+    achievements: document.getElementById('page-achievements'),
+    status: document.getElementById('page-status'),
+    donate: document.getElementById('page-donate'),
+    inbox: document.getElementById('page-inbox')
+  };
+
+  const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // idempotent about reveal initializer
+  function initAboutReveal() {
+    if (window._aboutRevealInit) return;
+    window._aboutRevealInit = true;
+
+    // elements we want to reveal on about page
+    const sel = '#page-about .rounded-2xl, #skp-banners, #skp-slider, #page-about .banner, #page-about .stories-glow-wrap, #skp-banners .banner, #skp-slider .skp-banner';
+    const revealTargets = Array.from(document.querySelectorAll(sel)).filter(Boolean);
+
+    revealTargets.forEach(el => el.classList.add('reveal'));
+
+    if (revealTargets.length === 0) return;
+
+    const io = new IntersectionObserver((entries, obs) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('revealed');
+          obs.unobserve(entry.target);
+        }
+      });
+    }, { root: null, rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+
+    revealTargets.forEach(el => {
+      // if currently visible, reveal instantly
+      if (el.getBoundingClientRect().top < window.innerHeight) {
+        el.classList.add('revealed');
+      } else {
+        io.observe(el);
       }
     });
-  }, { root: null, rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
-
-  revealTargets.forEach(el => {
-    // if already visible in viewport, reveal immediately
-    if (el.getBoundingClientRect().top < window.innerHeight) el.classList.add('revealed');
-    else io.observe(el);
-  });
-}
-
-// Animated routeTo preserves your existing side-effects (renderJar, etc.)
-async function routeTo(name) {
-  // sanity: if name missing or page not registered, no-op
-  if (!name || !pages[name]) return;
-
-  const next = pages[name];
-  const current = document.querySelector('.page.active');
-
-  // update nav link visuals immediately
-  navlinks.forEach(n => {
-    if (n.dataset.route === name) n.classList.add('bg-white/20','font-semibold');
-    else n.classList.remove('bg-white/20','font-semibold');
-  });
-
-  // if no current (first load), just show without waiting for transitions
-  if (!current || current === next) {
-    // if same page, still ensure about init or hook calls run
-    next.classList.add('active');
-    if (name === 'home') renderJar?.();
-    if (name === 'inbox') renderInbox?.();
-    if (name === 'status') loadDefaultPledgeData?.();
-    if (name === 'achievements') renderAchievements?.();
-    if (name === 'donate') initDonateForm?.();
-    if (name === 'about') initAboutReveal();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    return;
   }
 
-  // run exit animation on current
-  try {
-    current.classList.add('is-leaving');
+  // Unified routeTo with smooth exit/enter animation
+  async function routeTo(name) {
+    if (!name || !pages[name]) {
+      // fallback to 'home' if unknown
+      if (pages.home) name = 'home';
+      else return;
+    }
+    const next = pages[name];
+    const current = document.querySelector('.page.active');
 
-    if (!prefersReducedMotion) {
-      // await transitionend or fallback timeout
-      await new Promise(resolve => {
-        let done = false;
-        const onEnd = (ev) => {
-          // ensure this event is for the current element's opacity/transform
-          if (ev && ev.target !== current) return;
-          if (done) return;
-          done = true;
-          current.removeEventListener('transitionend', onEnd);
-          resolve();
-        };
-        current.addEventListener('transitionend', onEnd);
-        // safety fallback in case transitionend doesn't fire
-        setTimeout(() => { if (!done) { done = true; current.removeEventListener('transitionend', onEnd); resolve(); } }, 420);
-      });
+    // update nav visual state immediately
+    navlinks.forEach(n => {
+      if (n.dataset.route === name) n.classList.add('bg-white/20','font-semibold');
+      else n.classList.remove('bg-white/20','font-semibold');
+    });
+
+    // if already on same page or no current page, show next without waiting
+    if (!current || current === next) {
+      // ensure only this page is active
+      Object.values(pages).forEach(p => p && p !== next && p.classList.remove('active'));
+      next.classList.add('active');
+
+      // page-specific hooks
+      if (name === 'home') typeof renderJar === 'function' && renderJar();
+      if (name === 'inbox') typeof renderInbox === 'function' && renderInbox();
+      if (name === 'status') typeof loadDefaultPledgeData === 'function' && loadDefaultPledgeData();
+      if (name === 'achievements') typeof renderAchievements === 'function' && renderAchievements();
+      if (name === 'donate') typeof initDonateForm === 'function' && initDonateForm();
+      if (name === 'about') initAboutReveal();
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
     }
 
-    current.classList.remove('is-leaving', 'active');
-  } catch (e) {
-    // if anything goes wrong, ensure we still remove active class
-    current.classList.remove('is-leaving', 'active');
+    // animate leaving
+    try {
+      current.classList.add('is-leaving');
+
+      if (!prefersReducedMotion) {
+        await new Promise(resolve => {
+          let done = false;
+          const onEnd = (ev) => {
+            if (ev && ev.target !== current) return;
+            if (done) return;
+            done = true;
+            current.removeEventListener('transitionend', onEnd);
+            resolve();
+          };
+          current.addEventListener('transitionend', onEnd);
+          // safety fallback
+          setTimeout(() => { if (!done) { done = true; current.removeEventListener('transitionend', onEnd); resolve(); } }, 460);
+        });
+      }
+
+      current.classList.remove('is-leaving', 'active');
+    } catch (err) {
+      current.classList.remove('is-leaving', 'active');
+    }
+
+    // prepare & enter next
+    next.classList.add('is-entering');
+    // force reflow
+    void next.offsetWidth;
+    next.classList.add('active');
+    next.classList.remove('is-entering');
+
+    // page-specific hooks again (on show)
+    if (name === 'home') typeof renderJar === 'function' && renderJar();
+    if (name === 'inbox') typeof renderInbox === 'function' && renderInbox();
+    if (name === 'status') typeof loadDefaultPledgeData === 'function' && loadDefaultPledgeData();
+    if (name === 'achievements') typeof renderAchievements === 'function' && renderAchievements();
+    if (name === 'donate') typeof initDonateForm === 'function' && initDonateForm();
+    if (name === 'about') initAboutReveal();
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // prepare and show next
-  next.classList.add('is-entering');
-  // force reflow so CSS transitions run reliably
-  void next.offsetWidth;
-  next.classList.add('active');
-  next.classList.remove('is-entering');
+  // Wire nav buttons (keeps your existing listener behavior)
+  navlinks.forEach(btn => {
+    // remove existing click handlers added previously by other code won't be removed if anonymous,
+    // but adding new handlers is fine; ensure we prevent default and call new routeTo.
+    btn.addEventListener('click', (e) => {
+      const route = btn.dataset.route;
+      if (!route) return;
+      e.preventDefault();
+      routeTo(route);
+    });
+  });
 
-  // page-specific init calls
-  if (name === 'home') renderJar?.();
-  if (name === 'inbox') renderInbox?.();
-  if (name === 'status') loadDefaultPledgeData?.();
-  if (name === 'achievements') renderAchievements?.();
-  if (name === 'donate') initDonateForm?.();
-  if (name === 'about') initAboutReveal();
+  // mobile nav toggle (preserve original behavior)
+  document.getElementById('mobileNavBtn')?.addEventListener('click', () => {
+    const panel = document.getElementById('mobileNavPanel');
+    if (!panel) return;
+    panel.classList.toggle('hidden');
+  });
 
-  // scroll to top
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+  // close mobile panel when clicking a route (preserve original behavior)
+  document.querySelectorAll('#mobileNavPanel button[data-route]').forEach(b => {
+    b.addEventListener('click', (e) => {
+      const r = e.currentTarget.getAttribute('data-route');
+      if (r) routeTo(r);
+      document.getElementById('mobileNavPanel')?.classList.add('hidden');
+    });
+  });
 
-// wire nav buttons (keeps your existing listener behavior)
-navlinks.forEach(btn => btn.addEventListener('click', (e) => {
-  e.preventDefault();
-  const route = btn.dataset.route;
-  if (route) routeTo(route);
-}));
+  // logout button behavior (unchanged)
+  document.getElementById('logoutBtn')?.addEventListener('click', ()=> {
+    try { localStorage.removeItem(LS_ROLE); localStorage.removeItem(LS_ACTIVE_USER); } catch(e){}
+    // keep original redirect behavior
+    window.location.href = 'login.html';
+  });
 
+  // allow hash navigation and initial load routing
+  window.addEventListener('hashchange', () => {
+    const h = location.hash.replace('#','') || 'home';
+    routeTo(h);
+  });
+  document.addEventListener('DOMContentLoaded', () => {
+    const initial = (location.hash.replace('#','') || 'home');
+    // small delay so initial hero/other animations still run
+    setTimeout(() => routeTo(initial), 50);
+  });
+
+  // expose for debugging if needed
+  window.routeTo = routeTo;
+  // also expose about init for manual triggers
+  window.initAboutReveal = initAboutReveal;
+})();
 
   function animateCounter(el, target, duration = 1500) {
   let start = 0;
