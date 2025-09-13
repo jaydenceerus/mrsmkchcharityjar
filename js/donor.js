@@ -640,62 +640,50 @@ document.addEventListener('DOMContentLoaded', async () => {
 /* -------------------------
    Router + wiring
    ------------------------- */
+/* ===========================
+   Animated Router + About Reveal
+   Replace the previous "Router + wiring" block with this.
+   This snippet injects required CSS (so you don't have to edit index.html),
+   animates page transitions, preserves your existing hooks (renderJar, initDonateForm, etc.),
+   and lazily reveals About/SKP sections via IntersectionObserver.
+   =========================== */
 
 (function(){
-  const CSS_ID = 'animated-page-transitions-css-v2';
+  // Inject CSS for page transitions & reveals (idempotent)
+  const CSS_ID = 'animated-page-transitions-css';
   if (!document.getElementById(CSS_ID)) {
     const css = `
-      :root{
-        --page-enter-duration: 520ms;
-        --page-exit-duration: 320ms;
-        --page-ease: cubic-bezier(.16,.9,.3,1);
-        --overlay-color: rgba(0,0,0,0.12);
-      }
-
-      /* pages */
+      /* Animated page show/hide (overrides display:none approach) */
       .page {
         opacity: 0;
-        transform: translateY(12px) scale(0.998);
-        transition: opacity var(--page-enter-duration) var(--page-ease),
-                    transform var(--page-enter-duration) var(--page-ease);
+        transform: translateY(10px);
+        transition: opacity .36s cubic-bezier(.2,.9,.2,1), transform .36s cubic-bezier(.2,.9,.2,1);
         pointer-events: none;
         will-change: opacity, transform;
-        backface-visibility: hidden;
       }
       .page.active {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translateY(0);
         pointer-events: auto;
       }
-
-      /* leaving is slightly faster so the app feels snappy */
       .page.is-leaving {
         opacity: 0;
-        transform: translateY(-8px) scale(0.997);
-        transition-duration: var(--page-exit-duration);
-      }
-
-      .page.is-entering { opacity: 0; transform: translateY(24px) scale(0.996); }
-
-      /* overlay behind active page to create background fade */
-      #page-overlay {
-        position: fixed;
-        inset: 0;
+        transform: translateY(-8px);
         pointer-events: none;
-        background: transparent;
-        opacity: 0;
-        transition: opacity var(--page-enter-duration) var(--page-ease);
-        z-index: 999; /* sits above page background but below UI that should remain clickable */
+        transition-duration: .28s;
       }
-      #page-overlay.show { opacity: 1; background: var(--overlay-color); }
-      #page-overlay.hidden-instant { transition: none !important; opacity: 0 !important; }
+      .page.is-entering { opacity: 0; transform: translateY(8px); }
 
-      /* Lazy reveal for about page / large sections */
-      .reveal { opacity: 0; transform: translateY(18px); transition: opacity .56s var(--page-ease), transform .56s var(--page-ease); will-change: opacity, transform; }
+      /* Lazy reveal for about page / big sections */
+      .reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; will-change: opacity, transform; }
       .reveal.revealed { opacity: 1; transform: translateY(0); }
 
+      /* Small nicety for skp slider */
+      #skp-slider { opacity: 0; transform: translateY(10px); transition: opacity .45s ease, transform .45s ease; }
+      #skp-slider.show { opacity: 1; transform: translateY(0); }
+
       @media (prefers-reduced-motion: reduce) {
-        .page, .page.is-leaving, .reveal, #page-overlay { transition: none !important; transform: none !important; }
+        .page, .page.is-leaving, .reveal, #skp-slider { transition: none !important; transform: none !important; }
       }
     `;
     const s = document.createElement('style');
@@ -704,14 +692,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.head.appendChild(s);
   }
 
-  // create overlay element (idempotent)
-  let overlay = document.getElementById('page-overlay');
-  if (!overlay) {
-    overlay = document.createElement('div');
-    overlay.id = 'page-overlay';
-    document.body.appendChild(overlay);
-  }
-
+  // query nodes
   const navlinks = Array.from(document.querySelectorAll('.navlink'));
   const pages = {
     home: document.getElementById('page-home'),
@@ -724,13 +705,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // about reveal (same as before, kept idempotent)
+  // idempotent about reveal initializer
   function initAboutReveal() {
     if (window._aboutRevealInit) return;
     window._aboutRevealInit = true;
 
+    // elements we want to reveal on about page
     const sel = '#page-about .rounded-2xl, #skp-banners, #skp-slider, #page-about .banner, #page-about .stories-glow-wrap, #skp-banners .banner, #skp-slider .skp-banner';
     const revealTargets = Array.from(document.querySelectorAll(sel)).filter(Boolean);
+
     revealTargets.forEach(el => el.classList.add('reveal'));
 
     if (revealTargets.length === 0) return;
@@ -745,46 +728,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, { root: null, rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
 
     revealTargets.forEach(el => {
-      if (el.getBoundingClientRect().top < window.innerHeight) el.classList.add('revealed');
-      else io.observe(el);
+      // if currently visible, reveal instantly
+      if (el.getBoundingClientRect().top < window.innerHeight) {
+        el.classList.add('revealed');
+      } else {
+        io.observe(el);
+      }
     });
   }
 
-  // helper to toggle overlay with promise that resolves after transition
-  function setOverlay(show) {
-    if (prefersReducedMotion) {
-      // no animation; set instantly
-      overlay.classList.remove('show');
-      if (show) overlay.classList.add('show');
-      overlay.classList.add('hidden-instant');
-      // small microtask to remove the instant flag to avoid permanently disabling transitions later
-      return new Promise(resolve => requestAnimationFrame(() => {
-        overlay.classList.remove('hidden-instant');
-        resolve();
-      }));
-    }
-
-    return new Promise(resolve => {
-      let done = false;
-      const onEnd = (ev) => {
-        if (done) return;
-        // only care about opacity transitions on the overlay
-        if (ev && ev.target !== overlay) return;
-        done = true;
-        overlay.removeEventListener('transitionend', onEnd);
-        resolve();
-      };
-      overlay.addEventListener('transitionend', onEnd);
-      if (show) overlay.classList.add('show');
-      else overlay.classList.remove('show');
-      // fallback safety
-      setTimeout(() => { if (!done) { done = true; overlay.removeEventListener('transitionend', onEnd); resolve(); } }, 740);
-    });
-  }
-
-  // unified routeTo with smooth exit & overlay
+  // Unified routeTo with smooth exit/enter animation
   async function routeTo(name) {
     if (!name || !pages[name]) {
+      // fallback to 'home' if unknown
       if (pages.home) name = 'home';
       else return;
     }
@@ -797,93 +753,71 @@ document.addEventListener('DOMContentLoaded', async () => {
       else n.classList.remove('bg-white/20','font-semibold');
     });
 
-    // If reduced motion, shortcut to non-animated switch
-    if (prefersReducedMotion) {
+    // if already on same page or no current page, show next without waiting
+    if (!current || current === next) {
+      // ensure only this page is active
       Object.values(pages).forEach(p => p && p !== next && p.classList.remove('active'));
       next.classList.add('active');
-      // call hooks immediately
+
+      // page-specific hooks
       if (name === 'home') typeof renderJar === 'function' && renderJar();
       if (name === 'inbox') typeof renderInbox === 'function' && renderInbox();
       if (name === 'status') typeof loadDefaultPledgeData === 'function' && loadDefaultPledgeData();
       if (name === 'achievements') typeof renderAchievements === 'function' && renderAchievements();
       if (name === 'donate') typeof initDonateForm === 'function' && initDonateForm();
       if (name === 'about') initAboutReveal();
-      window.scrollTo({ top: 0, behavior: 'auto' });
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
-    // Always animate overlay in BEFORE showing page for a natural fade-from-background feel
-    await setOverlay(true);
-
-    // If there is a current page, animate leaving
-    if (current && current !== next) {
+    // animate leaving
+    try {
       current.classList.add('is-leaving');
-      // wait for transition end (with fallback)
-      await new Promise(resolve => {
-        let done = false;
-        const onEnd = (ev) => {
-          if (ev && ev.target !== current) return;
-          if (done) return;
-          done = true;
-          current.removeEventListener('transitionend', onEnd);
-          resolve();
-        };
-        current.addEventListener('transitionend', onEnd);
-        setTimeout(() => { if (!done) { done = true; current.removeEventListener('transitionend', onEnd); resolve(); } }, 520);
-      });
+
+      if (!prefersReducedMotion) {
+        await new Promise(resolve => {
+          let done = false;
+          const onEnd = (ev) => {
+            if (ev && ev.target !== current) return;
+            if (done) return;
+            done = true;
+            current.removeEventListener('transitionend', onEnd);
+            resolve();
+          };
+          current.addEventListener('transitionend', onEnd);
+          // safety fallback
+          setTimeout(() => { if (!done) { done = true; current.removeEventListener('transitionend', onEnd); resolve(); } }, 460);
+        });
+      }
+
       current.classList.remove('is-leaving', 'active');
-    } else if (current === next) {
-      // same page clicked — still refresh overlay and ensure page is active (no-op)
-    } else {
-      // no current page (first open) — make sure other pages are not active
-      Object.values(pages).forEach(p => p && p !== next && p.classList.remove('active'));
+    } catch (err) {
+      current.classList.remove('is-leaving', 'active');
     }
 
-    // Enter next page with an entering animation
+    // prepare & enter next
     next.classList.add('is-entering');
-    // force reflow to ensure transition runs
+    // force reflow
     void next.offsetWidth;
     next.classList.add('active');
-    // small timeout so the browser applies the 'active' state then transitions from is-entering -> active
-    requestAnimationFrame(() => {
-      next.classList.remove('is-entering');
-    });
+    next.classList.remove('is-entering');
 
-    // optional: wait for enter transition to finish before removing overlay for a cohesive feel
-    await new Promise(resolve => {
-      let done = false;
-      const onEnd = (ev) => {
-        if (ev && ev.target !== next) return;
-        if (done) return;
-        done = true;
-        next.removeEventListener('transitionend', onEnd);
-        resolve();
-      };
-      next.addEventListener('transitionend', onEnd);
-      // safety fallback
-      setTimeout(() => { if (!done) { done = true; next.removeEventListener('transitionend', onEnd); resolve(); } }, 720);
-    });
+    // page-specific hooks again (on show)
+    if (name === 'home') typeof renderJar === 'function' && renderJar();
+    if (name === 'inbox') typeof renderInbox === 'function' && renderInbox();
+    if (name === 'status') typeof loadDefaultPledgeData === 'function' && loadDefaultPledgeData();
+    if (name === 'achievements') typeof renderAchievements === 'function' && renderAchievements();
+    if (name === 'donate') typeof initDonateForm === 'function' && initDonateForm();
+    if (name === 'about') initAboutReveal();
 
-    // gently fade overlay out after page has entered
-    await setOverlay(false);
-
-    // page-specific hooks (run after page is visible)
-    // small microtask ensures layout is stable
-    requestAnimationFrame(() => {
-      if (name === 'home') typeof renderJar === 'function' && renderJar();
-      if (name === 'inbox') typeof renderInbox === 'function' && renderInbox();
-      if (name === 'status') typeof loadDefaultPledgeData === 'function' && loadDefaultPledgeData();
-      if (name === 'achievements') typeof renderAchievements === 'function' && renderAchievements();
-      if (name === 'donate') typeof initDonateForm === 'function' && initDonateForm();
-      if (name === 'about') initAboutReveal();
-    });
-
-    // scroll to top after animations (smooth feeling)
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // wire nav buttons
+  // Wire nav buttons (keeps your existing listener behavior)
   navlinks.forEach(btn => {
+    // remove existing click handlers added previously by other code won't be removed if anonymous,
+    // but adding new handlers is fine; ensure we prevent default and call new routeTo.
     btn.addEventListener('click', (e) => {
       const route = btn.dataset.route;
       if (!route) return;
@@ -892,14 +826,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // mobile nav toggle
+  // mobile nav toggle (preserve original behavior)
   document.getElementById('mobileNavBtn')?.addEventListener('click', () => {
     const panel = document.getElementById('mobileNavPanel');
     if (!panel) return;
     panel.classList.toggle('hidden');
   });
 
-  // close mobile panel when clicking a route
+  // close mobile panel when clicking a route (preserve original behavior)
   document.querySelectorAll('#mobileNavPanel button[data-route]').forEach(b => {
     b.addEventListener('click', (e) => {
       const r = e.currentTarget.getAttribute('data-route');
@@ -908,26 +842,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // logout button (unchanged)
+  // logout button behavior (unchanged)
   document.getElementById('logoutBtn')?.addEventListener('click', ()=> {
     try { localStorage.removeItem(LS_ROLE); localStorage.removeItem(LS_ACTIVE_USER); } catch(e){}
+    // keep original redirect behavior
     window.location.href = 'login.html';
   });
 
-  // hash navigation + initial load
+  // allow hash navigation and initial load routing
   window.addEventListener('hashchange', () => {
     const h = location.hash.replace('#','') || 'home';
     routeTo(h);
   });
   document.addEventListener('DOMContentLoaded', () => {
     const initial = (location.hash.replace('#','') || 'home');
+    // small delay so initial hero/other animations still run
     setTimeout(() => routeTo(initial), 50);
   });
 
-  // public exposure
+  // expose for debugging if needed
   window.routeTo = routeTo;
+  // also expose about init for manual triggers
   window.initAboutReveal = initAboutReveal;
 })();
+
 
   function animateCounter(el, target, duration = 1500) {
   let start = 0;

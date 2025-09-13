@@ -1042,31 +1042,6 @@ function closeEditModal() {
 }
 
 
-// Reset Demo
-const resetBtn = document.getElementById('resetDemo');
-if (resetBtn) resetBtn.addEventListener('click', async () => {
-  if (!confirm('This will delete ALL wishes, donations, and messages from the database. Are you absolutely sure?')) return;
-  
-  // You would typically create a Supabase Function with the service_role key to do this securely.
-  // The following is NOT recommended for production but demonstrates the client-side calls.
-  console.log("Attempting to clear data...");
-  const { error: msgErr } = await supabase.from('messages').delete().neq('id', 0);
-  const { error: convoErr } = await supabase.from('conversations').delete().neq('id', 0);
-  const { error: thanksErr } = await supabase.from('thanks').delete().neq('id', 0);
-  const { error: donErr } = await supabase.from('donations').delete().neq('id', 0);
-  const { error: wishErr } = await supabase.from('wishes').delete().neq('id', 0);
-
-  if (msgErr || convoErr || donErr || wishErr || thanksErr) {
-      alert('An error occurred. Check RLS policies. Some data may not be cleared.');
-      console.error({ msgErr, convoErr, donErr, wishErr, thanksErr });
-  } else {
-      alert('Database tables have been cleared.');
-  }
-  renderAdmin();
-  renderAdminInbox();
-});
-
-
 // ----------------------
 // Admin Inbox functions
 // ----------------------
