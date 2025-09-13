@@ -10,8 +10,42 @@
    <style>
     :root { --glass: rgba(255,255,255,0.12); }
     body { font-family: 'Poppins', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-    .page { display: none; }
-    .page.active { display: block; }
+    .page {
+    /* keep pages in flow so layout doesn't jump; visually hide via opacity/transform */
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity .36s cubic-bezier(.2,.9,.2,1), transform .36s cubic-bezier(.2,.9,.2,1);
+    pointer-events: none;
+    will-change: opacity, transform;
+  }
+  .page.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  /* quick leaving tweak to make exit feel snappy */
+  .page.is-leaving {
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+    transition-duration: .28s;
+  }
+
+  /* small helper when we want to prevent content flashes while measuring */
+  .page.is-entering { opacity: 0; transform: translateY(8px); }
+
+  /* SKP slider & other big sections: fade/slide in when 'revealed' set */
+  .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity .6s ease, transform .6s ease;
+    will-change: opacity, transform;
+  }
+  .reveal.revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
 
     /* Modal visibility (fixes always-visible popup) */
     .modal-hidden { opacity: 0; pointer-events: none; transform: translateY(10px) scale(.98); transition: all .18s ease; }

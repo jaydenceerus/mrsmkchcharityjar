@@ -650,40 +650,115 @@ const pages = {
   inbox: document.getElementById('page-inbox')
 };
 
-function routeTo(name){
-  Object.values(pages).forEach(p => p && p.classList.remove('active'));
-  if (pages[name]) pages[name].classList.add('active');
-  navlinks.forEach(n=> {
+const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// idempotent about reveal initializer (kept local to this script)
+function initAboutReveal() {
+  if (window._aboutRevealInit) return;
+  window._aboutRevealInit = true;
+
+  const selector = '#page-about .rounded-2xl, #skp-banners, #skp-slider, #page-about .banner, #page-about .stories-glow-wrap';
+  const revealTargets = Array.from(document.querySelectorAll(selector));
+  revealTargets.forEach(el => el.classList.add('reveal'));
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('revealed');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { root: null, rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+
+  revealTargets.forEach(el => {
+    // if already visible in viewport, reveal immediately
+    if (el.getBoundingClientRect().top < window.innerHeight) el.classList.add('revealed');
+    else io.observe(el);
+  });
+}
+
+// Animated routeTo preserves your existing side-effects (renderJar, etc.)
+async function routeTo(name) {
+  // sanity: if name missing or page not registered, no-op
+  if (!name || !pages[name]) return;
+
+  const next = pages[name];
+  const current = document.querySelector('.page.active');
+
+  // update nav link visuals immediately
+  navlinks.forEach(n => {
     if (n.dataset.route === name) n.classList.add('bg-white/20','font-semibold');
     else n.classList.remove('bg-white/20','font-semibold');
   });
-  if (name === 'home') renderJar();
-  if (name === 'inbox') renderInbox();
-  if (name === 'status') loadDefaultPledgeData();
-  if (name === 'achievements') renderAchievements();
-  if (name === 'donate') initDonateForm();   // <<-- call form init when showing donate
+
+  // if no current (first load), just show without waiting for transitions
+  if (!current || current === next) {
+    // if same page, still ensure about init or hook calls run
+    next.classList.add('active');
+    if (name === 'home') renderJar?.();
+    if (name === 'inbox') renderInbox?.();
+    if (name === 'status') loadDefaultPledgeData?.();
+    if (name === 'achievements') renderAchievements?.();
+    if (name === 'donate') initDonateForm?.();
+    if (name === 'about') initAboutReveal();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+
+  // run exit animation on current
+  try {
+    current.classList.add('is-leaving');
+
+    if (!prefersReducedMotion) {
+      // await transitionend or fallback timeout
+      await new Promise(resolve => {
+        let done = false;
+        const onEnd = (ev) => {
+          // ensure this event is for the current element's opacity/transform
+          if (ev && ev.target !== current) return;
+          if (done) return;
+          done = true;
+          current.removeEventListener('transitionend', onEnd);
+          resolve();
+        };
+        current.addEventListener('transitionend', onEnd);
+        // safety fallback in case transitionend doesn't fire
+        setTimeout(() => { if (!done) { done = true; current.removeEventListener('transitionend', onEnd); resolve(); } }, 420);
+      });
+    }
+
+    current.classList.remove('is-leaving', 'active');
+  } catch (e) {
+    // if anything goes wrong, ensure we still remove active class
+    current.classList.remove('is-leaving', 'active');
+  }
+
+  // prepare and show next
+  next.classList.add('is-entering');
+  // force reflow so CSS transitions run reliably
+  void next.offsetWidth;
+  next.classList.add('active');
+  next.classList.remove('is-entering');
+
+  // page-specific init calls
+  if (name === 'home') renderJar?.();
+  if (name === 'inbox') renderInbox?.();
+  if (name === 'status') loadDefaultPledgeData?.();
+  if (name === 'achievements') renderAchievements?.();
+  if (name === 'donate') initDonateForm?.();
+  if (name === 'about') initAboutReveal();
+
+  // scroll to top
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-navlinks.forEach(btn => btn.addEventListener('click', ()=> routeTo(btn.dataset.route)));
 
-document.getElementById('logoutBtn')?.addEventListener('click', ()=> {
-  try { localStorage.removeItem(LS_ROLE); localStorage.removeItem(LS_ACTIVE_USER); } catch(e){}
-  window.location.href = 'login.html';
-});
+// wire nav buttons (keeps your existing listener behavior)
+navlinks.forEach(btn => btn.addEventListener('click', (e) => {
+  e.preventDefault();
+  const route = btn.dataset.route;
+  if (route) routeTo(route);
+}));
 
-document.getElementById('mobileNavBtn')?.addEventListener('click', () => {
-    const panel = document.getElementById('mobileNavPanel');
-    if (!panel) return;
-    panel.classList.toggle('hidden');
-  });
-  // close mobile panel when clicking a route
-  document.querySelectorAll('#mobileNavPanel button[data-route]').forEach(b => {
-    b.addEventListener('click', (e) => {
-      const r = e.currentTarget.getAttribute('data-route');
-      if (r && typeof routeTo === 'function') routeTo(r);
-      document.getElementById('mobileNavPanel').classList.add('hidden');
-    });
-  });
 
   function animateCounter(el, target, duration = 1500) {
   let start = 0;
