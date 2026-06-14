@@ -16,7 +16,7 @@ const SUPABASE_URL      = 'https://gybcidzljqrmlhpjlxib.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5YmNpZHpsanFybWxocGpseGliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNDk4MzAsImV4cCI6MjA5NjcyNTgzMH0.MAy1jhw5cdbaed8I0iXnjpdURJGa8wP-kMN43SCcOMI'  // your anon key
                       // <- replace if needed
 // Add emails that should be considered "admin" accounts (lowercase is recommended)
-const ADMIN_EMAILS = ['christianoben294@gmail.com'];                     // <- replace with your admin email(s)
+const ADMIN_EMAILS = ['jaydencpaul@gmail.com'];                     // <- replace with your admin email(s)
 // -------------------------------
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
